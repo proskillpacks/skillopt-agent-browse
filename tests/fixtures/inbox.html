@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Inbox</title>
+<style>body{font-family:sans-serif;margin:20px}.row{border-bottom:1px solid #ccc;padding:22px 4px;display:flex;gap:16px}.from{width:160px;font-weight:bold}.subj{flex:1}#toast{position:fixed;top:10px;right:10px;background:#162;color:#fff;padding:10px;display:none}</style></head><body>
+<h1>Inbox</h1><p id="count"></p><div id="list"></div><div id="sentinel" style="height:40px">Loading more…</div><div id="toast" role="status"></div>
+<script>
+const first=["Alex","Bo","Chen","Dana","Elif","Femi","Gus","Hana","Ivo","Jude","Kai","Lena"],last="ABCDEFGHJKLM";
+const topics=["Invoice","Standup notes","Release checklist","Lunch order","Travel booking","Design review","On-call swap","Budget draft","Hiring loop","Retro actions"];
+const msgs=[];for(let i=0;i<60;i++){msgs.push({from:first[(i*5)%12]+" "+last[(i*7)%12]+".",subj:topics[(i*3)%10]+" #"+(100+i*13)});}
+msgs[44]={from:"Priya N.",subj:"Q3 vendor audit — rescheduled to the 19th"};
+let shown=0;const list=document.getElementById('list');
+function more(){for(let k=0;k<12&&shown<msgs.length;k++,shown++){const i=shown,m=msgs[i],r=document.createElement('div');r.className='row';
+r.innerHTML='<span class="from"></span><span class="subj"></span><button>Archive</button>';r.children[0].textContent=m.from;r.children[1].textContent=m.subj;
+r.children[2].onclick=()=>{if(confirm('Archive this message?')){r.remove();const t=document.getElementById('toast');t.textContent='Archived. Receipt #A-'+(i*137+1000);t.style.display='block';}};
+list.appendChild(r);}document.getElementById('count').textContent='Showing '+shown+' of '+msgs.length;if(shown>=msgs.length)document.getElementById('sentinel').textContent='End of inbox';}
+more();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));
+</script></body></html>

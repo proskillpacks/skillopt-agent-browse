@@ -1,0 +1,26 @@
+TASK x02: Open https://the-internet.herokuapp.com/nested_frames and report the text displayed in each of the four frames (left, middle, right, bottom).
+EXPECT: ['left', 'middle', 'right', 'bottom']
+RESULT: {"id": "x02_r1", "correct": true, "score": 0.966, "wtok": 22360, "turns": 3, "cost": 0.056, "secs": 38, "infra": false, "answer": "LEFT, MIDDLE, RIGHT, BOTTOM"}
+
+$ agent-browser open https://the-internet.herokuapp.com/nested_frames; agent-browser wait "frame"; agent-browser eval "(()=>{const r={};const top=document.querySelector('frame[name=frame-top]').contentDocument;for(const n of ['frame-left','frame-middle','frame-right']){r[n]=top.querySelector('frame[name='+n+']').contentDocument.body.innerText.trim()}r['frame-bottom']=document.querySelector('frame[name=frame-bottom]').contentDocument.body.innerText.trim();return JSON.stringify(r)})()"; agent-browser close
+-> [211 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+"{\"frame-left\":\"LEFT\",\"frame-middle\":\"MIDDLE\",\"frame-right\":\"\",\"frame-bottom\":\"BOTTOM\"}"
+✓ Browser closed
+SAY: The right frame came back empty. The page load had timed out, so that frame may not have finished loading. I'll run it again.
+$ agent-browser open https://the-internet.herokuapp.com/nested_frames; agent-browser wait --fn "(()=>{try{return document.querySelector('frame[name=frame-top]').contentDocument.querySelector('frame[name=frame-right]').contentDocument.body.innerText.trim().length>0}catch(e){return false}})()"; agent-browser eval "(()=>{const r={};const top=document.querySelector('frame[name=frame-top]').contentDocument;for(const n of ['frame-left','frame-middle','frame-right']){r[n]=top.querySelector('frame[name='+n+']').contentDocument.body.innerText.trim()}r['frame-bottom']=document.querySelector('frame[name=frame-bottom]').contentDocument.body.innerText.trim();return JSON.stringify(r)})()"; agent-browser close
+-> [185 chars] ✓ 
+  https://the-internet.herokuapp.com/nested_frames
+true
+"{\"frame-left\":\"LEFT\",\"frame-middle\":\"MIDDLE\",\"frame-right\":\"RIGHT\",\"frame-bottom\":\"BOTTOM\"}"
+✓ Browser closed
+SAY: I read the text in all four frames in a real browser with `agent-browser`:
+
+- **Left frame:** LEFT
+- **Middle frame:** MIDDLE
+- **Right frame:** RIGHT
+- **Bottom frame:** BOTTOM
+
+On the first try the page load timed out and the right frame came back blank. I loaded it again and waited until the right frame had text before reading, and that second read is the one above.
+
+ANSWER: LEFT, MIDDLE, RIGHT, BOTTOM

@@ -1,0 +1,29 @@
+TASK t04: Start at https://quotes.toscrape.com/js/ and use the Next link to go to the third page. Report the author of the first quote on page 3.
+EXPECT: ['pablo neruda']
+RESULT: {"id": "t04_r1", "correct": true, "score": 0.947, "wtok": 35319, "turns": 6, "cost": 0.049, "secs": 18, "infra": false, "answer": "Pablo Neruda"}
+
+$ agent-browser open https://quotes.toscrape.com/js/ && agent-browser snapshot -i | grep -i next
+-> [76 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/js/
+- link "Next " [ref=e6]
+$ agent-browser click @e6 && agent-browser snapshot -i | grep -i next
+-> [6 chars] ✓ Done
+$ agent-browser get url; agent-browser snapshot -i
+-> [257 chars] https://quotes.toscrape.com/js/page/2/
+- heading "Quotes to Scrape" [level=1, ref=e7]
+  - link "Quotes to Scrape" [ref=e8]
+- link "Login" [ref=e9]
+- link " Previous" [ref=e12]
+- link "Next " [ref=e13]
+- link "GoodReads.com" [ref=e10]
+- link "Zyte" [ref=e11]
+$ agent-browser click @e13 && agent-browser wait --load networkidle; agent-browser get url; agent-browser eval "document.querySelector('.quote .author').textContent"
+-> [67 chars] ✓ Done
+✓ Done
+https://quotes.toscrape.com/js/page/3/
+"Pablo Neruda"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I started at https://quotes.toscrape.com/js/ and clicked Next twice to reach page 3 (https://quotes.toscrape.com/js/page/3/). The first quote on that page is by Pablo Neruda. I've closed the browser.
+
+ANSWER: Pablo Neruda

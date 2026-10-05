@@ -1,0 +1,188 @@
+{
+ "tag": "s3_sel",
+ "skill": "../skills/s3.md",
+ "n": 16,
+ "acc": 1.0,
+ "score": 0.9632,
+ "wtok": 24472,
+ "turns": 3.0,
+ "cost": 0.9,
+ "results": [
+  {
+   "id": "s01_r1",
+   "correct": true,
+   "score": 0.979,
+   "wtok": 14029,
+   "turns": 2,
+   "cost": 0.043,
+   "secs": 42,
+   "infra": false,
+   "answer": "name: user3, href: /users/3"
+  },
+  {
+   "id": "s02_r1",
+   "correct": true,
+   "score": 0.979,
+   "wtok": 13683,
+   "turns": 2,
+   "cost": 0.042,
+   "secs": 10,
+   "infra": false,
+   "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"
+  },
+  {
+   "id": "s03_r1",
+   "correct": true,
+   "score": 0.968,
+   "wtok": 21203,
+   "turns": 3,
+   "cost": 0.052,
+   "secs": 40,
+   "infra": false,
+   "answer": "5 one-star books; 26 books total in Historical Fiction"
+  },
+  {
+   "id": "s04_r1",
+   "correct": true,
+   "score": 0.956,
+   "wtok": 29095,
+   "turns": 4,
+   "cost": 0.059,
+   "secs": 19,
+   "infra": false,
+   "answer": "49 wins, 269 GF"
+  },
+  {
+   "id": "s05_r1",
+   "correct": true,
+   "score": 0.857,
+   "wtok": 95602,
+   "turns": 6,
+   "cost": 0.178,
+   "secs": 26,
+   "infra": false,
+   "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"
+  },
+  {
+   "id": "s06_r1",
+   "correct": true,
+   "score": 0.979,
+   "wtok": 13927,
+   "turns": 2,
+   "cost": 0.043,
+   "secs": 16,
+   "infra": false,
+   "answer": "Remove \u2192 \"It's gone!\"; Enable \u2192 \"It's enabled!\", input value \"hello\""
+  },
+  {
+   "id": "s07_r1",
+   "correct": true,
+   "score": 0.972,
+   "wtok": 18741,
+   "turns": 3,
+   "cost": 0.039,
+   "secs": 11,
+   "infra": false,
+   "answer": "B, A"
+  },
+  {
+   "id": "s08_r1",
+   "correct": true,
+   "score": 0.969,
+   "wtok": 20948,
+   "turns": 3,
+   "cost": 0.049,
+   "secs": 28,
+   "infra": false,
+   "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"
+  },
+  {
+   "id": "s01_r2",
+   "correct": true,
+   "score": 0.979,
+   "wtok": 13716,
+   "turns": 2,
+   "cost": 0.042,
+   "secs": 41,
+   "infra": false,
+   "answer": "name: user3, href: /users/3"
+  },
+  {
+   "id": "s02_r2",
+   "correct": true,
+   "score": 0.97,
+   "wtok": 19796,
+   "turns": 3,
+   "cost": 0.044,
+   "secs": 33,
+   "infra": false,
+   "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"
+  },
+  {
+   "id": "s03_r2",
+   "correct": true,
+   "score": 0.968,
+   "wtok": 21203,
+   "turns": 3,
+   "cost": 0.052,
+   "secs": 15,
+   "infra": false,
+   "answer": "5 one-star books; 26 books total in Historical Fiction"
+  },
+  {
+   "id": "s04_r2",
+   "correct": true,
+   "score": 0.967,
+   "wtok": 22026,
+   "turns": 3,
+   "cost": 0.056,
+   "secs": 12,
+   "infra": false,
+   "answer": "49 wins, 269 GF"
+  },
+  {
+   "id": "s05_r2",
+   "correct": true,
+   "score": 0.94,
+   "wtok": 40014,
+   "turns": 5,
+   "cost": 0.072,
+   "secs": 19,
+   "infra": false,
+   "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"
+  },
+  {
+   "id": "s06_r2",
+   "correct": true,
+   "score": 0.979,
+   "wtok": 14116,
+   "turns": 2,
+   "cost": 0.044,
+   "secs": 47,
+   "infra": false,
+   "answer": "After Remove: \"It's gone!\"; after Enable: \"It's enabled!\", input value \"hello\""
+  },
+  {
+   "id": "s07_r2",
+   "correct": true,
+   "score": 0.981,
+   "wtok": 12880,
+   "turns": 2,
+   "cost": 0.038,
+   "secs": 39,
+   "infra": false,
+   "answer": "B, A"
+  },
+  {
+   "id": "s08_r2",
+   "correct": true,
+   "score": 0.969,
+   "wtok": 20579,
+   "turns": 3,
+   "cost": 0.048,
+   "secs": 27,
+   "infra": false,
+   "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"
+  }
+ ]
+}

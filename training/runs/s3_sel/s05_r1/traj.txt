@@ -1,0 +1,40 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r1", "correct": true, "score": 0.857, "wtok": 95602, "turns": 6, "cost": 0.178, "secs": 26, "infra": false, "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [418 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('button')].map((b,i)=>[i,b.closest('*:not(button)')?.parentElement?.innerText]))"
+-> [22985 chars] "[[0,\"Alex A.\\nInvoice #100\\nArchive\\nFemi H.\\nLunch order #113\\nArchive\\nKai C.\\nOn-call swap #126\\nArchive\\nDana K.\\nRetro actions #139\\nArchive\\nIvo E.\\nRelease checklist #152\\nArchive\\nBo M.\\nDesign review #165\\nArchive\\nGus G.\\nHiring loop #178\\nArchive\\nLena B.\\nStandup notes #191\\nArchive\\nElif J.\\nTravel booking #204\\nArchive\\nJude D.\\nBudget draft #217\\nArchive\\nChen L.\\nInvoice #230\\nArchive\\nHana F.\\nLunch order #243\\nArchive\\nAlex A.\\nOn-call swa …\\nInvoice #360\\nArchive\\nJude D.\\nLunch order #373\\nArchive\\nChen L.\\nOn-call swap #386\\nArchive\\nHana F.\\nRetro actions #399\\nArchive\"]]"
+SAY: Priya isn't in the first batch. The list probably loads more rows as you scroll.
+$ for i in 1 2 3 4 5 6 7 8; do agent-browser scroll down 5000 >/dev/null; agent-browser wait 500 >/dev/null; done; agent-browser eval "document.body.innerText.includes('Priya')+' '+document.querySelectorAll('button').length"
+-> [9 chars] "true 60"
+$ agent-browser eval "const b=[...document.querySelectorAll('button')].filter(b=>b.parentElement.innerText.includes('Priya'));b.forEach(x=>x.id='priya-btn');JSON.stringify(b.map(x=>x.parentElement.outerHTML))"
+-> [195 chars] "[\"<div class=\\\"row\\\"><span class=\\\"from\\\">Priya N.</span><span class=\\\"subj\\\">Q3 vendor audit — rescheduled to the 19th</span><button id=\\\"priya-btn\\\">Archive</button></div>\"]"
+$ agent-browser click "#priya-btn"; agent-browser dialog accept; agent-browser wait 1000; agent-browser eval "document.body.innerText.match(/.*(receipt|Receipt).*/g)"
+-> [186 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+✓ Done
+[
+  "Archived. Receipt #A-7028"
+]
+SAY: The message from Priya N. wasn't in the first batch of the inbox. It appeared after I scrolled down and more messages loaded. Its subject is **"Q3 vendor audit — rescheduled to the 19th"**.
+
+I clicked its Archive button and accepted the "Archive this message?" confirmation. The page then showed "Archived. Receipt #A-7028".
+
+ANSWER: Subject "Q3 vendor audit — rescheduled to the 19th"; receipt #A-7028

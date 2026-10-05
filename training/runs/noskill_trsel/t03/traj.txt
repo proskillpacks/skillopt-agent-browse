@@ -1,0 +1,114 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03", "correct": true, "score": 0.9, "wtok": 132738, "turns": 14, "cost": 0.14, "secs": 155, "infra": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser --help 2>&1 | head -50; agent-browser open https://the-internet.herokuapp.com/tables && agent-browser snapshot -i
+-> [2377 chars] Exit code 1
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser pr …es every session)
+
+Navigation:
+  back                       Go back
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser click "#table2 thead .dues"; agent-browser click "#table2 thead .dues"; agent-browser eval "[...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText).join('\n')"
+-> [290 chars] https://the-internet.herokuapp.com/tables
+✗ Element not found: #table2 thead .dues. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #table2 thead .dues. Verify the selector, role, or name is correct and the element exists in the DOM.
+""
+SAY: Page may not have loaded fully.
+$ agent-browser eval "document.readyState + ' ' + document.querySelectorAll('table').length"; agent-browser snapshot -i | head -40
+-> [1258 chars] "complete 2"
+- link "Fork me on GitHub" [ref=e1]
+- heading "Data Tables" [level=3, ref=e2]
+- heading "Example 1" [level=4, ref=e3]
+- columnheader "Last Name" [ref=e54]
+- columnheader "First Name" [ref=e55]
+- columnheader "Email" [ref=e56]
+- columnheader "Due" [ref=e57]
+- columnheader "Web Site" [ref=e58]
+- columnheader "Action" [ref=e59]
+- cell "Smith" [ref=e5]
+- cell "John" [ref=e6]
+- cell "jsmith@example.com" [ref=e7]
+- cell "$50.00" [ref=e8]
+- cell "http://www.jsmith.com" [ref=e9]
+- cell "edit  …arthlink.net" [ref=e25]
+- cell "$50.00" [ref=e26]
+- cell "http://www.timconway.com" [ref=e27]
+- cell "edit delete" [ref=e28]
+  - link "edit" [ref=e66]
+$ agent-browser eval "[...document.querySelectorAll('table')].map(t=>t.id+'|'+t.querySelector('thead').innerHTML).join('\n')"
+-> [654 chars] "table1|\n      <tr>\n        <th><span>Last Name</span></th>\n        <th><span>First Name</span></th>\n        <th><span>Email</span></th>\n        <th><span>Due</span></th>\n        <th><span>Web Site</span></th>\n        <th><span>Action</span></th>\n      </tr>\n    \ntable2|\n      <tr>\n        <th><span class=\"last-name\">Last Name</span></th>\n        <th><span class=\"first-name\">First Name</span></th>\n        <th><span class=\"email\">Email</span></th>\n        <th><span class=\"dues\">Due</span></th>\n        <th><span class=\"web-site\">Web Site</span></th>\n        <th><span class=\"action\">Action</span></th>\n      </tr>\n    "
+SAY: Selector should work now (page was likely mid-load before).
+$ agent-browser click "#table2 thead .dues"; agent-browser eval "[...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText).join('\n')"; agent-browser click "#table2 thead .dues"; agent-browser eval "[...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText).join('\n')"
+-> [623 chars] ✓ Done
+"Smith\tJohn\tjsmith@example.com\t$50.00\thttp://www.jsmith.com\tedit delete\nBach\tFrank\tfbach@yahoo.com\t$51.00\thttp://www.frank.com\tedit delete\nDoe\tJason\tjdoe@hotmail.com\t$100.00\thttp://www.jdoe.com\tedit delete\nConway\tTim\ttconway@earthlink.net\t$50.00\thttp://www.timconway.com\tedit delete"
+✓ Done
+"Smith\tJohn\tjsmith@example.com\t$50.00\thttp://www.jsmith.com\tedit delete\nBach\tFrank\tfbach@yahoo.com\t$51.00\thttp://www.frank.com\tedit delete\nDoe\tJason\tjdoe@hotmail.com\t$100.00\thttp://www.jdoe.com\tedit delete\nConway\tTim\ttconway@earthlink.net\t$50.00\thttp://www.timconway.com\tedit delete"
+SAY: The clicks didn't change the order. Checking whether the sort script is loaded.
+$ agent-browser eval "typeof jQuery + ' ' + (window.jQuery && typeof jQuery.fn.tablesorter) + ' ' + [...document.scripts].map(s=>s.src).join(',')"; agent-browser eval "document.querySelector('#table2 thead th:nth-child(4)').className"
+-> [429 chars] "undefined undefined https://the-internet.herokuapp.com/js/vendor/298279967.js,https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js,https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js,https://the-internet.herokuapp.com/js/foundation/foundation.js,https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js,,https://the-internet.herokuapp.com/js/vendor/jquery.tablesorter.min.js,"
+""
+SAY: The scripts didn't load. I'll reload the page and wait.
+$ agent-browser reload; agent-browser wait 3000; agent-browser eval "typeof jQuery + ' ' + (window.jQuery && typeof jQuery.fn.tablesorter)"
+-> [70 chars] https://the-internet.herokuapp.com/tables
+✓ Done
+"undefined undefined"
+$ agent-browser eval "performance.getEntriesByType('resource').map(e=>e.name+' '+e.responseStatus+' '+Math.round(e.duration)).join('\n')"; agent-browser console 2>&1 | tail -20; agent-browser errors 2>&1 | tail
+-> [718 chars] "https://the-internet.herokuapp.com/js/vendor/298279967.js 200 285\nhttps://the-internet.herokuapp.com/css/app.css 200 0\nhttps://the-internet.herokuapp.com/css/font-awesome.css 200 0\nhttps://the-internet.herokuapp.com/js/foundation/foundation.js 200 0\nhttps://the-internet.herokuapp.com/js/foundation/foundation.alerts.js 200 0\nhttps://the-internet.herokuapp.com/img/forkme_right_green_007200.png 200 0\nhttps://the-internet.herokuapp.com/js/vendor/jquery.tablesorter.min.js 200 0\nhttps://298279 …%3A%2F%2Fthe-internet.herokuapp.com%2Ftables&u=oeu1791188063966r0.6819657572971197&wxhr=true&t=1791188063970&f=298349752,318188263 0 53"
+✗ 
+✗ 
+✗ 
+✗ 
+✗
+SAY: jQuery isn't in the loaded resources. I'll check the network log.
+$ agent-browser network requests 2>&1 | head -30
+-> [2171 chars] [AE4C8B96C25258DD398AB1873DBE310A] GET https://the-internet.herokuapp.com/tables (Document) 200
+[163295.2] GET https://the-internet.herokuapp.com/js/vendor/298279967.js (Script) 503
+[163295.3] GET https://the-internet.herokuapp.com/css/app.css (Stylesheet) 200
+[163295.4] GET https://the-internet.herokuapp.com/css/font-awesome.css (Stylesheet) 200
+[163295.5] GET https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js (Script) 503
+[163295.6] GET https://the-internet.herokuapp.com/js/vend …=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Ftables&u=oeu1791188063966r0.6819657572971197&wxhr=true&t=1791188063970&f=298349752,318188263 (XHR)
+SAY: The server is returning 503 errors or stalling on jQuery, so I'll try reloading again.
+$ for i in 1 2 3; do agent-browser open https://the-internet.herokuapp.com/tables >/dev/null 2>&1; agent-browser wait 4000 >/dev/null; r=$(agent-browser eval "!!(window.jQuery && jQuery.fn.tablesorter)"); echo $r; [ "$r" = "true" ] && break; done
+-> [10 chars] false
+true
+$ agent-browser click "#table2 thead .dues"; agent-browser click "#table2 thead .dues"; agent-browser eval "document.querySelector('#table2 thead th:nth-child(4)').className + '\n' + [...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText).join('\n')"
+-> [341 chars] ✓ Done
+✓ Done
+"header headerSortDown\nSmith\tJohn\tjsmith@example.com\t$50.00\thttp://www.jsmith.com\tedit delete\nConway\tTim\ttconway@earthlink.net\t$50.00\thttp://www.timconway.com\tedit delete\nBach\tFrank\tfbach@yahoo.com\t$51.00\thttp://www.frank.com\tedit delete\nDoe\tJason\tjdoe@hotmail.com\t$100.00\thttp://www.jdoe.com\tedit delete"
+$ agent-browser click "#table2 thead .dues"; agent-browser eval "document.querySelector('#table2 thead th:nth-child(4)').className + '\n' + [...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText).join('\n')"
+-> [332 chars] ✓ Done
+"header headerSortUp\nDoe\tJason\tjdoe@hotmail.com\t$100.00\thttp://www.jdoe.com\tedit delete\nBach\tFrank\tfbach@yahoo.com\t$51.00\thttp://www.frank.com\tedit delete\nSmith\tJohn\tjsmith@example.com\t$50.00\thttp://www.jsmith.com\tedit delete\nConway\tTim\ttconway@earthlink.net\t$50.00\thttp://www.timconway.com\tedit delete"
+SAY: I'll reload the page and do exactly two clicks to confirm.
+$ for i in 1 2 3 4; do agent-browser open https://the-internet.herokuapp.com/tables >/dev/null 2>&1; agent-browser wait 4000 >/dev/null; r=$(agent-browser eval "!!(window.jQuery && jQuery.fn.tablesorter)"); [ "$r" = "true" ] && break; done; echo $r
+agent-browser click "#table2 thead .dues"; agent-browser wait 500; agent-browser eval "document.querySelector('#table2 tbody tr td.email').innerText"
+agent-browser click "#table2 thead .dues"; agent-browser wait 500; agent-browser eval "[...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText).join('\n')"
+-> [356 chars] true
+✓ Done
+✓ Done
+"jsmith@example.com"
+✓ Done
+✓ Done
+"Doe\tJason\tjdoe@hotmail.com\t$100.00\thttp://www.jdoe.com\tedit delete\nBach\tFrank\tfbach@yahoo.com\t$51.00\thttp://www.frank.com\tedit delete\nSmith\tJohn\tjsmith@example.com\t$50.00\thttp://www.jsmith.com\tedit delete\nConway\tTim\ttconway@earthlink.net\t$50.00\thttp://www.timconway.com\tedit delete"
+SAY: After two clicks on the "Due" header in Example 2, the table is sorted by Due descending:
+
+| Last Name | First Name | Email | Due |
+|---|---|---|---|
+| Doe | Jason | jdoe@hotmail.com | $100.00 |
+| Bach | Frank | fbach@yahoo.com | $51.00 |
+| Smith | John | jsmith@example.com | $50.00 |
+| Conway | Tim | tconway@earthlink.net | $50.00 |
+
+The site was unreliable. On the first few page loads, the server failed to deliver jQuery (it returned 503 errors or stalled), so the sort script never ran and click

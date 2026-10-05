@@ -1,0 +1,14 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07_r1", "correct": true, "score": 0.97, "wtok": 19874, "turns": 3, "cost": 0.045, "secs": 9, "infra": false, "answer": "A Year in Provence (Provence #1) \u2014 \u00a356.88"}
+
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/travel_2/index.html; agent-browser wait "article.product_pod"; agent-browser eval "JSON.stringify({h:document.querySelector('h1').textContent, n:document.querySelector('form strong')?.textContent, pager:!!document.querySelector('.pager'), b:[...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title,a.querySelector('.price_color').textContent])})"
+-> [859 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+✓ Done
+"{\"h\":\"Travel\",\"n\":\"11\",\"pager\":false,\"b\":[[\"It's Only the Himalayas\",\"£45.17\"],[\"Full Moon over Noah’s Ark: An Odyssey to Mount Ararat and Beyond\",\"£49.43\"],[\"See America: A Celebration of Our National Parks & Treasured Sites\",\"£48.87\"],[\"Vagabonding: An Uncommon Guide to the Art of Long-Term World Travel\",\"£36.94\"],[\"Under the Tuscan Sun\",\"£37.33\ …rom a Small Island #2)\",\"£23.21\"],[\"Neither Here nor There: Travels in Europe\",\"£38.95\"],[\"1,000 Places to See Before You Die\",\"£26.08\"]]}"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: The most expensive book in the Travel category is **A Year in Provence (Provence #1)** at **£56.88**. The category has 11 books, all on one page, and I compared every price. The next highest is "Full Moon over Noah’s Ark" at £49.43.
+
+ANSWER: A Year in Provence (Provence #1) — £56.88

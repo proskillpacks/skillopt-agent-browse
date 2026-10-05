@@ -1,0 +1,22 @@
+TASK t04: Start at https://quotes.toscrape.com/js/ and use the Next link to go to the third page. Report the author of the first quote on page 3.
+EXPECT: ['pablo neruda']
+RESULT: {"id": "t04", "correct": true, "score": 0.984, "wtok": 21330, "turns": 4, "cost": 0.016, "secs": 12, "infra": false, "answer": "Pablo Neruda"}
+
+$ agent-browser open https://quotes.toscrape.com/js/ && agent-browser snapshot -i | grep -i next
+-> [76 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/js/
+- link "Next " [ref=e6]
+$ agent-browser click @e6 && agent-browser wait --load networkidle; agent-browser get url; agent-browser snapshot -i | grep -i next
+-> [77 chars] ✓ Done
+✓ Done
+https://quotes.toscrape.com/js/page/2/
+- link "Next " [ref=e13]
+$ agent-browser click @e13 && agent-browser wait --load networkidle; agent-browser get url; agent-browser get text ".quote:first-of-type .author"; agent-browser eval "document.querySelector('.quote .author').textContent"
+-> [199 chars] ✓ Done
+✓ Done
+https://quotes.toscrape.com/js/page/3/
+✗ Element not found: .quote:first-of-type .author. Verify the selector, role, or name is correct and the element exists in the DOM.
+"Pablo Neruda"
+SAY: I opened https://quotes.toscrape.com/js/ in agent-browser and clicked the "Next" link twice, which took me to https://quotes.toscrape.com/js/page/3/. On that page, the first quote's author is Pablo Neruda.
+
+ANSWER: Pablo Neruda

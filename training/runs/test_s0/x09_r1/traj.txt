@@ -1,0 +1,32 @@
+TASK x09: Open https://the-internet.herokuapp.com/basic_auth . It is protected by HTTP basic authentication: username admin, password admin. Report the paragraph text shown after authenticating.
+EXPECT: ['congratulations! you must have the proper credentials']
+RESULT: {"id": "x09_r1", "correct": true, "score": 0.954, "wtok": 30925, "turns": 5, "cost": 0.05, "secs": 38, "infra": false, "answer": "Congratulations! You must have the proper credentials."}
+
+$ agent-browser open "https://admin:admin@the-internet.herokuapp.com/basic_auth" && agent-browser read
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser --help 2>&1 | grep -i -E "auth|credential|header" 
+-> [1547 chars]   offline [on|off], headers <json>, credentials <user> <pass>
+                             Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+Auth Vault:
+  auth save <name> [opts]    Save auth profile (--url, --username, --password/--password-stdin)
+  auth login <name>          Login using saved credentials (waits for form fields)
+  auth login <name> --no-navigate
+                             Use active page after verifying credential URL origin
+  auth  …owser-plugin-vault","capabilities":["credential.read"]},{"name":"stealth","command":"agent-browser-plugin-stealth","capabilities":["launch.mutate"]}]}
+$ agent-browser set credentials admin admin && agent-browser open "https://the-internet.herokuapp.com/basic_auth" && agent-browser read
+-> [171 chars] ✓ Done
+✓ The Internet
+  https://the-internet.herokuapp.com/basic_auth
+### Basic Auth
+
+Congratulations! You must have the proper credentials.
+
+Powered by Elemental Selenium
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I logged in and the page's paragraph reads: "Congratulations! You must have the proper credentials."
+
+Putting the username and password in the URL (`admin:admin@...`) timed out. What worked was setting the login with `agent-browser set credentials admin admin` and then opening the page. I closed the browser afterwards.
+
+ANSWER: Congratulations! You must have the proper credentials.

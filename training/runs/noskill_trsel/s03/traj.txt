@@ -1,0 +1,31 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03", "correct": true, "score": 0.986, "wtok": 19244, "turns": 3, "cost": 0.028, "secs": 10, "infra": false, "answer": "5 one-star books; 26 books total"}
+
+$ agent-browser --help | head -50; agent-browser open https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html && agent-browser eval "document.querySelector('.form-horizontal').innerText + ' | ' + [...document.querySelectorAll('.star-rating')].map(e=>e.className).join(',') + ' | ' + (document.querySelector('.pager')?.innerText||'')"
+-> [2804 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …ar-rating Four,star-rating Five,star-rating One,star-rating Five,star-rating Five,star-rating Two,star-rating One,star-rating Two | Page 1 of 2\nnext"
+SAY: Page 1: 5 one-star.
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html && agent-browser eval "document.querySelector('.form-horizontal').innerText + ' | ' + [...document.querySelectorAll('.star-rating')].map(e=>e.className).join(',') + ' | ' + (document.querySelector('.pager')?.innerText||'')"
+-> [298 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"26 results - showing 21 to 26. | star-rating Five,star-rating Five,star-rating Three,star-rating Three,star-rating Four,star-rating Five | previous\nPage 2 of 2"
+SAY: The Historical Fiction category has 26 books, and 5 of them have a one-star rating.
+
+I checked both pages of the category in the browser with `agent-browser`:
+- **Page 1 (books 1–20):** 5 have one star.
+- **Page 2 (books 21–26):** none have one star.
+
+ANSWER: 5 one-star books; 26 books total

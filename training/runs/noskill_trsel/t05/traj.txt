@@ -1,0 +1,37 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05", "correct": true, "score": 0.986, "wtok": 18228, "turns": 3, "cost": 0.022, "secs": 11, "infra": false, "answer": "\u201cA day without sunshine is like, you know, night.\u201d"}
+
+$ agent-browser open https://quotes.toscrape.com/search.aspx && agent-browser select "#author" "Steve Martin" && agent-browser wait 1500 && agent-browser snapshot -i
+-> [2417 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- combobox "Author" [expanded=false, ref=e5]: Steve Martin
+  - option "----------" [ref=e9]
+  - option "Albert Einstein" [ref=e10]
+  - option "J.K. Rowling" [ref=e11]
+  - option "Jane Austen" [ref=e12]
+  - option "Marilyn Monroe" [ref=e13]
+  - option "André Gide" [ref=e14]
+  - option "Thomas A. Edison" [ref=e15]
+  - …ef=e60]
+  - option "obvious" [ref=e61]
+  - option "simile" [ref=e62]
+- button "Search" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+$ agent-browser select "#tag" "humor" && agent-browser click "input[type=submit]" && agent-browser wait 1500 && agent-browser get text ".results" || agent-browser get text body
+-> [102 chars] ✓ Done
+✓ Done
+✓ Done
+Results
+“A day without sunshine is like, you know, night.” - Steve Martin (humor)
+SAY: In the browser, I picked author "Steve Martin" and tag "humor" on the search page and ran the search. It returned one quote:
+
+“A day without sunshine is like, you know, night.” — Steve Martin (humor)
+
+ANSWER: “A day without sunshine is like, you know, night.”

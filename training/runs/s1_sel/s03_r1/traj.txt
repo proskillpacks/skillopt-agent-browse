@@ -1,0 +1,21 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": true, "score": 0.97, "wtok": 20002, "turns": 3, "cost": 0.047, "secs": 10, "infra": false, "answer": "5 one-star books; 26 books total"}
+
+$ agent-browser open https://books.toscrape.com/; agent-browser eval "JSON.stringify([...document.querySelectorAll('.side_categories a')].filter(a=>a.textContent.trim()==='Historical Fiction').map(a=>a.href))"
+-> [164 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"]"
+$ B=https://books.toscrape.com/catalogue/category/books/historical-fiction_4; for p in index.html page-2.html page-3.html; do agent-browser open $B/$p >/dev/null; agent-browser eval "JSON.stringify({p:location.href,total:document.querySelector('.form-horizontal strong')?.textContent,n:document.querySelectorAll('article.product_pod').length,one:document.querySelectorAll('article.product_pod .star-rating.One').length,next:!!document.querySelector('li.next')})"; done; agent-browser close
+-> [445 chars] "{\"p\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"total\":\"26\",\"n\":20,\"one\":5,\"next\":true}"
+"{\"p\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\",\"total\":\"26\",\"n\":6,\"one\":0,\"next\":false}"
+"{\"p\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-3.html\",\"n\":0,\"one\":0,\"next\":false}"
+✓ Browser closed
+SAY: The Historical Fiction category has 26 books across 2 pages, and 5 of them have a one-star rating.
+
+- **Page 1:** 20 books, 5 with one star.
+- **Page 2:** 6 books, none with one star. This is the last page; it has no "next" link.
+
+The book count on the two pages adds up to 26, which matches the total the site shows for the category.
+
+ANSWER: 5 one-star books; 26 books total

@@ -1,0 +1,100 @@
+TASK x07: Complete the onboarding form at http://localhost:8791/wizard.html with: full name Mira Okonkwo, email mira@example.org, department Research, start date 23 November 2026, and confirm the handbook. Submit it and report the confirmation code.
+EXPECT: ['wz-19873']
+RESULT: {"id": "x07_r2", "correct": true, "score": 0.883, "wtok": 77913, "turns": 10, "cost": 0.092, "secs": 25, "infra": false, "answer": "WZ-19873"}
+
+$ agent-browser open http://localhost:8791/wizard.html; agent-browser snapshot -i
+-> [243 chars] ✓ Onboarding
+  http://localhost:8791/wizard.html
+- heading "New starter onboarding" [level=1, ref=e1]
+- heading "Step 1 of 3 — About you" [level=2, ref=e2]
+- textbox "Full name" [ref=e4]
+- textbox "Work email" [ref=e5]
+- button "Next" [ref=e3]
+$ agent-browser fill @e4 "Mira Okonkwo"; agent-browser fill @e5 "mira@example.org"; agent-browser click @e3; agent-browser snapshot -i
+-> [641 chars] ✓ Done
+✓ Done
+✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- heading "Step 2 of 3 — Role" [level=2, ref=e6]
+- combobox "Department" [expanded=false, ref=e10]: — select —
+  - option "— select —" [selected, ref=e12]
+  - option "Engineering" [ref=e13]
+  - option "Finance" [ref=e14]
+  - option "Research" [ref=e15]
+  - option "Operations" [ref=e16]
+- spinbutton "Month Month" [ref=e17]: 0
+- spinbutton "Day Day" [ref=e18]: 0
+- spinbutton "Year Year" [ref=e19]: 0
+- button "Show date picker Show date picker" [ref=e11]
+- checkbox "I have read the handbook" [checked=false, ref=e7]
+- button "Back" [ref=e8]
+- button "Next" [ref=e9]
+SAY: Date input; set via fill on the underlying input.
+$ agent-browser select @e10 "Research"; agent-browser eval "JSON.stringify([...document.querySelectorAll('input')].map(i=>[i.id,i.name,i.type]))"
+-> [117 chars] ✓ Done
+"[[\"name\",\"\",\"text\"],[\"email\",\"\",\"email\"],[\"date\",\"\",\"date\"],[\"agree\",\"\",\"checkbox\"]]"
+$ agent-browser fill "#date" "2026-11-23"; agent-browser check @e7; agent-browser eval "document.querySelector('#date').value"; agent-browser click @e9; agent-browser snapshot -i; agent-browser read
+-> [953 chars] ✓ Done
+✓ Done
+""
+✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- heading "Step 2 of 3 — Role" [level=2, ref=e6]
+- combobox "Department" [expanded=false, ref=e10]: Research
+  - option "— select —" [ref=e12]
+  - option "Engineering" [ref=e13]
+  - option "Finance" [ref=e14]
+  - option "Research" [selected, ref=e15]
+  - option "Operations" [ref=e16]
+- spinbutton "Month Month" [ref=e20]: 0
+- spinbutton "Day Day" [ref=e21]: 0
+- spinbutton "Year Year" [ref=e22]: 0
+- button "Show date pick …s
+Start date
+I have read the handbook
+
+Complete all fields and confirm the handbook.
+
+Back Next
+
+## Step 3 of 3 — Review
+
+```
+
+```
+
+Submit
+
+## All set
+SAY: Fill didn't take; type into the date segments instead.
+$ agent-browser click @e20; agent-browser type @e20 "11232026"; agent-browser eval "document.querySelector('#date').value"
+-> [16 chars] ✓ Done
+✓ Done
+""
+$ agent-browser eval "document.querySelector('#date').outerHTML"; agent-browser focus "#date"; agent-browser keyboard type "11232026"; agent-browser eval "document.querySelector('#date').value"
+-> [52 chars] "<input id=\"date\" type=\"date\">"
+✓ Done
+✓ Done
+""
+$ agent-browser eval "[...document.scripts].map(s=>s.textContent).join('\n')"
+-> [1004 chars] "\nconst $=id=>document.getElementById(id),show=n=>{document.querySelectorAll('.step').forEach(s=>s.classList.remove('on'));$('s'+n).classList.add('on');};\n$('n1').onclick=()=>{if($('name').value.trim().length<3||!/^\\S+@\\S+\\.\\S+$/.test($('email').value)){$('e1').textContent='Enter your full name and a valid email.';return;}$('e1').textContent='';show(2);};\n$('b2').onclick=()=>show(1);\n$('n2').onclick=()=>{if(!$('dept').value||!$('date').value||!$('agree').checked){$('e2').textContent='Com …\nconst n=(a*13+b*97+$('dept').selectedIndex*1009)%100000;setTimeout(()=>{$('conf').textContent='Confirmation: WZ-'+n+' ('+d+')';show(4);},1200);};\n"
+SAY: Plain input; I'll set the value via the native setter with events, since typing didn't register.
+$ agent-browser eval "const e=document.querySelector('#date');e.value='2026-11-23';e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));e.value"; agent-browser click "#n2"; agent-browser get text "#rev"
+-> [69 chars] "2026-11-23"
+✓ Done
+Mira Okonkwo
+mira@example.org
+Research
+2026-11-23
+$ agent-browser click "#sub"; agent-browser wait --text "Confirmation:"; agent-browser get text "#conf"; agent-browser close
+-> [73 chars] ✓ Done
+Confirmation:
+Confirmation: WZ-19873 (2026-11-23)
+✓ Browser closed
+SAY: I submitted the onboarding form and got the confirmation code **WZ-19873**.
+
+The review step showed Mira Okonkwo, mira@example.org, Research and 2026-11-23, and the handbook box was ticked. The page showed "Confirmation: WZ-19873 (2026-11-23)".
+
+The start date field wouldn't accept typed input in the browser, so I set it to 2026-11-23 with a small script on the page. The review step and the confirmation both show the correct date. Everything else was filled in normally.
+
+ANSWER: WZ-19873

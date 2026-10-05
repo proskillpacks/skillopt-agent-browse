@@ -1,0 +1,19 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r1", "correct": true, "score": 0.97, "wtok": 20001, "turns": 3, "cost": 0.045, "secs": 10, "infra": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login; agent-browser wait "#username"; agent-browser fill "#username" "user"; agent-browser fill "#password" "pass"; agent-browser click "input[type=submit]"; agent-browser wait --text "Logout"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote')[0].querySelectorAll('a')].map(a=>[a.textContent,a.href]))"
+-> [515 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+Logout
+"[[\"(about)\",\"https://quotes.toscrape.com/author/Albert-Einstein\"],[\"(Goodreads page)\",\"http://goodreads.com/author/show/9810.Albert_Einstein\"],[\"change\",\"https://quotes.toscrape.com/tag/change/page/1/\"],[\"deep-thoughts\",\"https://quotes.toscrape.com/tag/deep-thoughts/page/1/\"],[\"thinking\",\"https://quotes.toscrape.com/tag/thinking/page/1/\"],[\"world\",\"https://quotes.toscrape.com/tag/world/page/1/\"]]"
+$ agent-browser eval "document.querySelectorAll('.quote')[0].querySelectorAll('a')[1].getAttribute('href')"; agent-browser close
+-> [72 chars] "http://goodreads.com/author/show/9810.Albert_Einstein"
+✓ Browser closed
+SAY: I logged in to the site and the first quote on page 1, by Albert Einstein, now has a "(Goodreads page)" link. It points to `http://goodreads.com/author/show/9810.Albert_Einstein`. That is the link's raw `href`, and it uses `http`, not `https`.
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

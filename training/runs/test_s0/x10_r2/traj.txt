@@ -1,0 +1,24 @@
+TASK x10: On https://the-internet.herokuapp.com/shadowdom there are two custom paragraph components. Report the text content of the second one (it renders a list).
+EXPECT: ["let's have some different text!", 'in a list!']
+RESULT: {"id": "x10_r2", "correct": true, "score": 0.953, "wtok": 31487, "turns": 5, "cost": 0.055, "secs": 41, "infra": false, "answer": "Let's have some different text! In a list!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom >/dev/null; agent-browser eval "JSON.stringify([...document.querySelectorAll('my-paragraph')].map(e=>({light:e.textContent, shadow:e.shadowRoot && e.shadowRoot.innerHTML})))"
+-> [87 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"[]"
+$ agent-browser get url; agent-browser eval "JSON.stringify([...document.querySelectorAll('my-paragraph')].map(e=>e.innerText))"
+-> [49 chars] https://the-internet.herokuapp.com/shadowdom
+"[]"
+$ agent-browser wait 3000; agent-browser eval "document.readyState + ' ' + document.body.innerHTML.slice(0,2000)"
+-> [1821 chars] ✓ Done
+"complete \n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <h1>Simple templat …lign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+SAY: Now the elements are loaded.
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('my-paragraph')].map(e=>e.innerText))"; agent-browser close
+-> [105 chars] "[\"Let's have some different text!\",\"Let's have some different text!\\nIn a list!\"]"
+✓ Browser closed
+SAY: The second `my-paragraph` component shows a list with two items:
+- "Let's have some different text!"
+- "In a list!"
+
+I read this in the browser from the component's rendered text. The first attempt timed out while the page was still loading, so I waited and ran it again, which worked.
+
+ANSWER: Let's have some different text! In a list!

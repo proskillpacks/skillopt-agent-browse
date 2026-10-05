@@ -1,0 +1,57 @@
+TASK x11: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books have a five-star rating and cost less than £15.00? Also report the title of the most expensive book in the catalogue.
+EXPECT: ['\\b23\\b', 'the\\ perfect\\ play\\ \\(play\\ by']
+RESULT: {"id": "x11_r1", "correct": true, "score": 0.954, "wtok": 30733, "turns": 4, "cost": 0.075, "secs": 47, "infra": false, "answer": "23 five-star books cost under \u00a315.00; the most expensive book is \"The Perfect Play (Play by Play #1)\" (\u00a359.99)"}
+
+$ agent-browser --help 2>&1 | head -60
+-> [2632 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …rl
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+SAY: Plan: open page 1, then use eval with in-page fetch... that's still the browser, but to be safer, navigate each of 50 pages and extract via eval.
+$ cd /tmp; : > books.tsv; for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1; agent-browser eval "[...document.querySelectorAll('article.product_pod')].map(a=>a.querySelector('h3 a').title+'\t'+a.querySelector('.star-rating').className.split(' ')[1]+'\t'+a.querySelector('.price_color').textContent).join('\n')" >> books.tsv; echo >> books.tsv; done; grep -c . books.tsv; head -3 books.tsv
+-> [2202 chars] 50
+"A Light in the Attic\tThree\t£51.77\nTipping the Velvet\tOne\t£53.74\nSoumission\tOne\t£50.10\nSharp Objects\tFour\t£47.82\nSapiens: A Brief History of Humankind\tFive\t£54.23\nThe Requiem Red\tOne\t£22.65\nThe Dirty Little Secrets of Getting Your Dream Job\tFour\t£33.34\nThe Coming Woman: A Novel Based on the Life of the Infamous Feminist, Victoria Woodhull\tThree\t£17.93\nThe Boys in the Boat: Nine Americans and Their Epic Quest for Gold at the 1936 Berlin Olympics\tFour\t£22.60\nThe Black …d Closed Doors\tFour\t£52.22\nYou can't bury them all: Poems\tTwo\t£33.63"
+Shell cwd was reset to /home/user/skill-research/runs/test_noskill/x11_r1
+$ cd /tmp; python3 -c "
+import json
+rows=[]
+for l in open('books.tsv'):
+  l=l.strip()
+  if not l: continue
+  for r in json.loads(l).split('\n'):
+    t,s,p=r.split('\t'); rows.append((t,s,float(p.lstrip('£'))))
+print(len(rows))
+f=[r for r in rows if r[1]=='Five' and r[2]<15]; print(len(f)); [print(r) for r in f]
+m=max(r[2] for r in rows); print([r for r in rows if r[2]==m])
+"
+-> [1526 chars] 1000
+23
+('Princess Jellyfish 2-in-1 Omnibus, Vol. 01 (Princess Jellyfish 2-in-1 Omnibus #1)', 'Five', 13.61)
+('Princess Between Worlds (Wide-Awake Princess #5)', 'Five', 13.34)
+('The Third Wave: An Entrepreneur’s Vision of the Future', 'Five', 12.61)
+('Agnostic: A Spirited Manifesto', 'Five', 12.51)
+("Walt Disney's Alice in Wonderland", 'Five', 12.96)
+('Superman Vol. 1: Before Truth (Superman by Gene Luen Yang #1)', 'Five', 11.89)
+('Old School (Diary of a Wimpy Kid #10)', 'Five', 11.83)
+('Hyperb …', 'Five', 12.29)
+[('The Perfect Play (Play by Play #1)', 'Three', 59.99)]
+Shell cwd was reset to /home/user/skill-research/runs/test_noskill/x11_r1
+SAY: I opened all 50 catalogue pages in the browser with `agent-browser` and pulled each book's title, star rating and price from the page. That came to 1,000 books, which is the whole catalogue.
+
+- **Five-star books under £15.00: 23.** The cheapest is *An Abundance of Katherines* at £10.00. Other examples are *Greek Mythic History* (£10.23), *The Power Greens Cookbook* (£11.05) and *Dear Mr. Knightley* (£11.21).
+- **Most expensive book:** *The Perfect Play (Play by Play #1)* at £59.99. No other book

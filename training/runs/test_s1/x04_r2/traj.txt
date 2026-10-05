@@ -1,0 +1,33 @@
+TASK x04: On https://quotes.toscrape.com/ click the tag 'life' and count how many quotes carry that tag across all result pages. Also report the author of the last quote on the last page.
+EXPECT: ['\\b13\\b']
+RESULT: {"id": "x04_r2", "correct": true, "score": 0.969, "wtok": 20448, "turns": 3, "cost": 0.047, "secs": 11, "infra": false, "answer": "13 quotes tagged 'life'; last quote's author is Khaled Hosseini"}
+
+$ agent-browser open https://quotes.toscrape.com/; agent-browser wait "a.tag"; agent-browser click "a.tag[href='/tag/life/']"; agent-browser wait --text "Viewing tag"; agent-browser eval "location.href"; for p in 1 2 3 4; do agent-browser open https://quotes.toscrape.com/tag/life/page/$p/; agent-browser eval "JSON.stringify({p:$p,n:document.querySelectorAll('.quote').length,next:!!document.querySelector('li.next'),last:[...document.querySelectorAll('.quote .author')].pop()?.textContent})"; done
+-> [581 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✓ Done
+✓ Done
+Viewing tag
+"https://quotes.toscrape.com/tag/life/"
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/tag/life/page/1/
+"{\"p\":1,\"n\":10,\"next\":true,\"last\":\"Ralph Waldo Emerson\"}"
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/tag/life/page/2/
+"{\"p\":2,\"n\":3,\"next\":false,\"last\":\"Khaled Hosseini\"}"
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/tag/life/page/3/
+"{\"p\":3,\"n\":0,\"next\":false}"
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/tag/life/page/4/
+"{\"p\":4,\"n\":0,\"next\":false}"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: 13 quotes carry the 'life' tag. I clicked the 'life' tag on the home page and then went through each results page in the browser:
+
+- **Page 1:** 10 quotes, with a "Next" link.
+- **Page 2:** 3 quotes and no "Next" link, so this is the last page. Pages 3 and 4 have no quotes.
+
+The last quote on page 2 is by **Khaled Hosseini**.
+
+ANSWER: 13 quotes tagged 'life'; last quote's author is Khaled Hosseini

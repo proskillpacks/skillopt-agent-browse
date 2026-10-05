@@ -1,0 +1,21 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": true, "score": 0.969, "wtok": 20911, "turns": 3, "cost": 0.049, "secs": 14, "infra": false, "answer": "5 one-star books; 26 books total in Historical Fiction"}
+
+$ agent-browser open https://books.toscrape.com/; agent-browser eval "JSON.stringify([...document.querySelectorAll('.side_categories a')].filter(a=>a.textContent.trim()==='Historical Fiction').map(a=>a.href))"
+-> [164 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"]"
+$ B=https://books.toscrape.com/catalogue/category/books/historical-fiction_4; for p in index.html page-2.html page-3.html; do agent-browser open $B/$p >/dev/null; agent-browser eval "JSON.stringify({url:location.href,res:document.querySelector('.form-horizontal')?.textContent.trim(),n:document.querySelectorAll('article.product_pod').length,one:document.querySelectorAll('article.product_pod p.star-rating.One').length,next:!!document.querySelector('li.next')})"; done; agent-browser close
+-> [502 chars] "{\"url\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"res\":\"26 results - showing 1 to 20.\",\"n\":20,\"one\":5,\"next\":true}"
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\",\"res\":\"26 results - showing 21 to 26.\",\"n\":6,\"one\":0,\"next\":false}"
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-3.html\",\"n\":0,\"one\":0,\"next\":false}"
+✓ Browser closed
+SAY: The Historical Fiction category has 26 books across 2 pages, and 5 of them have a one-star rating.
+
+- **Page 1:** 20 books, 5 rated one star.
+- **Page 2:** 6 books, none rated one star. This page has no "next" link, so it is the last page.
+
+The page header also says "26 results", which matches the count.
+
+ANSWER: 5 one-star books; 26 books total in Historical Fiction

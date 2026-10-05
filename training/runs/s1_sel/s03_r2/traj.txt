@@ -1,0 +1,26 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": true, "score": 0.97, "wtok": 20157, "turns": 3, "cost": 0.048, "secs": 10, "infra": false, "answer": "5 one-star books; 26 books in total"}
+
+$ agent-browser open https://books.toscrape.com/; agent-browser wait ".side_categories"; agent-browser eval "[...document.querySelectorAll('.side_categories a')].filter(a=>a.textContent.trim()==='Historical Fiction')[0].href"
+-> [165 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"
+$ B=https://books.toscrape.com/catalogue/category/books/historical-fiction_4; for p in index.html page-2.html page-3.html; do agent-browser open $B/$p; agent-browser wait "body"; agent-browser eval "JSON.stringify({title:document.title,total:document.querySelector('form strong')?.textContent,cur:document.querySelector('.current')?.textContent.trim(),n:document.querySelectorAll('article.product_pod').length,one:document.querySelectorAll('article.product_pod .star-rating.One').length})"; done; agent-browser close
+-> [710 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+"{\"title\":\"Historical Fiction | Books to Scrape - Sandbox\",\"total\":\"26\",\"cur\":\"Page 1 of 2\",\"n\":20,\"one\":5}"
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+✓ Done
+"{\"title\":\"Historical Fiction | Books to Scrape - Sandbox\",\"total\":\"26\",\"cur\":\" …books.toscrape.com/catalogue/category/books/historical-fiction_4/page-3.html
+✓ Done
+"{\"title\":\"404 Not Found\",\"n\":0,\"one\":0}"
+✓ Browser closed
+SAY: The Historical Fiction category has 26 books in total, and 5 of them have a one-star rating.
+
+The category has two pages. Page 1 lists 20 books, and 5 of those have one star. Page 2 lists 6 books, and none of those have one star. The page header also says the category has 26 results, which matches the 20 + 6 count.
+
+ANSWER: 5 one-star books; 26 books in total

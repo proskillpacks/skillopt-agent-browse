@@ -1,0 +1,48 @@
+TASK x06: On https://www.scrapethissite.com/pages/frames/ find the turtle family Cheloniidae, open its 'Learn more' details, and report its common name, the year it was discovered and by whom.
+EXPECT: ['sea turtle', '1811', 'oppel']
+RESULT: {"id": "x06_r1", "correct": true, "score": 0.961, "wtok": 26141, "turns": 4, "cost": 0.05, "secs": 12, "infra": false, "answer": "Sea turtles, discovered in 1811 by Oppel"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/frames/ && agent-browser snapshot -i
+-> [1585 chars] ✓ Turtles All the Way Down: Frames & iFrames | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/frames/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Turtles All the Way Down: Frames & iFrames 14 items" [level=1, ref=e1]
+- link "3 video lessons" [ref=e7]
+- link "https://en.wikipedia.org/wiki/List_of_Testudines_families" [ref=e8]
+- Iframe [ref=e2]
+  - heading "Carettochelyidae" [leve …"Pelomedusidae" [level=3, ref=e33]
+  - link "Learn more →" [ref=e34]
+  - heading "Podocnemididae" [level=3, ref=e35]
+  - link "Learn more →" [ref=e36]
+$ agent-browser click @e12 && agent-browser wait 1500 && agent-browser snapshot
+-> [1658 chars] ✓ Done
+✓ Done
+- navigation
+  - list
+    - listitem [level=1]
+    - listitem [level=1]
+      - link "Sandbox" [ref=e3]
+    - listitem [level=1]
+      - link "Lessons" [ref=e4]
+    - listitem [level=1]
+      - link "FAQ" [ref=e5]
+    - listitem [level=1]
+      - link "Login" [ref=e6]
+- generic
+  - heading "Turtles All the Way Down: Frames & iFrames 14 items" [level=1, ref=e1]
+    - StaticText "Turtles All the Way Down: Frames & iFrames 14 items"
+  - separator
+- generic
+  - paragraph
+    - StaticTe …irst discovered in 1811 by Oppel."
+    - separator
+    - link "← Back to all Turtles" [ref=e38]
+- StaticText "Lessons and Videos © Hartley Brody 2023"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I opened the 'Learn more' page for Cheloniidae inside the page's iframe. It says the family is more commonly known as **"Sea turtles"** and was first discovered in **1811** by **Oppel**.
+
+ANSWER: Sea turtles, discovered in 1811 by Oppel

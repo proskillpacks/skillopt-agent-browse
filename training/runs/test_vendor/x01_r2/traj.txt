@@ -1,0 +1,30 @@
+TASK x01: On https://the-internet.herokuapp.com/windows click 'Click Here'. Report the heading text of the page that opens, and its URL.
+EXPECT: ['new window', '/windows/new']
+RESULT: {"id": "x01_r2", "correct": true, "score": 0.83, "wtok": 113352, "turns": 6, "cost": 0.167, "secs": 64, "infra": false, "answer": "Heading \"New Window\", URL https://the-internet.herokuapp.com/windows/new"}
+
+$ agent-browser open https://the-internet.herokuapp.com/windows && agent-browser snapshot -i
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser snapshot -i
+-> [68 chars] https://the-internet.herokuapp.com/windows
+(no interactive elements)
+$ agent-browser open https://the-internet.herokuapp.com/windows; agent-browser wait --text "Click Here"; agent-browser snapshot -i
+-> [246 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+Click Here
+- link "Fork me on GitHub" [ref=e1]
+- heading "Opening a new window" [level=3, ref=e2]
+- link "Click Here" [ref=e3]
+- link "Elemental Selenium" [ref=e4]
+$ agent-browser click @e3; agent-browser tab
+-> [188 chars] ✓ Done
+  [t1] the-internet.herokuapp.com/windows - https://the-internet.herokuapp.com/windows
+→ [t2] the-internet.herokuapp.com/windows/new - https://the-internet.herokuapp.com/windows/new
+$ agent-browser wait --text "New Window"; agent-browser get url; agent-browser find role heading text
+-> [68 chars] New Window
+https://the-internet.herokuapp.com/windows/new
+New Window
+SAY: I clicked 'Click Here' and it opened a new tab. That tab's heading is "New Window" and its URL is https://the-internet.herokuapp.com/windows/new.
+
+The first two attempts to open the starting page timed out while it was still loading. On the third try I waited for the link text to appear, and everything after that ran normally.
+
+ANSWER: Heading "New Window", URL https://the-internet.herokuapp.com/windows/new

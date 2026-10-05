@@ -1,0 +1,67 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05", "correct": true, "score": 0.97, "wtok": 39943, "turns": 6, "cost": 0.043, "secs": 20, "infra": false, "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html && agent-browser snapshot -i
+-> [418 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+$ agent-browser snapshot
+-> [2287 chars] - heading "Inbox" [level=1, ref=e1]
+- paragraph
+  - StaticText "Showing 24 of 60"
+- generic
+  - StaticText "Alex A."
+  - StaticText "Invoice #100"
+  - button "Archive" [ref=e2]
+  - StaticText "Femi H."
+  - StaticText "Lunch order #113"
+  - button "Archive" [ref=e3]
+  - StaticText "Kai C."
+  - StaticText "On-call swap #126"
+  - button "Archive" [ref=e4]
+  - StaticText "Dana K."
+  - StaticText "Retro actions #139"
+  - button "Archive" [ref=e5]
+  - StaticText "Ivo E."
+  - StaticText "Release checkl … - button "Archive" [ref=e24]
+  - StaticText "Hana F."
+  - StaticText "Retro actions #399"
+  - button "Archive" [ref=e25]
+- StaticText "Loading more…"
+SAY: Infinite scroll; scroll to load more.
+$ for i in 1 2 3 4 5; do agent-browser scroll down 5000 >/dev/null; agent-browser wait 1000 >/dev/null; done; agent-browser snapshot | grep -n -A3 -E "Priya|Showing"
+-> [266 chars] 3:  - StaticText "Showing 60 of 60"
+4-- generic
+5-  - StaticText "Alex A."
+6-  - StaticText "Invoice #100"
+--
+137:  - StaticText "Priya N."
+138-  - StaticText "Q3 vendor audit — rescheduled to the 19th"
+139-  - button "Archive" [ref=e46]
+140-  - StaticText "Jude D."
+$ agent-browser click @e46; agent-browser wait 500; agent-browser snapshot -i
+-> [452 chars] Exit code 1
+✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✗ A JavaScript confirm dialog is blocking the page: "Archive this message?". Resolve it with `dialog accept` or `dialog dismiss`, then retry `wait`.
+✗ A JavaScript confirm dialog is blocking the page: "Archive this message?". Resolve it with `dialog accept` or `dialog dismiss`, then retry `snapshot`.
+$ agent-browser dialog accept; agent-browser wait 500; agent-browser snapshot | grep -n -i -E "receipt|archived|Priya" 
+-> [60 chars] ✓ Done
+✓ Done
+184:  - StaticText "Archived. Receipt #A-7028"
+SAY: The inbox loads more messages as you scroll, so I scrolled until all 60 were showing. Priya N.'s message has the subject **"Q3 vendor audit — rescheduled to the 19th"**. I clicked Archive on it and accepted the "Archive this message?" confirmation. The page then showed **"Archived. Receipt #A-7028"**.
+
+ANSWER: Subject "Q3 vendor audit — rescheduled to the 19th"; receipt #A-7028

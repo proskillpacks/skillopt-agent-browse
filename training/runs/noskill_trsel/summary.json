@@ -1,0 +1,188 @@
+{
+ "tag": "noskill_trsel",
+ "skill": "none",
+ "n": 16,
+ "acc": 1.0,
+ "score": 0.9703,
+ "wtok": 39626,
+ "turns": 5.6,
+ "cost": 0.65,
+ "results": [
+  {
+   "id": "t01",
+   "correct": true,
+   "score": 0.975,
+   "wtok": 33552,
+   "turns": 6,
+   "cost": 0.028,
+   "secs": 74,
+   "infra": false,
+   "answer": "Hello World!"
+  },
+  {
+   "id": "t02",
+   "correct": true,
+   "score": 0.942,
+   "wtok": 77535,
+   "turns": 9,
+   "cost": 0.069,
+   "secs": 47,
+   "infra": false,
+   "answer": "You clicked: Cancel | You entered: skillopt-42"
+  },
+  {
+   "id": "t03",
+   "correct": true,
+   "score": 0.9,
+   "wtok": 132738,
+   "turns": 14,
+   "cost": 0.14,
+   "secs": 155,
+   "infra": false,
+   "answer": "jdoe@hotmail.com"
+  },
+  {
+   "id": "t04",
+   "correct": true,
+   "score": 0.984,
+   "wtok": 21330,
+   "turns": 4,
+   "cost": 0.016,
+   "secs": 12,
+   "infra": false,
+   "answer": "Pablo Neruda"
+  },
+  {
+   "id": "t05",
+   "correct": true,
+   "score": 0.986,
+   "wtok": 18228,
+   "turns": 3,
+   "cost": 0.022,
+   "secs": 11,
+   "infra": false,
+   "answer": "\u201cA day without sunshine is like, you know, night.\u201d"
+  },
+  {
+   "id": "t06",
+   "correct": true,
+   "score": 0.981,
+   "wtok": 25971,
+   "turns": 4,
+   "cost": 0.034,
+   "secs": 13,
+   "infra": false,
+   "answer": "5 five-star books; 32 books in total in the Mystery category"
+  },
+  {
+   "id": "t07",
+   "correct": true,
+   "score": 0.992,
+   "wtok": 11235,
+   "turns": 2,
+   "cost": 0.013,
+   "secs": 7,
+   "infra": false,
+   "answer": "A Year in Provence (Provence #1) \u2014 \u00a356.88"
+  },
+  {
+   "id": "t08",
+   "correct": true,
+   "score": 0.985,
+   "wtok": 20067,
+   "turns": 3,
+   "cost": 0.031,
+   "secs": 13,
+   "infra": false,
+   "answer": "Gravity won the most awards in 2013 with 7, and 12 Years a Slave is marked as Best Picture."
+  },
+  {
+   "id": "t09",
+   "correct": true,
+   "score": 0.951,
+   "wtok": 65265,
+   "turns": 10,
+   "cost": 0.056,
+   "secs": 26,
+   "infra": false,
+   "answer": "Quote ref NOR-2087, total \u20ac1470.00"
+  },
+  {
+   "id": "t10",
+   "correct": true,
+   "score": 0.957,
+   "wtok": 57099,
+   "turns": 8,
+   "cost": 0.061,
+   "secs": 50,
+   "infra": false,
+   "answer": "PDF, CSV, Excel"
+  },
+  {
+   "id": "s01",
+   "correct": true,
+   "score": 0.979,
+   "wtok": 27676,
+   "turns": 5,
+   "cost": 0.025,
+   "secs": 65,
+   "infra": false,
+   "answer": "name: user3, href: /users/3"
+  },
+  {
+   "id": "s02",
+   "correct": true,
+   "score": 0.986,
+   "wtok": 18445,
+   "turns": 3,
+   "cost": 0.016,
+   "secs": 10,
+   "infra": false,
+   "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"
+  },
+  {
+   "id": "s03",
+   "correct": true,
+   "score": 0.986,
+   "wtok": 19244,
+   "turns": 3,
+   "cost": 0.028,
+   "secs": 10,
+   "infra": false,
+   "answer": "5 one-star books; 26 books total"
+  },
+  {
+   "id": "s04",
+   "correct": true,
+   "score": 0.987,
+   "wtok": 17525,
+   "turns": 3,
+   "cost": 0.022,
+   "secs": 33,
+   "infra": false,
+   "answer": "49 wins, 269 GF"
+  },
+  {
+   "id": "s05",
+   "correct": true,
+   "score": 0.97,
+   "wtok": 39943,
+   "turns": 6,
+   "cost": 0.043,
+   "secs": 20,
+   "infra": false,
+   "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"
+  },
+  {
+   "id": "s06",
+   "correct": true,
+   "score": 0.964,
+   "wtok": 48170,
+   "turns": 7,
+   "cost": 0.05,
+   "secs": 58,
+   "infra": false,
+   "answer": "After Remove: \"It's gone!\"; after Enable: \"It's enabled!\", input value: \"hello\""
+  }
+ ]
+}

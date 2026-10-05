@@ -1,0 +1,39 @@
+TASK x04: On https://quotes.toscrape.com/ click the tag 'life' and count how many quotes carry that tag across all result pages. Also report the author of the last quote on the last page.
+EXPECT: ['\\b13\\b']
+RESULT: {"id": "x04_r1", "correct": true, "score": 0.968, "wtok": 21127, "turns": 3, "cost": 0.055, "secs": 13, "infra": false, "answer": "13 quotes tagged 'life'; last quote on the last page is by Khaled Hosseini"}
+
+$ agent-browser --help 2>&1 | head -50; agent-browser open https://quotes.toscrape.com/ && agent-browser snapshot -i | head -60
+-> [3944 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …ship" [ref=e19]
+- link "friends" [ref=e20]
+- link "truth" [ref=e21]
+- link "simile" [ref=e22]
+- link "GoodReads.com" [ref=e55]
+- link "Zyte" [ref=e56]
+$ agent-browser click @e32 >/dev/null; for i in 1 2 3 4 5; do agent-browser get url; agent-browser eval 'JSON.stringify({n:document.querySelectorAll(".quote").length, last:[...document.querySelectorAll(".quote .author")].pop()?.textContent, next:!!document.querySelector("li.next a")})'; agent-browser click "li.next a" >/dev/null 2>&1 || break; agent-browser wait 500 >/dev/null; done
+-> [310 chars] https://quotes.toscrape.com/tag/life/page/1/
+"{\"n\":10,\"last\":\"Ralph Waldo Emerson\",\"next\":true}"
+https://quotes.toscrape.com/tag/life/page/1/
+"{\"n\":10,\"last\":\"Ralph Waldo Emerson\",\"next\":true}"
+https://quotes.toscrape.com/tag/life/page/2/
+"{\"n\":3,\"last\":\"Khaled Hosseini\",\"next\":false}"
+SAY: I clicked the 'life' tag on https://quotes.toscrape.com/ and went through every results page in the browser. There are 2 pages:
+
+- **Page 1** (`/tag/life/page/1/`): 10 quotes
+- **Page 2** (`/tag/life/page/2/`): 3 quotes, and there is no "Next" button, so this is the last page
+
+That makes **13 quotes** tagged 'life'. The last quote on page 2 is by **Khaled Hosseini**.
+
+My script read page 1 twice because the page hadn't finished loading after the first "Next" click. I counted page 1 only once in 

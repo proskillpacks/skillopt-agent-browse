@@ -1,0 +1,137 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r1", "correct": true, "score": 0.935, "wtok": 43614, "turns": 6, "cost": 0.066, "secs": 21, "infra": false, "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i; agent-browser read
+-> [847 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+# Inbox
+
+Showing 12 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Arc …Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Loading more…
+SAY: Infinite scroll; scroll until Priya appears.
+$ for i in $(seq 1 10); do agent-browser scroll down 5000 >/dev/null; sleep 0.5; agent-browser eval "document.body.innerText.includes('Priya N.')" ; done; agent-browser eval "JSON.stringify([...document.querySelectorAll('*')].filter(e=>e.children.length<6 && e.innerText && e.innerText.includes('Priya N.') && e.querySelector('button')).map(e=>e.outerHTML).slice(-1))"
+-> [227 chars] false
+false
+false
+true
+true
+true
+true
+true
+true
+true
+"[\"<div class=\\\"row\\\"><span class=\\\"from\\\">Priya N.</span><span class=\\\"subj\\\">Q3 vendor audit — rescheduled to the 19th</span><button>Archive</button></div>\"]"
+$ agent-browser eval "document.querySelectorAll('.from').length + ' ' + [...document.querySelectorAll('.from')].filter(e=>e.textContent==='Priya N.').length"; agent-browser eval "[...document.querySelectorAll('.row')].find(r=>r.querySelector('.from').textContent==='Priya N.').querySelector('button').setAttribute('id','priya-btn')"; agent-browser click "#priya-btn"; agent-browser dialog accept; sleep 1; agent-browser read | grep -iv "Archive$" | head -30
+-> [183 chars] "60 1"
+null
+✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+# Inbox
+
+Showing 60 of 60
+$ agent-browser read | grep -iv "Archive$"; agent-browser eval "document.body.innerText.match(/receipt[^\n]*/gi)"
+-> [149 chars] # Inbox
+
+Showing 60 of 60
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+End of inbox
+
+Archived. Receipt #A-7028
+[
+  "Receipt #A-7028"
+]
+$ agent-browser eval "document.body.innerText.includes('Priya N.')"; agent-browser close
+-> [22 chars] false
+✓ Browser closed
+SAY: The message from Priya N. has the subject **"Q3 vendor audit — rescheduled to the 19th"**. The inbox loads more messages as you scroll, and this one only showed up after scrolling down. It was the only message from Priya N. among the 60.
+
+I clicked Archive on it and accepted the "Archive this message?" confirmation. The page then showed "Archived. Receipt #A-7028", and the message no longer appears in the inbox.
+
+ANSWER: Subject "Q3 vendor audit — rescheduled to the 19th"; receipt #A-7028

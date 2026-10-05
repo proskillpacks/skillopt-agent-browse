@@ -1,0 +1,32 @@
+TASK x08: Go to https://en.wikipedia.org/ , use the site's search box to find the article on Ada Lovelace, and report her date of birth and date of death as given in the infobox.
+EXPECT: ['10 december 1815|december 10,? 1815', '27 november 1852|november 27,? 1852']
+RESULT: {"id": "x08_r1", "correct": true, "score": 0.939, "wtok": 40947, "turns": 6, "cost": 0.061, "secs": 66, "infra": false, "answer": "Born 10 December 1815; died 27 November 1852"}
+
+$ agent-browser open https://en.wikipedia.org/; agent-browser wait "input[name=search]"; agent-browser fill "input[name=search]" "Ada Lovelace"; agent-browser press Enter; agent-browser wait ".infobox"; agent-browser eval "JSON.stringify({t:document.title,rows:[...document.querySelectorAll('.infobox tr')].map(r=>r.innerText).filter(s=>/Born|Died/.test(s))})"
+-> [211 chars] ✓ Wikipedia, the free encyclopedia
+  https://en.wikipedia.org/wiki/Main_Page
+✗ Wait timed out after 25000ms
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+"{\"t\":\"Wikipedia, the free encyclopedia\",\"rows\":[]}"
+$ agent-browser snapshot -i | grep -i -E "search|textbox" | head
+-> [24 chars] - link "Search" [ref=e5]
+$ agent-browser click @e5; agent-browser wait "input[name=search]"; agent-browser snapshot -i | grep -i -E "search|textbox|combobox" | head
+-> [84 chars] ✓ Done
+✓ Done
+- searchbox "Search Wikipedia" [ref=e297]
+- button "Search" [ref=e296]
+$ agent-browser fill @e297 "Ada Lovelace"; agent-browser press Enter; agent-browser wait ".infobox"; agent-browser eval "JSON.stringify({t:document.title,u:location.href,rows:[...document.querySelectorAll('.infobox tr')].map(r=>r.innerText).filter(s=>/Born|Died/.test(s))})"
+-> [257 chars] ✓ Done
+✓ Done
+✓ Done
+"{\"t\":\"Ada Lovelace - Wikipedia\",\"u\":\"https://en.wikipedia.org/wiki/Ada_Lovelace\",\"rows\":[\"Born\\tAugusta Ada Byron\\n10 December 1815\\nLondon, England\",\"Died\\t27 November 1852 (aged 36)\\nMarylebone, London, England\"]}"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I opened Wikipedia's main page in the browser and searched for "Ada Lovelace" with the site's search box, which took me to https://en.wikipedia.org/wiki/Ada_Lovelace. Her infobox gives:
+
+- **Born:** 10 December 1815, in London, England (as Augusta Ada Byron)
+- **Died:** 27 November 1852, aged 36, in Marylebone, London, England
+
+ANSWER: Born 10 December 1815; died 27 November 1852

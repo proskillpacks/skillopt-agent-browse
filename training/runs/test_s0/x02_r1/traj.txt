@@ -1,0 +1,16 @@
+TASK x02: Open https://the-internet.herokuapp.com/nested_frames and report the text displayed in each of the four frames (left, middle, right, bottom).
+EXPECT: ['left', 'middle', 'right', 'bottom']
+RESULT: {"id": "x02_r1", "correct": true, "score": 0.974, "wtok": 17454, "turns": 3, "cost": 0.037, "secs": 9, "infra": false, "answer": "left=LEFT, middle=MIDDLE, right=RIGHT, bottom=BOTTOM"}
+
+$ agent-browser open https://the-internet.herokuapp.com/nested_frames >/dev/null; agent-browser eval "(()=>{const t=window.frames['frame-top'];const r=[];for(const n of ['frame-left','frame-middle','frame-right'])r.push(n+':'+t.frames[n].document.body.innerText.trim());r.push('frame-bottom:'+window.frames['frame-bottom'].document.body.innerText.trim());return r.join(' | ')})()"
+-> [81 chars] "frame-left:LEFT | frame-middle:MIDDLE | frame-right:RIGHT | frame-bottom:BOTTOM"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I opened the page in the browser and read the text from each frame directly:
+
+- **Left frame:** LEFT
+- **Middle frame:** MIDDLE
+- **Right frame:** RIGHT
+- **Bottom frame:** BOTTOM
+
+ANSWER: left=LEFT, middle=MIDDLE, right=RIGHT, bottom=BOTTOM

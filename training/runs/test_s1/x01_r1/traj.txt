@@ -1,0 +1,19 @@
+TASK x01: On https://the-internet.herokuapp.com/windows click 'Click Here'. Report the heading text of the page that opens, and its URL.
+EXPECT: ['new window', '/windows/new']
+RESULT: {"id": "x01_r1", "correct": true, "score": 0.971, "wtok": 19129, "turns": 3, "cost": 0.042, "secs": 40, "infra": false, "answer": "Heading \"New Window\", URL https://the-internet.herokuapp.com/windows/new"}
+
+$ agent-browser open https://the-internet.herokuapp.com/windows; agent-browser wait "a[href='/windows/new']"; agent-browser click "a[href='/windows/new']"; sleep 1; agent-browser tab list
+-> [278 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+  [t1] the-internet.herokuapp.com/windows - https://the-internet.herokuapp.com/windows
+→ [t2] the-internet.herokuapp.com/windows/new - https://the-internet.herokuapp.com/windows/new
+$ agent-browser get text h3; agent-browser get url; agent-browser close
+-> [74 chars] New Window
+https://the-internet.herokuapp.com/windows/new
+✓ Browser closed
+SAY: Clicking "Click Here" opened a new tab. Its heading reads **"New Window"** and its URL is **https://the-internet.herokuapp.com/windows/new**.
+
+The first page load reported a timeout, but the page had still loaded, so the click and the new tab worked normally.
+
+ANSWER: Heading "New Window", URL https://the-internet.herokuapp.com/windows/new

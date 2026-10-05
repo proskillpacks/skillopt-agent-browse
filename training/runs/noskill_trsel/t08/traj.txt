@@ -1,0 +1,41 @@
+TASK t08: On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?
+EXPECT: ['gravity', '\\b7\\b', '12 years a slave']
+RESULT: {"id": "t08", "correct": true, "score": 0.985, "wtok": 20067, "turns": 3, "cost": 0.031, "secs": 13, "infra": false, "answer": "Gravity won the most awards in 2013 with 7, and 12 Years a Slave is marked as Best Picture."}
+
+$ agent-browser --help | head -50; agent-browser open https://www.scrapethissite.com/pages/ajax-javascript/ && agent-browser snapshot -i
+-> [2941 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …l=3, ref=e2]
+- link "2015" [ref=e3]
+- link "2014" [ref=e4]
+- link "2013" [ref=e5]
+- link "2012" [ref=e6]
+- link "2011" [ref=e7]
+- link "2010" [ref=e8]
+$ agent-browser click @e5 && agent-browser wait 2000 && agent-browser eval "Array.from(document.querySelectorAll('tr.film')).map(r=>[r.querySelector('.film-title').innerText,r.querySelector('.film-nominations').innerText,r.querySelector('.film-awards').innerText,r.querySelector('.film-best-picture').innerHTML.trim()].join(' | ')).join('\n')"
+-> [383 chars] ✓ Done
+✓ Done
+"12 Years a Slave | 9 | 3 | <i class=\"glyphicon glyphicon-flag\"></i>\nGravity | 10 | 7 | \nDallas Buyers Club | 6 | 3 | \nFrozen | 2 | 2 | \nThe Great Gatsby | 2 | 2 | \nHer | 5 | 1 | \nBlue Jasmine | 3 | 1 | \nMr Hublot | 1 | 1 | \nThe Lady in Number 6: Music Saved My Life | 1 | 1 | \nHelium | 1 | 1 | \nThe Great Beauty | 1 | 1 | \n20 Feet from Stardom | 1 | 1 | "
+SAY: I opened the page in the browser and clicked the 2013 tab, which loaded 12 films. **Gravity** won the most awards that year, 7 from 10 nominations. **12 Years a Slave** is the film flagged as Best Picture; it won 3 awards from 9 nominations.
+
+| Film | Nominations | Awards | Best Picture |
+|---|---|---|---|
+| 12 Years a Slave | 9 | 3 | ✔ |
+| Gravity | 10 | 7 | |
+| Dallas Buyers Club | 6 | 3 | |
+| Frozen | 2 | 2 | |
+| The Great Gatsby | 2 | 2 | |
+| Her | 5 | 1 | |
+| Blue Jasmine | 3 | 1 | |
+| Mr H

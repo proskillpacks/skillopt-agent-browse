@@ -1,0 +1,48 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r2", "correct": true, "score": 0.94, "wtok": 40014, "turns": 5, "cost": 0.072, "secs": 19, "infra": false, "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [418 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+$ agent-browser eval "document.body.innerHTML"
+-> [4719 chars] "\n<h1>Inbox</h1><p id=\"count\">Showing 24 of 60</p><div id=\"list\"><div class=\"row\"><span class=\"from\">Alex A.</span><span class=\"subj\">Invoice #100</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Femi H.</span><span class=\"subj\">Lunch order #113</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Kai C.</span><span class=\"subj\">On-call swap #126</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Dana K.</s …box';}\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\n</script>\n"
+SAY: Need to scroll to load index 44.
+$ for i in 1 2 3 4; do agent-browser scroll down 5000; agent-browser wait 900; done; agent-browser eval "document.getElementById('count').textContent"; agent-browser find text "Priya N." click 2>/dev/null; agent-browser eval "[...document.querySelectorAll('.row')].findIndex(r=>r.children[0].textContent==='Priya N.')"
+-> [84 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+"Showing 60 of 60"
+✓ Done
+44
+$ agent-browser get text ".row:nth-child(45)"; agent-browser click ".row:nth-child(45) button"; agent-browser dialog accept; agent-browser get text "#toast"
+-> [230 chars] Priya N.
+Q3 vendor audit — rescheduled to the 19th
+Archive
+✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+Archived. Receipt #A-7028
+SAY: The message from Priya N. has the subject **"Q3 vendor audit — rescheduled to the 19th"**. It only appeared after I scrolled down far enough for the inbox to load all 60 messages.
+
+I archived it and accepted the "Archive this message?" confirmation. The page then showed "Archived. Receipt #A-7028".
+
+ANSWER: Subject "Q3 vendor audit — rescheduled to the 19th"; receipt #A-7028

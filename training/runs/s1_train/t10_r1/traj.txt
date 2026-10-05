@@ -1,0 +1,103 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r1", "correct": true, "score": 0.89, "wtok": 73274, "turns": 10, "cost": 0.099, "secs": 129, "infra": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu; agent-browser wait "#ui-id-3"; agent-browser hover "#ui-id-3"; agent-browser wait --fn "document.querySelector('#ui-id-4') && document.querySelector('#ui-id-4').offsetParent!==null"; agent-browser hover "#ui-id-4"; agent-browser wait 1000; agent-browser snapshot -i
+-> [754 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #ui-id-3. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: #ui-id-4. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e3]
+- link " …ef=e8]
+- link "PDF" [ref=e10]
+- link "CSV" [ref=e11]
+- link "Excel" [ref=e12]
+- link "Back to JQuery UI" [ref=e9]
+- link "Elemental Selenium" [ref=e6]
+$ agent-browser hover @e5; agent-browser wait 800; agent-browser hover @e8; agent-browser wait 1000; agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu a')].map(a=>[a.textContent.trim(), a.offsetParent!==null]))"
+-> [198 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+"[[\"Disabled\",true],[\"Should not see this\",true],[\"Enabled\",true],[\"Downloads\",true],[\"PDF\",true],[\"CSV\",true],[\"Excel\",true],[\"Back to JQuery UI\",true]]"
+$ agent-browser eval "document.querySelector('#menu').className + ' | ' + typeof jQuery"
+-> [14 chars] " | undefined"
+SAY: The scripts didn't load, so I'll reload the page.
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu; agent-browser wait --fn "document.querySelector('#menu.ui-menu')"; agent-browser eval "document.querySelector('#menu').className + ' | ' + typeof jQuery"
+-> [170 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+{
+  "jQuery111303047340227603268": 7
+}
+"ui-menu ui-widget ui-widget-content | function"
+$ agent-browser snapshot -i; agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu a')].map(a=>[a.id,a.textContent.trim()]))"
+-> [606 chars] - link "Fork me on GitHub" [ref=e13]
+- heading "JQueryUI - Menu" [level=3, ref=e14]
+- link "JQuery UI Menus" [ref=e16]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e15] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e17]
+    - link "Disabled" [disabled, ref=e19]
+  - menuitem "Enabled" [ref=e18]
+    - link "Enabled" [ref=e20]
+- link "Elemental Selenium" [ref=e21]
+"[[\"\",\"Disabled\"],[\"\",\"Should not see this\"],[\"\",\"Enabled\"],[\"\",\"Downloads\"],[\"\",\"PDF\"],[\"\",\"CSV\"],[\"\",\"Excel\"],[\"\",\"Back to JQuery UI\"]]"
+$ agent-browser hover @e20; agent-browser wait 1000; agent-browser snapshot -i
+$ agent-browser hover @e27; agent-browser wait 1200; agent-browser snapshot -i; agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu a')].filter(a=>a.offsetParent!==null&&getComputedStyle(a).visibility!=='hidden').map(a=>a.textContent.trim()))"
+-> [609 chars] ✓ Done
+✓ Done
+- link "Fork me on GitHub" [ref=e13]
+- heading "JQueryUI - Menu" [level=3, ref=e14]
+- link "JQuery UI Menus" [ref=e16]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e15] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e17]
+    - link "Disabled" [disabled, ref=e19]
+  - menuitem "Enabled" [ref=e18]
+    - link "Enabled" [ref=e20]
+    - menuitem "Downloads" [ref=e22]
+      - link "Downloads" [ref=e24]
+    - menuitem "Back to JQuery UI" [ref=e23]
+      - link "Back to JQuery UI" [ref=e25]
+- link "Elemental Selenium" [ref=e21]
+-> [686 chars] ✗ Unknown ref: e27
+✓ Done
+- link "Fork me on GitHub" [ref=e13]
+- heading "JQueryUI - Menu" [level=3, ref=e14]
+- link "JQuery UI Menus" [ref=e16]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e15] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e17]
+    - link "Disabled" [disabled, ref=e19]
+  - menuitem "Enabled" [ref=e18]
+    - link "Enabled" [ref=e20]
+    - menuitem "Downloads" [ref=e22]
+      - link "Downloads" [ref=e24]
+    - menuitem "Back to JQuery UI" [ref=e23]
+      - link "Back to JQuery UI" [ref=e25]
+- link "Elemental Selenium" [ref=e21]
+"[\"Disabled\",\"Enabled\",\"Downloads\",\"Back to JQuery UI\"]"
+SAY: Typo on ref; hovering Downloads (e24).
+$ agent-browser hover @e24; agent-browser wait 1200; agent-browser snapshot -i; agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu a')].filter(a=>a.offsetParent!==null&&getComputedStyle(a).visibility!=='hidden').map(a=>a.textContent.trim()))"
+-> [896 chars] ✓ Done
+✓ Done
+- link "Fork me on GitHub" [ref=e13]
+- heading "JQueryUI - Menu" [level=3, ref=e14]
+- link "JQuery UI Menus" [ref=e16]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e15] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e17]
+    - link "Disabled" [disabled, ref=e19]
+  - menuitem "Enabled" [ref=e18]
+    - link "Enabled" [ref=e20]
+    - menuitem "Downloads" [ref=e22]
+      - link "Downloads" [ref=e24]
+      - menuitem … JQuery UI" [ref=e25]
+- link "Elemental Selenium" [ref=e21]
+"[\"Disabled\",\"Enabled\",\"Downloads\",\"PDF\",\"CSV\",\"Excel\",\"Back to JQuery UI\"]"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I opened Enabled > Downloads by hovering over each menu item, and the Downloads submenu shows three items: **PDF**, **CSV** and **Excel**.
+
+The first page load timed out before the page's scripts loaded, so the menu wasn't working and every nested item was visible. I reloaded until the menu was running, then opened the path again. This time only the Downloads submenu items appeared, which confirms the list above.
+
+ANSWER: PDF, CSV, Excel

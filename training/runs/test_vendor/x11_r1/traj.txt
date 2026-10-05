@@ -1,0 +1,38 @@
+TASK x11: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books have a five-star rating and cost less than £15.00? Also report the title of the most expensive book in the catalogue.
+EXPECT: ['\\b23\\b', 'the\\ perfect\\ play\\ \\(play\\ by']
+RESULT: {"id": "x11_r1", "correct": true, "score": 0.909, "wtok": 60696, "turns": 3, "cost": 0.169, "secs": 27, "infra": false, "answer": "23 five-star books cost less than \u00a315.00; the most expensive book is \"The Perfect Play (Play by Play #1)\" (\u00a359.99)"}
+
+$ cd /tmp; rm -f books.jsonl; for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null || echo "fail $i"; cat <<'EOF' | agent-browser eval --stdin >> books.jsonl
+JSON.stringify(Array.from(document.querySelectorAll('article.product_pod')).map(a=>({t:a.querySelector('h3 a').title,p:parseFloat(a.querySelector('.price_color').innerText.replace(/[^0-9.]/g,'')),r:a.querySelector('.star-rating').className.split(' ')[1]})))
+EOF
+echo >> books.jsonl; done; wc -l books.jsonl; head -c 300 books.jsonl
+-> [391 chars] 100 books.jsonl
+"[{\"t\":\"A Light in the Attic\",\"p\":51.77,\"r\":\"Three\"},{\"t\":\"Tipping the Velvet\",\"p\":53.74,\"r\":\"One\"},{\"t\":\"Soumission\",\"p\":50.1,\"r\":\"One\"},{\"t\":\"Sharp Objects\",\"p\":47.82,\"r\":\"Four\"},{\"t\":\"Sapiens: A Brief History of Humankind\",\"p\":54.23,\"r\":\"Five\"},{\
+Shell cwd was reset to /home/user/skill-research/runs/test_vendor/x11_r1
+$ python3 -c "
+import json
+b=[]
+for l in open('/tmp/books.jsonl'):
+    l=l.strip()
+    if l: b+=json.loads(json.loads(l))
+print(len(b))
+f=[x for x in b if x['r']=='Five' and x['p']<15]
+print(len(f)); [print(x) for x in f]
+m=max(b,key=lambda x:x['p']); print(m); print(sorted(x['p'] for x in b)[-3:])
+"
+-> [1828 chars] 1000
+23
+{'t': 'Princess Jellyfish 2-in-1 Omnibus, Vol. 01 (Princess Jellyfish 2-in-1 Omnibus #1)', 'p': 13.61, 'r': 'Five'}
+{'t': 'Princess Between Worlds (Wide-Awake Princess #5)', 'p': 13.34, 'r': 'Five'}
+{'t': 'The Third Wave: An Entrepreneur’s Vision of the Future', 'p': 12.61, 'r': 'Five'}
+{'t': 'Agnostic: A Spirited Manifesto', 'p': 12.51, 'r': 'Five'}
+{'t': "Walt Disney's Alice in Wonderland", 'p': 12.96, 'r': 'Five'}
+{'t': 'Superman Vol. 1: Before Truth (Superman by Gene Luen Yang #1)',  …Five'}
+{'t': 'The Girl You Lost', 'p': 12.29, 'r': 'Five'}
+{'t': 'The Perfect Play (Play by Play #1)', 'p': 59.99, 'r': 'Three'}
+[59.95, 59.98, 59.99]
+SAY: I opened all 50 catalogue pages in the browser with `agent-browser` and read the title, price and star rating from each book listing. That gave 1,000 books, the full catalogue.
+
+**Five-star books under £15.00: 23.** The cheapest is *An Abundance of Katherines* at £10.00. The most expensive of the 23 are *Hyperbole and a Half* and *A Gentleman's Position*, both at £14.75.
+
+**Most expensive book:** *The Perfect Play (Play by Play #1)* at £59.99. The next two prices are £59.98 and £59.95, so nothin

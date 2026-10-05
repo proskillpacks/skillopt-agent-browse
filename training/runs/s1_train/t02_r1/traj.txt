@@ -1,0 +1,22 @@
+TASK t02: On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.
+EXPECT: ['you clicked: cancel', 'you entered: skillopt-42']
+RESULT: {"id": "t02_r1", "correct": true, "score": 0.98, "wtok": 13543, "turns": 2, "cost": 0.041, "secs": 58, "infra": false, "answer": "You clicked: Cancel; You entered: skillopt-42"}
+
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts; agent-browser wait "#result"; agent-browser click "button[onclick='jsConfirm()']"; agent-browser dialog dismiss; agent-browser get text "#result"; agent-browser click "button[onclick='jsPrompt()']"; agent-browser dialog accept "skillopt-42"; agent-browser get text "#result"; agent-browser close
+-> [457 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "I am a JS Confirm" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+You clicked: Cancel
+✓ Done
+⚠ A JavaScript prompt dialog is blocking the page: "I am a JS prompt" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+You entered: skillopt-42
+✓ Browser closed
+SAY: I ran both dialogs in the browser and read the Result text on the page after each one. The page load and the first wait both timed out, but the buttons still worked and both results came back.
+
+1. I clicked "Click for JS Confirm" and chose Cancel. The Result was **You clicked: Cancel**.
+2. I clicked "Click for JS Prompt", entered `skillopt-42` and confirmed. The Result was **You entered: skillopt-42**.
+
+ANSWER: You clicked: Cancel; You entered: skillopt-42

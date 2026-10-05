@@ -1,0 +1,100 @@
+TASK x02: Open https://the-internet.herokuapp.com/nested_frames and report the text displayed in each of the four frames (left, middle, right, bottom).
+EXPECT: ['left', 'middle', 'right', 'bottom']
+RESULT: {"id": "x02_r2", "correct": true, "score": 0.7, "wtok": 223127, "turns": 11, "cost": 0.237, "secs": 61, "infra": false, "answer": "Left: LEFT, Middle: MIDDLE, Right: RIGHT, Bottom: BOTTOM"}
+
+$ agent-browser open https://the-internet.herokuapp.com/nested_frames && agent-browser snapshot
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser snapshot
+-> [168 chars] https://the-internet.herokuapp.com/nested_frames
+- Iframe [ref=e1]
+  - Iframe [ref=e3]
+  - Iframe [ref=e4]
+  - Iframe [ref=e5]
+- Iframe [ref=e2]
+  - StaticText "BOTTOM"
+$ for f in e3 e4 e5; do agent-browser frame @e1 >/dev/null; agent-browser frame @$f >/dev/null; agent-browser get text body; agent-browser frame main >/dev/null; done
+-> [11 chars] LEFT
+MIDDLE
+$ agent-browser frame main; agent-browser frame @e1; agent-browser snapshot; agent-browser frame '[name=frame-right]'; agent-browser get text body; agent-browser frame main
+-> [240 chars] ✓ Done
+✓ Done
+- Iframe [ref=e3]
+- Iframe [ref=e4]
+- Iframe [ref=e5]
+✗ Could not find frame for selector
+✗ Element not found in the selected frame: body. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+$ agent-browser frame main; agent-browser frame @e1; agent-browser frame @e5; agent-browser get text body; agent-browser snapshot; agent-browser frame main
+-> [65 chars] ✓ Done
+✗ Unknown ref: e1
+✓ Done
+
+    
+  
+- Iframe [ref=e6]
+✓ Done
+SAY: Left and middle are done; I'm re-reading the right frame with fresh refs.
+$ agent-browser frame main; agent-browser snapshot; agent-browser frame @e1; agent-browser snapshot; agent-browser frame @e5; agent-browser get text body; agent-browser frame main
+-> [210 chars] ✓ Done
+- Iframe [ref=e1]
+  - Iframe [ref=e3]
+  - Iframe [ref=e4]
+  - Iframe [ref=e5]
+- Iframe [ref=e2]
+  - StaticText "BOTTOM"
+✓ Done
+- Iframe [ref=e3]
+- Iframe [ref=e4]
+- Iframe [ref=e5]
+✓ Done
+
+    
+  
+✓ Done
+$ cat <<'EOF' | agent-browser eval --stdin
+const top = document.querySelector('frame[name=frame-top]').contentDocument;
+const out = {};
+for (const n of ['frame-left','frame-middle','frame-right']) { const d = top.querySelector(`frame[name=${n}]`).contentDocument; out[n] = d && d.body ? d.body.innerText.trim() : null; }
+out.bottom = document.querySelector('frame[name=frame-bottom]').contentDocument.body.innerText.trim();
+JSON.stringify(out);
+EOF
+-> [87 chars] Exit code 1
+✗ Evaluation error: SyntaxError: Identifier 'top' has already been declared
+$ cat <<'EOF' | agent-browser eval --stdin
+(() => { const t = document.querySelector('frame[name=frame-top]').contentDocument;
+const out = {};
+for (const n of ['frame-left','frame-middle','frame-right']) { const d = t.querySelector(`frame[name=${n}]`).contentDocument; out[n] = d && d.body ? d.body.innerText.trim() : null; }
+out.bottom = document.querySelector('frame[name=frame-bottom]').contentDocument.body.innerText.trim();
+return JSON.stringify(out); })()
+EOF
+-> [98 chars] "{\"frame-left\":\"LEFT\",\"frame-middle\":\"MIDDLE\",\"frame-right\":\"\",\"bottom\":\"BOTTOM\"}"
+$ cat <<'EOF' | agent-browser eval --stdin
+(() => { const t = document.querySelector('frame[name=frame-top]').contentDocument;
+const f = t.querySelector('frame[name=frame-right]'); const d=f.contentDocument;
+return JSON.stringify({src:f.src, url:d.URL, rs:d.readyState, html:d.documentElement.outerHTML.slice(0,500)}); })()
+EOF
+-> [728 chars] "{\"src\":\"https://the-internet.herokuapp.com/frame_right\",\"url\":\"https://the-internet.herokuapp.com/frame_right\",\"rs\":\"complete\",\"html\":\"<html><head>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n    <meta charset=\\\"utf-8\\\">\\n    <title>Application Error</title>\\n    <style media=\\\"screen\\\">\\n      html,body,iframe {\\n        margin: 0;\\n        padding: 0;\\n      }\\n\\n      html,body {\\n        height: 100%;\\n        ove …height: 100%;\\n        border: 0;\\n      }\\n    </style>\\n  </head>\\n  <body>\\n    <iframe src=\\\"https://www.herokucdn.com/error-pages/app\"}"
+SAY: The right frame hit a Heroku "Application Error" page. Reloading it once:
+$ cat <<'EOF' | agent-browser eval --stdin
+(() => { const t = document.querySelector('frame[name=frame-top]').contentDocument;
+const f = t.querySelector('frame[name=frame-right]'); f.contentWindow.location.reload(); return 'ok'; })()
+EOF
+agent-browser wait 4000
+cat <<'EOF' | agent-browser eval --stdin
+(() => { const t = document.querySelector('frame[name=frame-top]').contentDocument;
+const d = t.querySelector('frame[name=frame-right]').contentDocument; return d.title + ' | ' + d.body.innerText.trim(); })()
+EOF
+-> [22 chars] "ok"
+✓ Done
+" | RIGHT"
+SAY: I opened the page in agent-browser and read the text inside each frame:
+
+- **Left:** LEFT
+- **Middle:** MIDDLE
+- **Right:** RIGHT
+- **Bottom:** BOTTOM
+
+The right frame first loaded a Heroku "Application Error" page with no text. After I reloaded that frame it showed "RIGHT", so the first load was a temporary server error.
+
+ANSWER: Left: LEFT, Middle: MIDDLE, Right: RIGHT, Bottom: BOTTOM

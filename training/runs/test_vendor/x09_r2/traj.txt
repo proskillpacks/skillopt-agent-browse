@@ -1,0 +1,31 @@
+TASK x09: Open https://the-internet.herokuapp.com/basic_auth . It is protected by HTTP basic authentication: username admin, password admin. Report the paragraph text shown after authenticating.
+EXPECT: ['congratulations! you must have the proper credentials']
+RESULT: {"id": "x09_r2", "correct": true, "score": 0.887, "wtok": 75287, "turns": 4, "cost": 0.154, "secs": 37, "infra": false, "answer": "Congratulations! You must have the proper credentials."}
+
+$ agent-browser set credentials admin admin && agent-browser open https://the-internet.herokuapp.com/basic_auth && agent-browser get text "#content p"
+-> [101 chars] Exit code 1
+✓ Done
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser snapshot
+-> [58 chars] https://the-internet.herokuapp.com/basic_auth
+(empty page)
+SAY: Credentials didn't take effect; trying origin-scoped Authorization header instead.
+$ agent-browser --headers '{"Authorization":"Basic YWRtaW46YWRtaW4="}' open https://the-internet.herokuapp.com/basic_auth; agent-browser snapshot
+-> [391 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/basic_auth
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "Basic Auth" [level=3, ref=e2]
+  - paragraph
+    - StaticText "Congratulations! You must have the proper credentials."
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e3]
+SAY: I logged in and loaded the "Basic Auth" page. The paragraph under the heading reads: "Congratulations! You must have the proper credentials."
+
+My first try, `agent-browser set credentials admin admin`, didn't work: the page stayed empty and the command timed out. What worked was reopening the page with an `Authorization: Basic` header for admin/admin, passed through `agent-browser --headers`.
+
+ANSWER: Congratulations! You must have the proper credentials.

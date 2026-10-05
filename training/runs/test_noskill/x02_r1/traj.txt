@@ -1,0 +1,34 @@
+TASK x02: Open https://the-internet.herokuapp.com/nested_frames and report the text displayed in each of the four frames (left, middle, right, bottom).
+EXPECT: ['left', 'middle', 'right', 'bottom']
+RESULT: {"id": "x02_r1", "correct": true, "score": 0.972, "wtok": 18462, "turns": 3, "cost": 0.044, "secs": 10, "infra": false, "answer": "left=LEFT, middle=MIDDLE, right=RIGHT, bottom=BOTTOM"}
+
+$ agent-browser --help 2>&1 | head -60; agent-browser open https://the-internet.herokuapp.com/nested_frames
+-> [2686 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s … visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+✓ 
+  https://the-internet.herokuapp.com/nested_frames
+SAY: Frames are same-origin, so eval can traverse them.
+$ agent-browser eval "(()=>{const t=window.frames['frame-top'];const r={};for(const n of ['frame-left','frame-middle','frame-right'])r[n]=t.frames[n].document.body.innerText.trim();r.bottom=window.frames['frame-bottom'].document.body.innerText.trim();return JSON.stringify(r)})()"
+-> [103 chars] "{\"frame-left\":\"LEFT\",\"frame-middle\":\"MIDDLE\",\"frame-right\":\"RIGHT\",\"bottom\":\"BOTTOM\"}"
+SAY: I opened the page with `agent-browser` and read the text in each frame by running JavaScript in the browser. The frames come from the same site, so the script could read inside each one. Each frame shows one word:
+
+- **Left:** LEFT
+- **Middle:** MIDDLE
+- **Right:** RIGHT
+- **Bottom:** BOTTOM
+
+ANSWER: left=LEFT, middle=MIDDLE, right=RIGHT, bottom=BOTTOM

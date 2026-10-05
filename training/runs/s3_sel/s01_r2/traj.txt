@@ -1,0 +1,12 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r2", "correct": true, "score": 0.979, "wtok": 13716, "turns": 2, "cost": 0.042, "secs": 41, "infra": false, "answer": "name: user3, href: /users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait ".figure"; agent-browser hover ".figure:nth-of-type(3) img"; agent-browser eval "(()=>{const f=document.querySelectorAll('.figure')[2];const c=f.querySelector('.figcaption');return JSON.stringify({vis:getComputedStyle(c).display,name:f.querySelector('h5').innerText,href:f.querySelector('a').getAttribute('href'),abs:f.querySelector('a').href})})()"
+-> [220 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+"{\"vis\":\"block\",\"name\":\"name: user3\",\"href\":\"/users/3\",\"abs\":\"https://the-internet.herokuapp.com/users/3\"}"
+SAY: I hovered over the third avatar and its caption appeared. It shows the name "user3", and the "View profile" link's href is `/users/3`, which resolves to https://the-internet.herokuapp.com/users/3. The page load reported a timeout at first, but the page still loaded and the hover worked.
+
+ANSWER: name: user3, href: /users/3

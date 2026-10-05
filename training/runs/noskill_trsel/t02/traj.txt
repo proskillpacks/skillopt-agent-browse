@@ -1,0 +1,90 @@
+TASK t02: On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.
+EXPECT: ['you clicked: cancel', 'you entered: skillopt-42']
+RESULT: {"id": "t02", "correct": true, "score": 0.942, "wtok": 77535, "turns": 9, "cost": 0.069, "secs": 47, "infra": false, "answer": "You clicked: Cancel | You entered: skillopt-42"}
+
+$ agent-browser --help 2>&1 | head -80
+-> [3506 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …         Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+  storage <local|session>    Manage web storage
+$ agent-browser --help 2>&1 | grep -i -A3 dialog
+-> [671 chars]   --no-auto-dialog           Disable automatic dismissal of alert/beforeunload dialogs (or AGENT_BROWSER_NO_AUTO_DIALOG)
+  --model <name>             AI model for chat (or AI_GATEWAY_MODEL env)
+  -v, --verbose              Show tool commands and their raw output
+  -q, --quiet                Show only AI text responses (hide tool calls)
+--
+  AGENT_BROWSER_NO_AUTO_DIALOG   Disable automatic dismissal of alert/beforeunload dialogs
+  AGENT_BROWSER_ENGINE           Browser engine: chrome (default), lightpanda
+  AGENT_BROWSER_PLUGINS          JSON plugin registry override
+  HTTP_PROXY / HTTPS_PROXY       Standard proxy env vars (fallback if AGENT_BROWSER_PROXY not set)
+$ agent-browser skills get core --full 2>&1 | grep -i -B2 -A6 dialog | head -60
+-> [4363 chars] - **Discarded tab (Chrome Memory Saver).** A backgrounded tab may have its renderer dropped. Switching to it reactivates the tab, which reloads the page and discards unsaved state (form input, scroll position). The switch result then includes `"revived": true`, so treat prior in-page state as gone and re-snapshot. Closing the active tab onto a discarded successor reports `"activeTabRevived": true` for the same reason.
+- **Tab blocked by a dialog.** If the target tab has an open dialog (`confirm` …alogs
+- `react` - React tree/inspect/renders/suspense, vitals, pushstate
+- `mobile` - Viewport/device/geolocation/media, touch, swipe, mouse, keyboard
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts; agent-browser click "button[onclick='jsConfirm()']"; agent-browser dialog status; agent-browser dialog dismiss; agent-browser get text "#result"
+-> [432 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: button[onclick='jsConfirm()']. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ No dialog is currently open
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+✗ Element not found: #result. Verify the selector, role, or name is correct and the element exists in the DOM.
+$ agent-browser get url; agent-browser snapshot | head -30
+-> [65 chars] https://the-internet.herokuapp.com/javascript_alerts
+(empty page)
+SAY: The page loaded empty, so I'm reloading it.
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts; agent-browser wait 3000; agent-browser snapshot | head -30
+-> [727 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/javascript_alerts
+✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JavaScript Alerts" [level=3, ref=e2]
+  - paragraph
+    - StaticText "Here are some examples of different JavaScript alerts which can be troublesome for automation"
+  - list
+    - listitem [level=1]
+      - button "Click for JS Alert" [ref=e4]
+    - listitem [level=1]
+      - button "Click for JS Confirm" [ref=e5]
+    - listitem  … [level=4, ref=e3]
+  - paragraph
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e7]
+$ agent-browser click @e5; agent-browser dialog status; agent-browser dialog dismiss; agent-browser get text "#result"
+-> [307 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "I am a JS Confirm" — use `dialog accept` or `dialog dismiss` to resolve it
+⚠ JavaScript confirm dialog is open: "I am a JS Confirm"
+  Default prompt text: ""
+  Use `dialog accept [text]` or `dialog dismiss` to resolve it
+✓ Done
+You clicked: Cancel
+$ agent-browser click @e6; agent-browser dialog status; agent-browser dialog accept "skillopt-42"; agent-browser get text "#result"
+-> [308 chars] ✓ Done
+⚠ A JavaScript prompt dialog is blocking the page: "I am a JS prompt" — use `dialog accept` or `dialog dismiss` to resolve it
+⚠ JavaScript prompt dialog is open: "I am a JS prompt"
+  Default prompt text: ""
+  Use `dialog accept [text]` or `dialog dismiss` to resolve it
+✓ Done
+You entered: skillopt-42
+SAY: I did both steps in the browser with `agent-browser`. The first page load came up empty, so I reloaded it before clicking anything.
+
+1. **JS Confirm:** I clicked "Click for JS Confirm" and chose Cancel. The Result text was **`You clicked: Cancel`**.
+2. **JS Prompt:** I clicked "Click for JS Prompt", entered `skillopt-42` and confirmed. The Result text was **`You entered: skillopt-42`**.
+
+ANSWER: You clicked: Cancel | You entered: skillopt-42

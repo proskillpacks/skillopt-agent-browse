@@ -1,0 +1,155 @@
+{
+ "tag": "s1_train",
+ "skill": "../skills/s1.md",
+ "n": 13,
+ "acc": 1.0,
+ "score": 0.9532,
+ "wtok": 31314,
+ "turns": 4.4,
+ "cost": 0.76,
+ "results": [
+  {
+   "id": "t01_r1",
+   "correct": true,
+   "score": 0.971,
+   "wtok": 19617,
+   "turns": 3,
+   "cost": 0.044,
+   "secs": 100,
+   "infra": false,
+   "answer": "Hello World!"
+  },
+  {
+   "id": "t02_r1",
+   "correct": true,
+   "score": 0.98,
+   "wtok": 13543,
+   "turns": 2,
+   "cost": 0.041,
+   "secs": 58,
+   "infra": false,
+   "answer": "You clicked: Cancel; You entered: skillopt-42"
+  },
+  {
+   "id": "t03_r1",
+   "correct": true,
+   "score": 0.932,
+   "wtok": 45545,
+   "turns": 6,
+   "cost": 0.077,
+   "secs": 159,
+   "infra": false,
+   "answer": "jdoe@hotmail.com"
+  },
+  {
+   "id": "t04_r1",
+   "correct": true,
+   "score": 0.971,
+   "wtok": 19430,
+   "turns": 3,
+   "cost": 0.043,
+   "secs": 9,
+   "infra": false,
+   "answer": "Pablo Neruda"
+  },
+  {
+   "id": "t05_r1",
+   "correct": true,
+   "score": 0.943,
+   "wtok": 38101,
+   "turns": 5,
+   "cost": 0.071,
+   "secs": 39,
+   "infra": false,
+   "answer": "\u201cA day without sunshine is like, you know, night.\u201d"
+  },
+  {
+   "id": "t06_r1",
+   "correct": true,
+   "score": 0.97,
+   "wtok": 20299,
+   "turns": 3,
+   "cost": 0.046,
+   "secs": 12,
+   "infra": false,
+   "answer": "5 five-star books; 32 books total in Mystery"
+  },
+  {
+   "id": "t07_r1",
+   "correct": true,
+   "score": 0.97,
+   "wtok": 19874,
+   "turns": 3,
+   "cost": 0.045,
+   "secs": 9,
+   "infra": false,
+   "answer": "A Year in Provence (Provence #1) \u2014 \u00a356.88"
+  },
+  {
+   "id": "t08_r1",
+   "correct": true,
+   "score": 0.946,
+   "wtok": 36232,
+   "turns": 5,
+   "cost": 0.064,
+   "secs": 42,
+   "infra": false,
+   "answer": "Gravity won the most awards in 2013 with 7; 12 Years a Slave is marked as Best Picture."
+  },
+  {
+   "id": "t09_r1",
+   "correct": true,
+   "score": 0.922,
+   "wtok": 52064,
+   "turns": 7,
+   "cost": 0.076,
+   "secs": 19,
+   "infra": false,
+   "answer": "Quote ref NOR-2087, total \u20ac1470.00"
+  },
+  {
+   "id": "t10_r1",
+   "correct": true,
+   "score": 0.89,
+   "wtok": 73274,
+   "turns": 10,
+   "cost": 0.099,
+   "secs": 129,
+   "infra": false,
+   "answer": "PDF, CSV, Excel"
+  },
+  {
+   "id": "t11_r1",
+   "correct": true,
+   "score": 0.94,
+   "wtok": 40329,
+   "turns": 6,
+   "cost": 0.058,
+   "secs": 89,
+   "infra": false,
+   "answer": "You selected a context menu"
+  },
+  {
+   "id": "t12_r1",
+   "correct": true,
+   "score": 0.98,
+   "wtok": 13551,
+   "turns": 2,
+   "cost": 0.041,
+   "secs": 35,
+   "infra": false,
+   "answer": "File Uploaded! \u2014 skillopt-note.txt"
+  },
+  {
+   "id": "t13_r1",
+   "correct": true,
+   "score": 0.977,
+   "wtok": 15227,
+   "turns": 2,
+   "cost": 0.052,
+   "secs": 12,
+   "infra": false,
+   "answer": "Albert Einstein, with 10 quotes"
+  }
+ ]
+}

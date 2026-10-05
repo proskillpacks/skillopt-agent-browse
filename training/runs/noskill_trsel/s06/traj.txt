@@ -1,0 +1,72 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06", "correct": true, "score": 0.964, "wtok": 48170, "turns": 7, "cost": 0.05, "secs": 58, "infra": false, "answer": "After Remove: \"It's gone!\"; after Enable: \"It's enabled!\", input value: \"hello\""}
+
+$ agent-browser --help 2>&1 | head -60
+-> [2632 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …rl
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls && agent-browser click "#checkbox-example button" && agent-browser wait "#checkbox-example #message" && agent-browser get count "#checkbox" ; agent-browser get text "#checkbox-example #message"
+-> [224 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: #checkbox-example #message. Verify the selector, role, or name is correct and the element exists in the DOM.
+$ agent-browser get url; agent-browser snapshot
+-> [64 chars] https://the-internet.herokuapp.com/dynamic_controls
+(empty page)
+SAY: Page appears empty; retrying the load.
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "#checkbox-example button"; agent-browser snapshot
+-> [877 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - generic
+    - heading "Dynamic Controls" [level=4, ref=e2]
+    - paragraph
+      - StaticText "This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously."
+    - heading "Remove/add" [level=4, ref=e3]
+    - LineBreak "\n"
+    - form
+      - generic
+        - checkbox [checked=false, ref=e8]
+     …tton "Enable" [ref=e7]
+    - generic
+      - separator
+      - generic
+        - StaticText "Powered by "
+        - link "Elemental Selenium" [ref=e9]
+$ agent-browser click @e5 && agent-browser wait "#checkbox-example #message" && agent-browser get count "#checkbox"; agent-browser get text "#checkbox-example #message"
+-> [26 chars] ✓ Done
+✓ Done
+0
+It's gone!
+$ agent-browser click @e7 && agent-browser wait "#input-example input:enabled" && agent-browser is enabled "#input-example input" && agent-browser type "#input-example input" hello && agent-browser get text "#input-example #message"; agent-browser get value "#input-example input"
+-> [45 chars] ✓ Done
+✓ Done
+true
+✓ Done
+It's enabled!
+hello
+SAY: I did both steps in the browser with `agent-browser`. The page came up blank on the first try, so I reloaded it before starting.
+
+1. **Remove:** I clicked Remove and waited for the checkbox to leave the page. A check confirmed no checkbox was left. The message shown was **"It's gone!"**
+2. **Enable:** I clicked Enable and waited until the text box could be edited, then typed `hello` into it. The message shown was **"It's enabled!"** and the box's value is **`hello`**.
+
+ANSWER: After Remove: "It'

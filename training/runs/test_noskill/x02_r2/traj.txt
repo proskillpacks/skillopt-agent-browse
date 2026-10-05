@@ -1,0 +1,47 @@
+TASK x02: Open https://the-internet.herokuapp.com/nested_frames and report the text displayed in each of the four frames (left, middle, right, bottom).
+EXPECT: ['left', 'middle', 'right', 'bottom']
+RESULT: {"id": "x02_r2", "correct": true, "score": 0.916, "wtok": 56177, "turns": 8, "cost": 0.085, "secs": 64, "infra": false, "answer": "LEFT, MIDDLE, RIGHT, BOTTOM"}
+
+$ agent-browser open https://the-internet.herokuapp.com/nested_frames && agent-browser --help | head -60
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser --help | grep -iE "frame|eval|snapshot|get "
+-> [1288 chars]   agent-browser skills get core --full
+  skills get core              Core usage guide (overview + common patterns)
+  skills get core --full       Include full command reference and templates
+  skills get <name>            Load a specialized skill (electron, slack, ...)
+  snapshot                   Accessibility tree with refs (for AI)
+  eval <js>                  Run JavaScript
+Get Info:  agent-browser get <what> [selector]
+  diff snapshot              Compare current vs last snapshot
+  webmcp  …ect via CDP port
+  agent-browser --auto-connect snapshot  # Auto-discover running Chrome
+  agent-browser open example.com && agent-browser snapshot -i
+SAY: Frames are same-origin, so eval can traverse them.
+$ agent-browser get url; agent-browser eval "(() => { const t = window.frames['frame-top']; const r = n => t.frames[n].document.body.innerText.trim(); return JSON.stringify({left:r('frame-left'),middle:r('frame-middle'),right:r('frame-right'),bottom:window.frames['frame-bottom'].document.body.innerText.trim()}); })()"
+-> [123 chars] https://the-internet.herokuapp.com/nested_frames
+"{\"left\":\"LEFT\",\"middle\":\"MIDDLE\",\"right\":\"\",\"bottom\":\"\"}"
+SAY: Right and bottom look like they hadn't finished loading yet. I'll check again.
+$ agent-browser eval "(() => { const t = window.frames['frame-top']; const f=[t.frames['frame-left'],t.frames['frame-middle'],t.frames['frame-right'],window.frames['frame-bottom']]; return JSON.stringify(f.map(x=>[x.location.href,x.document.readyState,x.document.body&&x.document.body.innerText.trim()])); })()"
+-> [298 chars] "[[\"https://the-internet.herokuapp.com/frame_left\",\"complete\",\"LEFT\"],[\"https://the-internet.herokuapp.com/frame_middle\",\"complete\",\"MIDDLE\"],[\"https://the-internet.herokuapp.com/frame_right\",\"complete\",\"\"],[\"https://the-internet.herokuapp.com/frame_bottom\",\"complete\",\"\"]]"
+$ agent-browser eval "(() => { const t = window.frames['frame-top']; return JSON.stringify([t.frames['frame-right'].document.documentElement.outerHTML, window.frames['frame-bottom'].document.documentElement.outerHTML]); })()"
+-> [1269 chars] "[\"<html><head>\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n    <meta charset=\\\"utf-8\\\">\\n    <title>Application Error</title>\\n    <style media=\\\"screen\\\">\\n      html,body,iframe {\\n        margin: 0;\\n        padding: 0;\\n      }\\n\\n      html,body {\\n        height: 100%;\\n        overflow: hidden;\\n      }\\n\\n      iframe {\\n        width: 100%;\\n        height: 100%;\\n        border: 0;\\n      }\\n    </style>\\n  </hea …yle>\\n  </head>\\n  <body>\\n    <iframe src=\\\"https://www.herokucdn.com/error-pages/application-error.html\\\"></iframe>\\n  \\n</body></html>\"]"
+SAY: The server returned Heroku "Application Error" pages for those two frames. I'll reload those frames to retry.
+$ agent-browser eval "(() => { const t = window.frames['frame-top']; t.frames['frame-right'].location.reload(); window.frames['frame-bottom'].location.reload(); return 'ok'; })()"; agent-browser wait 4000; agent-browser eval "(() => { const t = window.frames['frame-top']; const f=[t.frames['frame-left'],t.frames['frame-middle'],t.frames['frame-right'],window.frames['frame-bottom']]; return JSON.stringify(f.map(x=>[x.document.title,x.document.body.innerText.trim()])); })()"
+-> [95 chars] "ok"
+✓ Done
+"[[\"\",\"LEFT\"],[\"\",\"MIDDLE\"],[\"\",\"RIGHT\"],[\"Application Error\",\"\"]]"
+$ for i in 1 2 3; do agent-browser eval "window.frames['frame-bottom'].location.reload(); 'ok'" >/dev/null; agent-browser wait 4000 >/dev/null; agent-browser eval "JSON.stringify([window.frames['frame-bottom'].document.title, window.frames['frame-bottom'].document.body.innerText.trim()])"; done
+-> [59 chars] "[\"\",\"BOTTOM\"]"
+"[\"\",\"BOTTOM\"]"
+"[\"\",\"BOTTOM\"]"
+SAY: I opened the page in the browser session and read the text in each of the four frames:
+
+- **Left:** LEFT
+- **Middle:** MIDDLE
+- **Right:** RIGHT
+- **Bottom:** BOTTOM
+
+On the first load, the right and bottom frames showed a Heroku "Application Error" page instead of their content. Reloading the right frame once fixed it. The bottom frame showed the error once more, then loaded correctly on the next reload and stayed correct on two more reloads.
+
+ANSWER: LEFT, MIDDLE, RIGHT, BOTTOM

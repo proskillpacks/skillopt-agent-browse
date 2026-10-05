@@ -1,0 +1,47 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r2", "correct": true, "score": 0.923, "wtok": 51309, "turns": 9, "cost": 0.069, "secs": 78, "infra": false, "answer": "Remove message: \"It's gone!\"; Enable message: \"It's enabled!\"; input value: \"hello\""}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls && agent-browser snapshot -i
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser snapshot -i
+-> [25 chars] (no interactive elements)
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser get url; agent-browser snapshot -i
+-> [160 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+https://the-internet.herokuapp.com/dynamic_controls
+(no interactive elements)
+$ agent-browser eval "document.readyState + ' | ' + document.body?.innerText?.slice(0,300)"; agent-browser snapshot
+-> [34 chars] "loading | undefined"
+(empty page)
+SAY: The page is stuck loading. Waiting and checking again.
+$ agent-browser wait --load load --timeout 60000 2>&1 || agent-browser wait 60000; agent-browser eval "document.readyState"; agent-browser snapshot -i
+-> [341 chars] ✓ Done
+"complete"
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+$ agent-browser click @e5 && agent-browser wait --fn "!document.querySelector('#checkbox') && document.querySelector('#message')" && agent-browser get text "#message"
+$ agent-browser click @e7 && agent-browser wait --fn "!document.querySelector('#input-example input').disabled" && agent-browser fill "#input-example input" "hello" && agent-browser get text "#input-example #message" && agent-browser eval "document.querySelector('#input-example input').value"
+-> [20 chars] ✓ Done
+{}
+It's gone!
+-> [40 chars] ✓ Done
+true
+✓ Done
+It's enabled!
+"hello"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I did both steps in the browser. The page was slow to load at first, so I waited for it to finish before clicking anything.
+
+- **Remove:** Once the checkbox was gone, the message read **"It's gone!"**
+- **Enable:** When the text input became enabled, the message read **"It's enabled!"** I typed hello into it, and its value is **"hello"**.
+
+ANSWER: Remove message: "It's gone!"; Enable message: "It's enabled!"; input value: "hello"

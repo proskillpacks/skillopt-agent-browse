@@ -1,0 +1,65 @@
+TASK x02: Open https://the-internet.herokuapp.com/nested_frames and report the text displayed in each of the four frames (left, middle, right, bottom).
+EXPECT: ['left', 'middle', 'right', 'bottom']
+RESULT: {"id": "x02_r1", "correct": true, "score": 0.763, "wtok": 158277, "turns": 8, "cost": 0.202, "secs": 52, "infra": false, "answer": "LEFT, MIDDLE, RIGHT, BOTTOM"}
+
+$ agent-browser open https://the-internet.herokuapp.com/nested_frames && agent-browser snapshot
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser snapshot
+-> [168 chars] https://the-internet.herokuapp.com/nested_frames
+- Iframe [ref=e1]
+  - Iframe [ref=e3]
+  - Iframe [ref=e4]
+  - Iframe [ref=e5]
+- Iframe [ref=e2]
+  - StaticText "BOTTOM"
+SAY: Frames are framesets; I'll read each frame's text via eval.
+$ cat <<'EOF' | agent-browser eval --stdin
+const top = window.frames['frame-top'];
+const out = {};
+for (const n of ['frame-left','frame-middle','frame-right']) out[n] = top.frames[n].document.body.innerText.trim();
+out['frame-bottom'] = window.frames['frame-bottom'].document.body.innerText.trim();
+JSON.stringify(out);
+EOF
+-> [87 chars] Exit code 1
+✗ Evaluation error: SyntaxError: Identifier 'top' has already been declared
+$ cat <<'EOF' | agent-browser eval --stdin
+(() => {
+const t = window.frames['frame-top'];
+const out = {};
+for (const n of ['frame-left','frame-middle','frame-right']) out[n] = t.frames[n].document.body.innerText.trim();
+out['frame-bottom'] = window.frames['frame-bottom'].document.body.innerText.trim();
+return JSON.stringify(out);
+})()
+EOF
+-> [103 chars] "{\"frame-left\":\"LEFT\",\"frame-middle\":\"\",\"frame-right\":\"RIGHT\",\"frame-bottom\":\"BOTTOM\"}"
+SAY: The middle frame's `innerText` came back empty, so I'll check its `textContent`.
+$ cat <<'EOF' | agent-browser eval --stdin
+(() => window.frames['frame-top'].frames['frame-middle'].document.body.textContent.trim())()
+EOF
+-> [2 chars] ""
+$ cat <<'EOF' | agent-browser eval --stdin
+(() => { const d = window.frames['frame-top'].frames['frame-middle'].document; return d.readyState + ' | ' + d.location.href + ' | ' + d.documentElement.outerHTML.slice(0,500); })()
+EOF
+-> [595 chars] "complete | https://the-internet.herokuapp.com/frame_middle | <html><head>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <meta charset=\"utf-8\">\n    <title>Application Error</title>\n    <style media=\"screen\">\n      html,body,iframe {\n        margin: 0;\n        padding: 0;\n      }\n\n      html,body {\n        height: 100%;\n        overflow: hidden;\n      }\n\n      iframe {\n        width: 100%;\n        height: 100%;\n        border: 0;\n      }\n    </style>\n  </head>\n  <body>\n    <iframe src=\"https://www.herokucdn.com/error-pages/app"
+SAY: The middle frame loaded a Heroku "Application Error" page. I'll reload it to see if that was a temporary failure.
+$ cat <<'EOF' | agent-browser eval --stdin
+(() => { window.frames['frame-top'].frames['frame-middle'].location.reload(); return 'ok'; })()
+EOF
+agent-browser wait 4000
+cat <<'EOF' | agent-browser eval --stdin
+(() => { const d = window.frames['frame-top'].frames['frame-middle'].document; return d.title + ' | ' + d.body.innerText.trim(); })()
+EOF
+-> [23 chars] "ok"
+✓ Done
+" | MIDDLE"
+SAY: I opened the page in agent-browser and read the text from each frame:
+
+- **Left frame:** `LEFT`
+- **Middle frame:** `MIDDLE`
+- **Right frame:** `RIGHT`
+- **Bottom frame:** `BOTTOM`
+
+The first time the page loaded, the middle frame showed Heroku's "Application Error" page and had no text. I reloaded just that frame and it then showed `MIDDLE`, so the first error looks like a temporary server problem.
+
+ANSWER: LEFT, MIDDLE, RIGHT, BOTTOM

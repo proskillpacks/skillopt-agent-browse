@@ -1,0 +1,23 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r2", "correct": true, "score": 0.979, "wtok": 13732, "turns": 2, "cost": 0.042, "secs": 14, "infra": false, "answer": "Remove message: \"It's gone!\"; Enable message: \"It's enabled!\"; input value: \"hello\""}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "#checkbox-example button"; agent-browser click "#checkbox-example button"; agent-browser wait --fn "!document.querySelector('#checkbox') && document.querySelector('#checkbox-example #message')"; agent-browser get text "#checkbox-example #message"; agent-browser click "#input-example button"; agent-browser wait --fn "!document.querySelector('#input-example input').disabled"; agent-browser fill "#input-example input" "hello"; agent-browser get text "#input-example #message"; agent-browser eval "document.querySelector('#input-example input').value"; agent-browser close
+-> [154 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✓ Done
+✓ Done
+{}
+It's gone!
+✓ Done
+true
+✓ Done
+It's enabled!
+"hello"
+✓ Browser closed
+SAY: I ran both steps on the Dynamic Controls page in agent-browser:
+
+1. **Remove:** I clicked Remove and waited for the checkbox to disappear. The page then showed **"It's gone!"**
+2. **Enable:** I clicked Enable and waited until the text input was no longer disabled. The page showed **"It's enabled!"** I typed `hello` into the input, and reading its value back returned **"hello"**.
+
+ANSWER: Remove message: "It's gone!"; Enable message: "It's enabled!"; input value: "hello"

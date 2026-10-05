@@ -1,0 +1,46 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08", "correct": true, "score": 0.96, "wtok": 26393, "turns": 4, "cost": 0.055, "secs": 31, "infra": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2281 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …  Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+SAY: Loop over 50 pages using open + eval.
+$ for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1; agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>[a.querySelector("h3 a").title,a.querySelector(".price_color").textContent]))'; done > /tmp/books.txt; wc -l /tmp/books.txt; head -c 300 /tmp/books.txt
+-> [311 chars] 50 /tmp/books.txt
+"[[\"A Light in the Attic\",\"£51.77\"],[\"Tipping the Velvet\",\"£53.74\"],[\"Soumission\",\"£50.10\"],[\"Sharp Objects\",\"£47.82\"],[\"Sapiens: A Brief History of Humankind\",\"£54.23\"],[\"The Requiem Red\",\"£22.65\"],[\"The Dirty Little Secrets of Getting Your Dream Job\",\"£33.34\"],[\
+$ python3 -c '
+import json
+b=[]
+for l in open("/tmp/books.txt"): b+=json.loads(json.loads(l))
+print(len(b), len(set(t for t,_ in b)))
+p=[(float(x.replace("£","")),t) for t,x in b]
+print(sum(1 for v,_ in p if v<12))
+print(sorted(p)[:5])'
+-> [213 chars] 1000 999
+44
+[(10.0, 'An Abundance of Katherines'), (10.01, 'The Origin of Species'), (10.02, 'The Tipping Point: How Little Things Can Make a Big Difference'), (10.16, 'Patience'), (10.23, 'Greek Mythic History')]
+SAY: I loaded all 50 catalogue pages in the browser with `agent-browser` and read the title and price of every book on each page, 1,000 books in total.
+
+- **Books under £12.00:** 44
+- **Cheapest book:** "An Abundance of Katherines" at £10.00. The next cheapest is "The Origin of Species" at £10.01, so there is no tie.
+
+One title appears twice in the catalogue, so there are 999 different titles. I counted every listing, which is why the total is 1,000.
+
+ANSWER: 44 books cost less than £12.00; the cheap

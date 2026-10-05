@@ -1,0 +1,22 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": true, "score": 0.963, "wtok": 24740, "turns": 4, "cost": 0.047, "secs": 16, "infra": false, "answer": "5 one-star books; 26 books total in Historical Fiction"}
+
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html && agent-browser eval "JSON.stringify({total: document.querySelector('form strong')?.textContent, pager: document.querySelector('.pager .current')?.textContent.trim(), ones: document.querySelectorAll('article.product_pod p.star-rating.One').length, n: document.querySelectorAll('article.product_pod').length})"
+-> [201 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"total\":\"26\",\"pager\":\"Page 1 of 2\",\"ones\":5,\"n\":20}"
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html && agent-browser eval "JSON.stringify({pager: document.querySelector('.pager .current')?.textContent.trim(), ones: document.querySelectorAll('article.product_pod p.star-rating.One').length, n: document.querySelectorAll('article.product_pod').length})"
+-> [184 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"pager\":\"Page 2 of 2\",\"ones\":0,\"n\":6}"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: The Historical Fiction category has 26 books across 2 pages, and 5 of them have a one-star rating.
+
+- **Page 1:** 20 books, 5 rated one star.
+- **Page 2:** 6 books, none rated one star.
+
+The page header shows 26 results, which matches the 20 + 6 books I counted on the two pages.
+
+ANSWER: 5 one-star books; 26 books total in Historical Fiction

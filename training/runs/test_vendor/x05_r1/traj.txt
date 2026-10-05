@@ -1,0 +1,99 @@
+TASK x05: On https://books.toscrape.com/ open the 'Poetry' category, find its cheapest book, open that book's page, and report its title, price and UPC.
+EXPECT: ['poems that make grown women cry', '14\\.19', '31001a1210623bd4']
+RESULT: {"id": "x05_r1", "correct": true, "score": 0.7, "wtok": 216941, "turns": 10, "cost": 0.249, "secs": 58, "infra": false, "answer": "Poems That Make Grown Women Cry \u2014 \u00a314.19 \u2014 UPC 31001a1210623bd4"}
+
+$ agent-browser open https://books.toscrape.com/ && agent-browser find text "Poetry" click && agent-browser wait --load domcontentloaded && agent-browser get url
+-> [159 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+✓ Done
+https://books.toscrape.com/catalogue/category/books/poetry_23/index.html
+$ cat <<'EOF' | agent-browser eval --stdin
+({next: !!document.querySelector('li.next'), count: document.querySelector('form.form-horizontal strong')?.innerText,
+books: Array.from(document.querySelectorAll('article.product_pod')).map(a=>({t:a.querySelector('h3 a').title,p:a.querySelector('.price_color').innerText,h:a.querySelector('h3 a').href}))})
+EOF
+-> [3290 chars] {
+  "books": [
+    {
+      "h": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html",
+      "p": "£51.77",
+      "t": "A Light in the Attic"
+    },
+    {
+      "h": "https://books.toscrape.com/catalogue/the-black-maria_991/index.html",
+      "p": "£52.15",
+      "t": "The Black Maria"
+    },
+    {
+      "h": "https://books.toscrape.com/catalogue/shakespeares-sonnets_989/index.html",
+      "p": "£20.66",
+      "t": "Shakespeare's Sonnets"
+    },
+    {
+      "h": "https://bo …ong-of-despair_91/index.html",
+      "p": "£30.95",
+      "t": "Twenty Love Poems and a Song of Despair"
+    }
+  ],
+  "count": "19",
+  "next": false
+}
+SAY: All 19 on one page; cheapest is £14.19.
+$ agent-browser find text "Poems That Make Grown Women Cry" click && agent-browser wait --url "**/poems-that-make-grown-women-cry_824/**" && cat <<'EOF' | agent-browser eval --stdin
+({t:document.querySelector('.product_main h1').innerText,p:document.querySelector('.product_main .price_color').innerText,upc:[...document.querySelectorAll('table tr')].find(r=>r.querySelector('th').innerText==='UPC').querySelector('td').innerText,url:location.href})
+EOF
+-> [154 chars] Exit code 1
+✗ No element found by text 'Poems That Make Grown Women Cry'. Verify the selector, role, or name is correct and the element exists in the DOM.
+SAY: Link text is truncated; click via selector.
+$ agent-browser click 'h3 a[title="Poems That Make Grown Women Cry"]' && agent-browser wait --url "**/poems-that-make-grown-women-cry_824/**" && cat <<'EOF' | agent-browser eval --stdin
+({t:document.querySelector('.product_main h1').innerText,p:document.querySelector('.product_main .price_color').innerText,upc:[...document.querySelectorAll('table tr')].find(r=>r.querySelector('th').innerText==='UPC').querySelector('td').innerText,url:location.href})
+EOF
+-> [49 chars] Exit code 1
+✓ Done
+✗ Wait timed out after 25000ms
+$ agent-browser get url; cat <<'EOF' | agent-browser eval --stdin
+({t:document.querySelector('.product_main h1')?.innerText,p:document.querySelector('.product_main .price_color')?.innerText,upc:[...document.querySelectorAll('table tr')].find(r=>r.querySelector('th').innerText==='UPC')?.querySelector('td').innerText})
+EOF
+-> [75 chars] https://books.toscrape.com/catalogue/category/books/poetry_23/index.html
+{}
+$ agent-browser snapshot -i | grep -i "grown"
+-> [154 chars] - link "Poems That Make Grown Women Cry" [ref=e89]
+- heading "Poems That Make Grown ..." [level=3, ref=e63]
+  - link "Poems That Make Grown ..." [ref=e90]
+$ agent-browser click @e90 && agent-browser wait --load domcontentloaded && agent-browser get url && cat <<'EOF' | agent-browser eval --stdin
+({t:document.querySelector('.product_main h1')?.innerText,p:document.querySelector('.product_main .price_color')?.innerText,upc:[...document.querySelectorAll('table tr')].find(r=>r.querySelector('th').innerText==='UPC')?.querySelector('td').innerText})
+EOF
+-> [89 chars] ✓ Done
+✓ Done
+https://books.toscrape.com/catalogue/category/books/poetry_23/index.html
+{}
+$ cat <<'EOF' | agent-browser eval --stdin
+const a=document.querySelector('h3 a[title="Poems That Make Grown Women Cry"]');({href:a.getAttribute('href'),onclick:a.onclick+'',scripts:[...document.scripts].map(s=>s.src||s.text.slice(0,200))})
+EOF
+-> [884 chars] {
+  "href": "../../../poems-that-make-grown-women-cry_824/index.html",
+  "onclick": "null",
+  "scripts": [
+    "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js",
+    "window.jQuery || document.write('<script src=\"../../../../static/oscar/js/jquery/jquery-1.9.1.min.js\"><\\/script>')",
+    "https://books.toscrape.com/static/oscar/js/jquery/jquery-1.9.1.min.js",
+    "https://books.toscrape.com/static/oscar/js/bootstrap3/bootstrap.min.js",
+    "https://books.toscrape.com/static/osc …s",
+    "\n            $(function() {\n                \n    \n    \n    oscar.init();\n\n    oscar.search.init();\n\n            });\n        "
+  ]
+}
+$ agent-browser open https://books.toscrape.com/catalogue/poems-that-make-grown-women-cry_824/index.html && cat <<'EOF' | agent-browser eval --stdin
+({t:document.querySelector('.product_main h1')?.innerText,p:document.querySelector('.product_main .price_color')?.innerText,upc:[...document.querySelectorAll('table tr')].find(r=>r.querySelector('th').innerText==='UPC')?.querySelector('td').innerText})
+EOF
+-> [238 chars] ✓ Poems That Make Grown Women Cry | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/poems-that-make-grown-women-cry_824/index.html
+{
+  "p": "£14.19",
+  "t": "Poems That Make Grown Women Cry",
+  "upc": "31001a1210623bd4"
+}
+SAY: The cheapest book in the Poetry category is **Poems That Make Grown Women Cry**, priced at **£14.19**, with UPC **31001a1210623bd4**.
+
+I opened the Poetry category from the homepage in the browser. All 19 Poetry books fit on one page, and I compared their prices. The runner-up was "Untitled Collection: Sabbath Poems 2014" at £14.27.
+
+Clicking the book's link on the category page didn't take me anywhere: I tried three times and stayed on the category page each time. So I opened the book's page in

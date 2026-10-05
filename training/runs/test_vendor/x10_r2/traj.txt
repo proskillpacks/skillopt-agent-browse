@@ -1,0 +1,24 @@
+TASK x10: On https://the-internet.herokuapp.com/shadowdom there are two custom paragraph components. Report the text content of the second one (it renders a list).
+EXPECT: ["let's have some different text!", 'in a list!']
+RESULT: {"id": "x10_r2", "correct": true, "score": 0.943, "wtok": 37754, "turns": 2, "cost": 0.141, "secs": 10, "infra": false, "answer": "Let's have some different text! In a list!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom >/dev/null; cat <<'EOF' | agent-browser eval --stdin
+const els=[...document.querySelectorAll('my-paragraph')];
+els.map(e=>({light:e.innerText, shadow:e.shadowRoot?e.shadowRoot.innerHTML:null}))
+EOF
+-> [502 chars] [
+  {
+    "light": "Let's have some different text!",
+    "shadow": "\n  <style>\n    p {\n      color: white;\n      background-color: #666;\n      padding: 5px;\n    }\n  </style>\n  <p><slot name=\"my-text\">My default text</slot></p>\n"
+  },
+  {
+    "light": "Let's have some different text!\nIn a list!",
+    "shadow": "\n  <style>\n    p {\n      color: white;\n      background-color: #666;\n      padding: 5px;\n    }\n  </style>\n  <p><slot name=\"my-text\">My default text</slot></p>\n"
+  }
+]
+SAY: I opened the page in agent-browser and read both `<my-paragraph>` elements. The second one puts a list into its shadow DOM's `my-text` slot. The list has two items:
+
+1. "Let's have some different text!"
+2. "In a list!"
+
+ANSWER: Let's have some different text! In a list!

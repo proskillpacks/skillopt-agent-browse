@@ -1,0 +1,20 @@
+TASK t04: Start at https://quotes.toscrape.com/js/ and use the Next link to go to the third page. Report the author of the first quote on page 3.
+EXPECT: ['pablo neruda']
+RESULT: {"id": "t04_r1", "correct": true, "score": 0.971, "wtok": 19430, "turns": 3, "cost": 0.043, "secs": 9, "infra": false, "answer": "Pablo Neruda"}
+
+$ agent-browser open https://quotes.toscrape.com/js/; agent-browser wait ".quote"; agent-browser click "li.next a"; agent-browser wait --fn "location.href.includes('/page/2')"; agent-browser wait ".quote"; agent-browser click "li.next a"; agent-browser wait --fn "location.href.includes('/page/3')"; agent-browser wait ".quote"; agent-browser eval "JSON.stringify([location.href, document.querySelector('.quote .author').textContent, document.querySelector('.quote .text').textContent])"
+-> [485 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/js/
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+"[\"https://quotes.toscrape.com/js/page/3/\",\"Pablo Neruda\",\"“I love you without knowing how, or when, or from where. I love you simply, without problems or pride: I love you in this way because I do not know any other way of loving but this, in which there is no I or you, so intimate that your hand upon my chest is my hand, so intimate that when I fall asleep your eyes close.”\"]"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I started at the JS version of the site and clicked the Next link twice, which took me to https://quotes.toscrape.com/js/page/3/. The first quote on that page is by Pablo Neruda. It begins "I love you without knowing how, or when, or from where…"
+
+ANSWER: Pablo Neruda

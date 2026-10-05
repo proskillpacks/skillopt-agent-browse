@@ -1,0 +1,27 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": true, "score": 0.969, "wtok": 20606, "turns": 3, "cost": 0.048, "secs": 25, "infra": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1; agent-browser wait "article.product_pod" >/dev/null 2>&1; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title,a.querySelector('.price_color').textContent]))"; done > /tmp/books.txt; wc -l /tmp/books.txt
+-> [17 chars] 50 /tmp/books.txt
+$ python3 -c "
+import json
+b=[]
+for l in open('/tmp/books.txt'):
+  l=l.strip(); v=json.loads(l)
+  if isinstance(v,str): v=json.loads(v)
+  b+=v
+print(len(b))
+p=[(float(x[1].replace('£','').replace('Â','')),x[0]) for x in b]
+print(sum(1 for x in p if x[0]<12)); print(sorted(p)[:3])
+"; agent-browser close
+-> [172 chars] 1000
+44
+[(10.0, 'An Abundance of Katherines'), (10.01, 'The Origin of Species'), (10.02, 'The Tipping Point: How Little Things Can Make a Big Difference')]
+✓ Browser closed
+SAY: I went through all 50 catalogue pages in the browser and pulled the title and price of all 1,000 books.
+
+- **44 books** cost less than £12.00.
+- The cheapest book is **"An Abundance of Katherines" at £10.00**. Nothing else costs the same. The next two are "The Origin of Species" at £10.01 and "The Tipping Point" at £10.02.
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00

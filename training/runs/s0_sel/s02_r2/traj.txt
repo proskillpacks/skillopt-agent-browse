@@ -1,0 +1,27 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r2", "correct": true, "score": 0.964, "wtok": 24193, "turns": 4, "cost": 0.045, "secs": 14, "infra": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login && agent-browser snapshot -i
+-> [301 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+$ agent-browser fill @e5 "user" && agent-browser fill @e6 "pass" && agent-browser click @e2 && agent-browser wait --text "Logout" && agent-browser get url && agent-browser eval "Array.from(document.querySelectorAll('.quote')[0].querySelectorAll('a')).map(a=>a.textContent+' -> '+a.href).join('\n')"
+-> [443 chars] ✓ Done
+✓ Done
+✓ Done
+Logout
+https://quotes.toscrape.com/
+"(about) -> https://quotes.toscrape.com/author/Albert-Einstein\n(Goodreads page) -> http://goodreads.com/author/show/9810.Albert_Einstein\nchange -> https://quotes.toscrape.com/tag/change/page/1/\ndeep-thoughts -> https://quotes.toscrape.com/tag/deep-thoughts/page/1/\nthinking -> https://quotes.toscrape.com/tag/thinking/page/1/\nworld -> https://quotes.toscrape.com/tag/world/page/1/"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I logged in with a placeholder username and password, and the site then returned to the home page with a "Logout" link showing. The first quote there is by Albert Einstein. Its "(Goodreads page)" link goes to `http://goodreads.com/author/show/9810.Albert_Einstein`. I took that URL from the link's `href` attribute in the browser. The link uses plain `http`, not `https`.
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

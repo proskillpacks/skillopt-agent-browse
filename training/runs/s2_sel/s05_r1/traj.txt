@@ -1,0 +1,39 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r1", "correct": true, "score": 0.93, "wtok": 46884, "turns": 6, "cost": 0.074, "secs": 25, "infra": false, "answer": "Q3 vendor audit \u2014 rescheduled to the 19th; Receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [418 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('button')].map((b,i)=>i+': '+b.parentElement.innerText))"
+-> [1088 chars] "[\"0: Alex A.\\nInvoice #100\\nArchive\",\"1: Femi H.\\nLunch order #113\\nArchive\",\"2: Kai C.\\nOn-call swap #126\\nArchive\",\"3: Dana K.\\nRetro actions #139\\nArchive\",\"4: Ivo E.\\nRelease checklist #152\\nArchive\",\"5: Bo M.\\nDesign review #165\\nArchive\",\"6: Gus G.\\nHiring loop #178\\nArchive\",\"7: Lena B.\\nStandup notes #191\\nArchive\",\"8: Elif J.\\nTravel booking #204\\nArchive\",\"9: Jude D.\\nBudget draft #217\\nArchive\",\"10: Chen L.\\nInvoice #230\\nArchive\",\"11: Han …nArchive\",\"21: Jude D.\\nLunch order #373\\nArchive\",\"22: Chen L.\\nOn-call swap #386\\nArchive\",\"23: Hana F.\\nRetro actions #399\\nArchive\"]"
+SAY: Priya isn't in the loaded list; the list may load more as you scroll.
+$ for i in 1 2 3 4 5 6; do agent-browser scroll down 5000 >/dev/null; agent-browser eval "window.scrollTo(0,document.body.scrollHeight)" >/dev/null; sleep 1; done; agent-browser eval "JSON.stringify([document.querySelectorAll('button').length, [...document.querySelectorAll('button')].map((b,i)=>i+': '+b.parentElement.innerText).filter(t=>/Priya/.test(t)), document.body.innerText.slice(-300)])"
+-> [436 chars] "[60,[\"44: Priya N.\\nQ3 vendor audit — rescheduled to the 19th\\nArchive\"],\"63\\nArchive\\nIvo E.\\nOn-call swap #776\\nArchive\\nBo M.\\nRetro actions #789\\nArchive\\nGus G.\\nRelease checklist #802\\nArchive\\nLena B.\\nDesign review #815\\nArchive\\nElif J.\\nHiring loop #828\\nArchive\\nJude D.\\nStandup notes #841\\nArchive\\nChen L.\\nTravel booking #854\\nArchive\\nHana F.\\nBudget draft #867\\nArchive\\nEnd of inbox\"]"
+$ agent-browser eval "const b=document.querySelectorAll('button')[44]; b.scrollIntoView({block:'center'}); b.setAttribute('data-t','priya'); b.parentElement.innerText"; agent-browser click "[data-t=priya]"; agent-browser snapshot -i
+-> [366 chars] Exit code 1
+"Priya N.\nQ3 vendor audit — rescheduled to the 19th\nArchive"
+✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✗ A JavaScript confirm dialog is blocking the page: "Archive this message?". Resolve it with `dialog accept` or `dialog dismiss`, then retry `snapshot`.
+$ agent-browser dialog accept; sleep 1; agent-browser eval "document.body.innerText.match(/.{0,80}receipt.{0,80}/is)?.[0] || document.body.innerText.slice(0,400)"
+-> [110 chars] ✓ Done
+"l booking #854\nArchive\nHana F.\nBudget draft #867\nArchive\nEnd of inbox\nArchived. Receipt #A-7028"
+SAY: The message from Priya N. only showed up after scrolling, because the inbox loads more messages as you go down. Its subject is **"Q3 vendor audit — rescheduled to the 19th"**.
+
+I clicked Archive on that message and accepted the "Archive this message?" confirmation. The page then showed "Archived. Receipt #A-7028".
+
+ANSWER: Q3 vendor audit — rescheduled to the 19th; Receipt #A-7028

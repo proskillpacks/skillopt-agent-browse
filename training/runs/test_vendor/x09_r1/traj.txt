@@ -1,0 +1,35 @@
+TASK x09: Open https://the-internet.herokuapp.com/basic_auth . It is protected by HTTP basic authentication: username admin, password admin. Report the paragraph text shown after authenticating.
+EXPECT: ['congratulations! you must have the proper credentials']
+RESULT: {"id": "x09_r1", "correct": true, "score": 0.885, "wtok": 76515, "turns": 4, "cost": 0.159, "secs": 122, "infra": false, "answer": "Congratulations! You must have the proper credentials."}
+
+$ agent-browser set credentials admin admin && agent-browser open https://the-internet.herokuapp.com/basic_auth && agent-browser get text "#content p"
+-> [57 chars] Exit code 1
+✓ Done
+✗ CDP command timed out: Page.navigate
+$ agent-browser get url; agent-browser get text "#content p"
+-> [171 chars] Exit code 1
+https://the-internet.herokuapp.com/basic_auth
+✗ Element not found: #content p. Verify the selector, role, or name is correct and the element exists in the DOM.
+SAY: Let me try sending the Authorization header scoped to this origin instead.
+$ agent-browser snapshot 2>&1 | head -20; agent-browser open https://the-internet.herokuapp.com/basic_auth --headers '{"Authorization":"Basic YWRtaW46YWRtaW4="}' && agent-browser get text "#content p"
+-> [556 chars] - Iframe [ref=e1]
+  - image
+  - StaticText "Application error"
+  - paragraph
+    - StaticText "An error occurred in the application and your page could not be served. If you are the application owner, "
+    - link "check your logs for details" [ref=e2]
+    - StaticText ". You can do this from the Heroku CLI with the command"
+    - LineBreak "\n"
+    - code
+      - StaticText "heroku logs --tail"
+  - image
+  - link [ref=e3]
+    - image
+✓ The Internet
+  https://the-internet.herokuapp.com/basic_auth
+Congratulations! You must have the proper credentials.
+SAY: After logging in with admin/admin, the page shows the paragraph "Congratulations! You must have the proper credentials."
+
+My first try set the login with `agent-browser set credentials admin admin` and then opened the page. That timed out and landed on a Heroku "Application error" page instead. The second try sent the login as a Basic `Authorization` header (`--headers`) along with `open`, and that loaded the authenticated page.
+
+ANSWER: Congratulations! You must have the proper credentials.

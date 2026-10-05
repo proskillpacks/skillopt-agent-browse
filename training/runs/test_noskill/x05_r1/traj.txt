@@ -1,0 +1,51 @@
+TASK x05: On https://books.toscrape.com/ open the 'Poetry' category, find its cheapest book, open that book's page, and report its title, price and UPC.
+EXPECT: ['poems that make grown women cry', '14\\.19', '31001a1210623bd4']
+RESULT: {"id": "x05_r1", "correct": true, "score": 0.901, "wtok": 66310, "turns": 7, "cost": 0.103, "secs": 47, "infra": false, "answer": "Poems That Make Grown Women Cry \u2014 \u00a314.19 \u2014 UPC 31001a1210623bd4"}
+
+$ agent-browser --help 2>&1 | head -50; agent-browser open https://books.toscrape.com/catalogue/category/books/poetry_23/index.html && agent-browser snapshot 2>&1 | head -150
+-> [7305 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …ker "◦ "
+            - link "Christian" [ref=e47]
+          - listitem [level=2]
+            - ListMarker "◦ "
+            - link "Suspense" [ref=e48]
+$ agent-browser eval 'document.querySelector("form strong")?.innerText + " | next:" + !!document.querySelector("li.next") + "\n" + [...document.querySelectorAll("article.product_pod")].map(a=>a.querySelector("h3 a").title+" | "+a.querySelector(".price_color").innerText+" | "+a.querySelector("h3 a").href).join("\n")'
+-> [2323 chars] "19 | next:false\nA Light in the Attic | £51.77 | https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html\nThe Black Maria | £52.15 | https://books.toscrape.com/catalogue/the-black-maria_991/index.html\nShakespeare's Sonnets | £20.66 | https://books.toscrape.com/catalogue/shakespeares-sonnets_989/index.html\nOlio | £23.88 | https://books.toscrape.com/catalogue/olio_984/index.html\nYou can't bury them all: Poems | £33.63 | https://books.toscrape.com/catalogue/you-cant-bury-them- …x.html\nTwenty Love Poems and a Song of Despair | £30.95 | https://books.toscrape.com/catalogue/twenty-love-poems-and-a-song-of-despair_91/index.html"
+SAY: Cheapest: Poems That Make Grown Women Cry (£14.19). All 19 on one page.
+$ agent-browser click 'a[title="Poems That Make Grown Women Cry"]' && agent-browser eval 'document.querySelector("h1").innerText+" | "+document.querySelector(".product_main .price_color").innerText+" | "+[...document.querySelectorAll("table tr")].map(r=>r.innerText).join(" ; ")+" | "+location.href'
+-> [126 chars] Exit code 1
+✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:98
+SAY: Page likely still loading; retry.
+$ agent-browser wait '.product_main' && agent-browser eval 'document.querySelector("h1").innerText+" | "+document.querySelector(".product_main .price_color").innerText+" | "+[...document.querySelectorAll("table tr")].map(r=>r.innerText).join(" ; ")+" | "+location.href'
+-> [42 chars] Exit code 1
+✗ Wait timed out after 25000ms
+$ agent-browser get url; agent-browser get title
+-> [107 chars] https://books.toscrape.com/catalogue/category/books/poetry_23/index.html
+Poetry | Books to Scrape - Sandbox
+SAY: The click landed on the image link, not the title link, so the page didn't change. I'll go to the book's URL directly.
+$ agent-browser open https://books.toscrape.com/catalogue/poems-that-make-grown-women-cry_824/index.html && agent-browser eval 'document.querySelector("h1").innerText+" | "+document.querySelector(".product_main .price_color").innerText+" | "+[...document.querySelectorAll("table tr")].map(r=>r.innerText).join(" ; ")'
+-> [368 chars] ✓ Poems That Make Grown Women Cry | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/poems-that-make-grown-women-cry_824/index.html
+"Poems That Make Grown Women Cry | £14.19 | UPC\t31001a1210623bd4 ; Product Type\tBooks ; Price (excl. tax)\t£14.19 ; Price (incl. tax)\t£14.19 ; Tax\t£0.00 ; Availability\tIn stock (15 available) ; Number of reviews\t0"
+SAY: The cheapest book in the Poetry category is **Poems That Make Grown Women Cry**.
+
+- **Price:** £14.19 (same with and without tax)
+- **UPC:** 31001a1210623bd4
+
+All 19 Poetry books are on one page, and I compared their prices. The next cheapest was "Untitled Collection: Sabbath Poems 2014" at £14.27. Clicking the book's link didn't change the page, so I opened the book page by going to its link address (`/catalogue/poems-that-make-grown-women-cry_824/index.html`) in the same browser.
+
+ANSWER: Poem

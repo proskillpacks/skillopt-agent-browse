@@ -1,0 +1,21 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r1", "correct": true, "score": 0.956, "wtok": 29095, "turns": 4, "cost": 0.059, "secs": 19, "infra": false, "answer": "49 wins, 269 GF"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/; agent-browser wait "input#q"; agent-browser fill "input#q" "Bruins"; agent-browser press Enter; agent-browser wait --text "Bruins"; agent-browser eval "JSON.stringify([...document.querySelectorAll('tr.team')].map(r=>r.innerText.replace(/\s+/g,' ').trim()).filter(t=>t.includes('2011')))"; agent-browser get url
+-> [243 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+✓ Done
+✓ Done
+Bruins
+"[]"
+https://www.scrapethissite.com/pages/forms/?q=Bruins
+SAY: The 2011 row isn't on this page, so the results probably span more than one page.
+$ agent-browser eval "JSON.stringify({rows:[...document.querySelectorAll('tr.team')].map(r=>r.innerText.replace(/\s+/g,' ').trim()),pages:[...document.querySelectorAll('.pagination a')].map(a=>a.href)})"
+-> [1018 chars] "{\"rows\":[\"Boston Bruins 1990 44 24 0.55 299 264 35\",\"Boston Bruins 1991 36 32 0.45 270 275 -5\",\"Boston Bruins 1992 51 26 0.607 332 268 64\",\"Boston Bruins 1993 42 29 0.5 289 252 37\",\"Boston Bruins 1994 27 18 0.562 150 127 23\",\"Boston Bruins 1995 40 31 0.488 282 269 13\",\"Boston Bruins 1996 26 47 0.317 234 300 -66\",\"Boston Bruins 1997 39 30 0.476 221 194 27\",\"Boston Bruins 1998 39 30 0.476 214 181 33\",\"Boston Bruins 1999 24 33 6 0.293 210 248 -38\",\"Boston Bruins 2000 36 30 8 …ruins 2009 39 30 13 0.476 206 200 6\",\"Boston Bruins 2010 46 25 11 0.561 246 195 51\",\"Boston Bruins 2011 49 29 4 0.598 269 202 67\"],\"pages\":[]}"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I searched for "Bruins" on the page, and the Boston Bruins' 2011 row reads: 49 wins, 29 losses, 4 overtime losses, 0.598 win percentage, 269 Goals For, 202 Goals Against and a +67 goal differential.
+
+ANSWER: 49 wins, 269 GF

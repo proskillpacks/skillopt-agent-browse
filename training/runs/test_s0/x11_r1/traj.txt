@@ -1,0 +1,31 @@
+TASK x11: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books have a five-star rating and cost less than £15.00? Also report the title of the most expensive book in the catalogue.
+EXPECT: ['\\b23\\b', 'the\\ perfect\\ play\\ \\(play\\ by']
+RESULT: {"id": "x11_r1", "correct": true, "score": 0.969, "wtok": 20385, "turns": 3, "cost": 0.053, "secs": 25, "infra": false, "answer": "23 five-star books under \u00a315.00; most expensive book: The Perfect Play (Play by Play #1) (\u00a359.99)"}
+
+$ cd /tmp; : > books.txt; for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title,a.querySelector('.star-rating').className.split(' ')[1],a.querySelector('.price_color').textContent]))" >> books.txt; echo >> books.txt; done; wc -l books.txt; head -c 300 books.txt
+-> [379 chars] 100 books.txt
+"[[\"A Light in the Attic\",\"Three\",\"£51.77\"],[\"Tipping the Velvet\",\"One\",\"£53.74\"],[\"Soumission\",\"One\",\"£50.10\"],[\"Sharp Objects\",\"Four\",\"£47.82\"],[\"Sapiens: A Brief History of Humankind\",\"Five\",\"£54.23\"],[\"The Requiem Red\",\"One\",\"£22.65\"],[\"The Dirty Little
+Shell cwd was reset to /home/user/skill-research/runs/test_s0/x11_r1
+$ cd /tmp; python3 -c "
+import json
+b=[]
+for l in open('books.txt'):
+  l=l.strip()
+  if l: b+=json.loads(json.loads(l))
+print(len(b))
+p=lambda x:float(x[2].replace('£',''))
+f=[x for x in b if x[1]=='Five' and p(x)<15]
+print(len(f),f)
+m=max(p(x) for x in b); print([x for x in b if p(x)==m])
+"; agent-browser close
+-> [1636 chars] 1000
+23 [['Princess Jellyfish 2-in-1 Omnibus, Vol. 01 (Princess Jellyfish 2-in-1 Omnibus #1)', 'Five', '£13.61'], ['Princess Between Worlds (Wide-Awake Princess #5)', 'Five', '£13.34'], ['The Third Wave: An Entrepreneur’s Vision of the Future', 'Five', '£12.61'], ['Agnostic: A Spirited Manifesto', 'Five', '£12.51'], ["Walt Disney's Alice in Wonderland", 'Five', '£12.96'], ['Superman Vol. 1: Before Truth (Superman by Gene Luen Yang #1)', 'Five', '£11.89'], ['Old School (Diary of a Wimpy Kid #10)' …]]
+[['The Perfect Play (Play by Play #1)', 'Three', '£59.99']]
+✓ Browser closed
+Shell cwd was reset to /home/user/skill-research/runs/test_s0/x11_r1
+SAY: I opened all 50 catalogue pages in the browser with `agent-browser` and collected the title, star rating and price for all 1,000 books.
+
+- **23 books** have a five-star rating and cost less than £15.00. They range from "An Abundance of Katherines" at £10.00 to "Hyperbole and a Half" and "A Gentleman's Position" at £14.75 each.
+- **The most expensive book** is "The Perfect Play (Play by Play #1)" at £59.99. No other book has that price.
+
+ANSWER: 23 five-star books under £15.00; most expensive boo

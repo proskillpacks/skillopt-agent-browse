@@ -1,0 +1,119 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09", "correct": true, "score": 0.951, "wtok": 65265, "turns": 10, "cost": 0.056, "secs": 26, "infra": false, "answer": "Quote ref NOR-2087, total \u20ac1470.00"}
+
+$ agent-browser open http://localhost:8791/shop.html && agent-browser snapshot -i
+-> [445 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+$ agent-browser click @e5 && agent-browser snapshot -i
+-> [399 chars] ✓ Done
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+SAY: Let me try working with the form directly, without accepting cookies.
+$ agent-browser click @e2 && agent-browser snapshot -i
+-> [226 chars] Exit code 1
+✗ Element '@e2' is covered by <div#consent> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).
+$ agent-browser eval "document.getElementById('consent').outerHTML"
+-> [225 chars] "<div id=\"consent\"><div class=\"box\"><h2>We value your privacy</h2><p>We use cookies to improve your experience.</p>\n<button id=\"c-manage\">Manage preferences</button> <button id=\"c-ok\">Accept all</button></div></div>"
+SAY: The "Manage preferences" button does nothing, so "Accept all" is the only way to dismiss the banner. This is a local test site, so I'll accept.
+$ agent-browser click @e6 && agent-browser click @e2 && agent-browser snapshot -i
+-> [284 chars] ✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+$ agent-browser snapshot
+-> [850 chars] - heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Choose region…"
+- generic
+  - generic [ref=e10] clickable [cursor:pointer, onclick]
+    - StaticText "Benelux"
+  - generic [ref=e11] clickable [cursor:pointer, onclick]
+    - StaticText "Nordics"
+  - generic [ref=e12] clickable [cursor:pointer, onclick]
+    - StaticText "Iberia"
+  - generic [ref=e13] clickable [cursor:pointer, onclick]
+    - Sta … - StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+$ agent-browser click @e11 && agent-browser fill @e9 7 && agent-browser check @e8 && agent-browser snapshot -i
+-> [274 chars] ✓ Done
+✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Nordics" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 7
+- radio "Basic" [checked=false, ref=e7]
+- radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [ref=e3]
+$ agent-browser click @e3 && agent-browser wait 1000 && agent-browser snapshot
+-> [444 chars] ✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Nordics"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 7
+      - StaticText "7"
+- paragraph
+  - radio "Basic" [checked=false, ref=e7]
+  - radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [ref=e3]
+- StaticText "Calculating…"
+$ agent-browser wait 3000 && agent-browser snapshot
+-> [521 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Nordics"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 7
+      - StaticText "7"
+- paragraph
+  - radio "Basic" [checked=false, ref=e7]
+  - radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [ref=e3]
+- generic
+  - paragraph
+    - StaticText "Quote ref: NOR-2087"
+  - paragraph
+    - StaticText "Total: €1470.00"
+SAY: I requested the quote for region Nordics, quantity 7, plan Pro, and the site returned:
+
+- **Quote reference:** NOR-2087
+- **Total price:** €1470.00
+
+A cookie banner was blocking the form, and its "Manage preferences" button did nothing. The only way to close it was "Accept all", so I clicked that.
+
+ANSWER: Quote ref NOR-2087, total €1470.00

@@ -1,0 +1,12 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r2", "correct": true, "score": 0.981, "wtok": 12589, "turns": 2, "cost": 0.037, "secs": 36, "infra": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "#column-a"; agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns header')].map(h=>h.textContent))"
+-> [112 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+"[\"B\",\"A\"]"
+SAY: I dragged box A onto box B in the browser. Reading the page afterwards, the boxes had swapped: B is now on the left and A on the right. The page load timed out at first, but the boxes showed up and the drag went through.
+
+ANSWER: B, A

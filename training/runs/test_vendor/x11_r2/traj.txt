@@ -1,0 +1,59 @@
+TASK x11: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books have a five-star rating and cost less than £15.00? Also report the title of the most expensive book in the catalogue.
+EXPECT: ['\\b23\\b', 'the\\ perfect\\ play\\ \\(play\\ by']
+RESULT: {"id": "x11_r2", "correct": true, "score": 0.877, "wtok": 82000, "turns": 4, "cost": 0.182, "secs": 34, "infra": false, "answer": "23 five-star books cost less than \u00a315.00; the most expensive book is \"The Perfect Play (Play by Play #1)\" (\u00a359.99)"}
+
+$ cd /tmp; agent-browser open https://books.toscrape.com/ >/dev/null; for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null; cat <<'EOF' | agent-browser eval --stdin >> /tmp/books.txt
+JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title, a.querySelector('.star-rating').className.split(' ')[1], a.querySelector('.price_color').innerText]))
+EOF
+done; wc -l /tmp/books.txt
+-> [93 chars] 100 /tmp/books.txt
+Shell cwd was reset to /home/user/skill-research/runs/test_vendor/x11_r2
+$ head -c 300 /tmp/books.txt; echo; python3 - <<'EOF'
+import json
+rows=[]
+for l in open('/tmp/books.txt'):
+    l=l.strip()
+    if not l: continue
+    v=json.loads(l)
+    if isinstance(v,str): v=json.loads(v)
+    rows+=v
+print(len(rows))
+p=lambda s: float(s.replace('£','').replace('Â',''))
+print(sum(1 for t,r,pr in rows if r=='Five' and p(pr)<15))
+m=max(rows,key=lambda x:p(x[2])); print(m)
+print(sorted(p(x[2]) for x in rows)[-3:])
+EOF
+-> [484 chars] Exit code 1
+"[[\"A Light in the Attic\",\"£51.77\"],[\"Tipping the Velvet\",\"£53.74\"],[\"Soumission\",\"£50.10\"],[\"Sharp Objects\",\"£47.82\"],[\"Sapiens: A Brief History of Humankind\",\"£54.23\"],[\"The Requiem Red\",\"£22.65\"],[\"The Dirty Little Secrets of Getting Your Dream Job\",\"£33.34\"],[\
+2000
+Traceback (most recent call last):
+  File "<stdin>", line 11, in <module>
+  File "<stdin>", line 11, in <genexpr>
+ValueError: not enough values to unpack (expected 3, got 2)
+SAY: The output file already had data from an earlier run in it, so I'll start over with a fresh file.
+$ F=/tmp/books_$$.txt; for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null; cat <<'EOF' | agent-browser eval --stdin >> $F
+JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title, a.querySelector('.star-rating').className.split(' ')[1], a.querySelector('.price_color').innerText]))
+EOF
+done; F=$F python3 - <<'EOF'
+import json,os
+rows=[]
+for l in open(os.environ['F']):
+    l=l.strip()
+    if not l: continue
+    v=json.loads(l)
+    if isinstance(v,str): v=json.loads(v)
+    rows+=v
+print(len(rows), len(set(r[0] for r in rows)))
+p=lambda s: float(s.replace('£','').replace('Â',''))
+print(sum(1 for t,r,pr in rows if r=='Five' and p(pr)<15))
+print(sorted(rows,key=lambda x:p(x[2]))[-3:])
+EOF
+-> [184 chars] 1000 999
+23
+[['Civilization and Its Discontents', 'Two', '£59.95'], ['Last One Home (New Beginnings #1)', 'Three', '£59.98'], ['The Perfect Play (Play by Play #1)', 'Three', '£59.99']]
+SAY: I opened all 50 catalogue pages in the browser and read all 1,000 books.
+
+- **Five-star books under £15.00:** 23.
+- **Most expensive book:** *The Perfect Play (Play by Play #1)* at £59.99. The next two are *Last One Home (New Beginnings #1)* at £59.98 and *Civilization and Its Discontents* at £59.95.
+
+My first attempt added its results to a file in `/tmp` that already held data from an earlier run, so its count was wrong. I threw it out and re-read all 50 pages into a new file. Only 999 of the 1

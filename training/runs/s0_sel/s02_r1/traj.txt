@@ -1,0 +1,26 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r1", "correct": true, "score": 0.964, "wtok": 23731, "turns": 4, "cost": 0.043, "secs": 14, "infra": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login && agent-browser snapshot -i
+-> [301 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+$ agent-browser fill @e5 "user" && agent-browser fill @e6 "pass" && agent-browser click @e2 && agent-browser wait --text "Logout" && agent-browser eval "location.href + ' | ' + document.querySelector('.quote').innerText.slice(0,80) + ' | ' + [...document.querySelector('.quote').querySelectorAll('a')].map(a=>a.textContent+'='+a.href).join(' ; ')"
+-> [515 chars] ✓ Done
+✓ Done
+✓ Done
+Logout
+"https://quotes.toscrape.com/ | “The world as we have created it is a process of our thinking. It cannot be chan | (about)=https://quotes.toscrape.com/author/Albert-Einstein ; (Goodreads page)=http://goodreads.com/author/show/9810.Albert_Einstein ; change=https://quotes.toscrape.com/tag/change/page/1/ ; deep-thoughts=https://quotes.toscrape.com/tag/deep-thoughts/page/1/ ; thinking=https://quotes.toscrape.com/tag/thinking/page/1/ ; world=https://quotes.toscrape.com/tag/world/page/1/"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I logged in with a placeholder username and password, and the page showed "Logout" afterwards, so the login worked. The first quote on the first page is Albert Einstein's "The world as we have created it is a process of our thinking…". Its "(Goodreads page)" link goes to `http://goodreads.com/author/show/9810.Albert_Einstein`.
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

@@ -1,0 +1,48 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r1", "correct": true, "score": 0.888, "wtok": 74789, "turns": 10, "cost": 0.103, "secs": 59, "infra": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser open https://the-internet.herokuapp.com/tables && agent-browser click "#table2 thead .dues" && agent-browser click "#table2 thead .dues" && agent-browser eval "Array.from(document.querySelectorAll('#table2 tbody tr')).map(r=>r.innerText).join('\n')"
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser snapshot -i | head -30
+-> [67 chars] https://the-internet.herokuapp.com/tables
+(no interactive elements)
+$ agent-browser eval "document.querySelector('#table2 thead').outerHTML"; agent-browser eval "Array.from(document.querySelectorAll('#table2 tbody tr')).map(r=>r.innerText).join('\n')"
+-> [110 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'outerHTML')
+    at <anonymous>:1:40
+""
+$ agent-browser eval "document.readyState + ' ' + document.title + ' ' + document.body.innerText.slice(0,300)"
+-> [330 chars] "complete The Internet Data Tables\n\nOften times when you see a table it contains data which is sortable -- sometimes with actions that can be taken within each row (e.g. edit, delete). And it can be challenging to automate interaction with sets of data in a table depending on how it is constructed.\n\nExample 1\n\nNo Class or"
+$ agent-browser eval "Array.from(document.querySelectorAll('table')).map(t=>t.id+'|'+t.className+'|'+t.querySelector('thead')?.innerHTML.replace(/\s+/g,' ')).join('\n')"
+-> [736 chars] "table1|tablesorter| <tr> <th class=\"header\"><span>Last Name</span></th> <th class=\"header\"><span>First Name</span></th> <th class=\"header\"><span>Email</span></th> <th class=\"header\"><span>Due</span></th> <th class=\"header\"><span>Web Site</span></th> <th class=\"header\"><span>Action</span></th> </tr> \ntable2|tablesorter| <tr> <th class=\"header\"><span class=\"last-name\">Last Name</span></th> <th class=\"header\"><span class=\"first-name\">First Name</span></th> <th class=\"header\" …</span></th> <th class=\"header\"><span class=\"web-site\">Web Site</span></th> <th class=\"header\"><span class=\"action\">Action</span></th> </tr> "
+SAY: Table 2 exists now (it was probably still loading earlier), so I'm trying the clicks again.
+$ agent-browser click "#table2 thead .dues" && agent-browser click "#table2 thead .dues" && agent-browser eval "document.querySelector('#table2 thead').innerHTML.replace(/\s+/g,' ') + '\n' + Array.from(document.querySelectorAll('#table2 tbody tr')).map(r=>r.innerText).join('\n')"
+-> [736 chars] ✓ Done
+✓ Done
+" <tr> <th class=\"header\"><span class=\"last-name\">Last Name</span></th> <th class=\"header\"><span class=\"first-name\">First Name</span></th> <th class=\"header\"><span class=\"email\">Email</span></th> <th class=\"header headerSortDown\"><span class=\"dues\">Due</span></th> <th class=\"header\"><span class=\"web-site\">Web Site</span></th> <th class=\"header\"><span class=\"action\">Action</span></th> </tr> \nSmith\tJohn\tjsmith@example.com\t$50.00\thttp://www.jsmith.com\tedit  …ete\nBach\tFrank\tfbach@yahoo.com\t$51.00\thttp://www.frank.com\tedit delete\nDoe\tJason\tjdoe@hotmail.com\t$100.00\thttp://www.jdoe.com\tedit delete"
+SAY: The rows show Due ascending, so one of my clicks may not have registered. I'll reload the page and check the order after each click.
+$ agent-browser open https://the-internet.herokuapp.com/tables >/dev/null; agent-browser wait "#table2 .dues" >/dev/null
+R="Array.from(document.querySelectorAll('#table2 tbody tr')).map(r=>r.cells[2].innerText+' '+r.cells[3].innerText).join(' | ')"
+agent-browser eval "$R"; agent-browser click "#table2 thead .dues"; agent-browser eval "$R"; agent-browser click "#table2 thead .dues"; agent-browser eval "$R"
+-> [340 chars] "jsmith@example.com $50.00 | fbach@yahoo.com $51.00 | jdoe@hotmail.com $100.00 | tconway@earthlink.net $50.00"
+✓ Done
+"jsmith@example.com $50.00 | fbach@yahoo.com $51.00 | jdoe@hotmail.com $100.00 | tconway@earthlink.net $50.00"
+✓ Done
+"jsmith@example.com $50.00 | tconway@earthlink.net $50.00 | fbach@yahoo.com $51.00 | jdoe@hotmail.com $100.00"
+SAY: The first click after loading doesn't seem to sort anything. I'll click once more to see whether the table switches to descending.
+$ R="Array.from(document.querySelectorAll('#table2 tbody tr')).map(r=>r.cells[2].innerText+' '+r.cells[3].innerText).join(' | ')"
+agent-browser click "#table2 thead .dues"; agent-browser eval "$R"
+-> [115 chars] ✓ Done
+"jdoe@hotmail.com $100.00 | fbach@yahoo.com $51.00 | jsmith@example.com $50.00 | tconway@earthlink.net $50.00"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: When Example 2 is sorted by Due from highest to lowest, the first row is Jason Doe ($100.00), with the email **jdoe@hotmail.com**.
+
+It took three clicks on the Due header, not two. On a freshly loaded page, the first click did nothing (my guess is the sorting script wasn't ready yet). The second click sorted Due from low to high ($50, $50, $51, $100). The third click sorted it from high to low:
+
+| Email | Due |
+|---|---|
+| jdoe@hotmail.com | $100.00 |
+| fbach@yahoo.com | $51.00 |
+| jsmith@example.

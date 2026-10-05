@@ -1,0 +1,22 @@
+TASK x04: On https://quotes.toscrape.com/ click the tag 'life' and count how many quotes carry that tag across all result pages. Also report the author of the last quote on the last page.
+EXPECT: ['\\b13\\b']
+RESULT: {"id": "x04_r1", "correct": true, "score": 0.914, "wtok": 57092, "turns": 3, "cost": 0.151, "secs": 11, "infra": false, "answer": "13 quotes tagged 'life'; last quote on the last page is by Khaled Hosseini"}
+
+$ agent-browser open https://quotes.toscrape.com/ && agent-browser find text "life" click --exact && agent-browser wait --url "**/tag/life/**" ; agent-browser get url; agent-browser get count ".quote"
+-> [149 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✓ Done
+https://quotes.toscrape.com/tag/life/page/1/
+https://quotes.toscrape.com/tag/life/page/1/
+10
+$ for i in 1 2 3 4 5; do agent-browser get count ".quote"; agent-browser eval "Array.from(document.querySelectorAll('.quote')).map(q=>q.querySelector('.author').innerText+' | '+[...q.querySelectorAll('.tag')].map(t=>t.innerText).join(',')).join('\n')"; agent-browser get count "li.next a" | grep -q '^0' && break; agent-browser click "li.next a"; agent-browser wait --load load; agent-browser get url; done
+-> [604 chars] 10
+"Albert Einstein | inspirational,life,live,miracle,miracles\nAndré Gide | life,love\nMarilyn Monroe | friends,heartbreak,inspirational,life,love,sisters\nDouglas Adams | life,navigation\nMark Twain | books,contentment,friends,friendship,life\nAllen Saunders | fate,life,misattributed-john-lennon,planning,plans\nDr. Seuss | comedy,life,yourself\nAlbert Einstein | life,simile\nGeorge Bernard Shaw | inspirational,life,yourself\nRalph Waldo Emerson | life,regrets"
+✓ Done
+✓ Done
+https://quotes.toscrape.com/tag/life/page/2/
+3
+"Mark Twain | death,life\nJimi Hendrix | death,life\nKhaled Hosseini | life"
+SAY: I clicked the 'life' tag on the home page in the browser and went through every page of results. There are 2 pages: page 1 has 10 quotes and page 2 has 3. Each of the 13 quotes carries the `life` tag. Page 2 has no "Next" link, so it is the last page. Its last quote is by Khaled Hosseini.
+
+ANSWER: 13 quotes tagged 'life'; last quote on the last page is by Khaled Hosseini

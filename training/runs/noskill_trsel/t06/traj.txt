@@ -1,0 +1,36 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06", "correct": true, "score": 0.981, "wtok": 25971, "turns": 4, "cost": 0.034, "secs": 13, "infra": false, "answer": "5 five-star books; 32 books in total in the Mystery category"}
+
+$ agent-browser --help | head -50; agent-browser open https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+-> [2394 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …
+  back                       Go back
+✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+$ agent-browser eval "JSON.stringify({total: document.querySelector('.form-horizontal strong').textContent, five: document.querySelectorAll('.star-rating.Five').length, n: document.querySelectorAll('article.product_pod').length, page: document.querySelector('.pager .current')?.textContent.trim(), next: document.querySelector('.pager .next a')?.href})"
+-> [152 chars] "{\"total\":\"32\",\"five\":3,\"n\":20,\"page\":\"Page 1 of 2\",\"next\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html\"}"
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html; agent-browser eval "JSON.stringify({five: document.querySelectorAll('article.product_pod .star-rating.Five').length, n: document.querySelectorAll('article.product_pod').length, page: document.querySelector('.pager .current')?.textContent.trim(), next: document.querySelector('.pager .next a')?.href||null})"
+-> [176 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+"{\"five\":2,\"n\":12,\"page\":\"Page 2 of 2\",\"next\":null}"
+SAY: The Mystery category has 32 books in total, and 5 of them have a five-star rating. I checked both pages in the browser with `agent-browser`:
+
+- **Page 1 of 2:** 20 books, 3 with five stars.
+- **Page 2 of 2:** 12 books, 2 with five stars.
+
+The 32 books I counted on the two pages match the "32 results" total the category page shows.
+
+ANSWER: 5 five-star books; 32 books in total in the Mystery category

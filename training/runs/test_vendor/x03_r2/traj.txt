@@ -1,0 +1,38 @@
+TASK x03: https://quotes.toscrape.com/scroll loads more quotes as you scroll. Scroll until no more load. How many quotes are there in total, and who is the author of the very last one?
+EXPECT: ['\\b100\\b', 'george r\\.? ?r\\.? martin']
+RESULT: {"id": "x03_r2", "correct": true, "score": 0.887, "wtok": 75083, "turns": 4, "cost": 0.153, "secs": 29, "infra": false, "answer": "100 quotes; the last one is by George R.R. Martin"}
+
+$ agent-browser open https://quotes.toscrape.com/scroll && agent-browser wait --text "by" ; agent-browser get count ".quote"
+-> [60 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/scroll
+by
+0
+$ for i in $(seq 1 15); do agent-browser scroll down 5000 >/dev/null; agent-browser wait 1200 >/dev/null; echo "$i: $(agent-browser get count '.quote')"; done
+-> [102 chars] 1: 20
+2: 30
+3: 40
+4: 50
+5: 60
+6: 70
+7: 80
+8: 90
+9: 100
+10: 100
+11: 100
+12: 100
+13: 100
+14: 100
+15: 100
+$ cat <<'EOF' | agent-browser eval --stdin
+const q=[...document.querySelectorAll('.quote')]; const l=q[q.length-1]; ({n:q.length, text:l.querySelector('.text').innerText, author:l.querySelector('.author').innerText, loading: document.querySelector('.loading')?.style.display})
+EOF
+-> [143 chars] {
+  "author": "George R.R. Martin",
+  "n": 100,
+  "text": "“... a mind needs books as a sword needs a whetstone, if it is to keep its edge.”"
+}
+SAY: I kept scrolling the page in the browser. Each scroll added 10 quotes until the count reached 100, and six more scrolls after that added nothing. That makes 100 quotes in total.
+
+The last quote is "... a mind needs books as a sword needs a whetstone, if it is to keep its edge." by **George R.R. Martin**.
+
+ANSWER: 100 quotes; the last one is by George R.R. Martin

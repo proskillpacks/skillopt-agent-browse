@@ -1,0 +1,21 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r1", "correct": true, "score": 0.973, "wtok": 17947, "turns": 3, "cost": 0.04, "secs": 13, "infra": false, "answer": "5 five-star books; 32 books total in Mystery"}
+
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/mystery_3/index.html && agent-browser eval "JSON.stringify({total:document.querySelector('.form-horizontal strong')?.textContent, n:document.querySelectorAll('article.product_pod').length, five:document.querySelectorAll('article .star-rating.Five').length, next:document.querySelector('li.next a')?.href})"
+-> [240 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+"{\"total\":\"32\",\"n\":20,\"five\":3,\"next\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html\"}"
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html && agent-browser eval "JSON.stringify({n:document.querySelectorAll('article.product_pod').length, five:document.querySelectorAll('article .star-rating.Five').length, next:document.querySelector('li.next a')?.href||null})"; agent-browser close
+-> [168 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+"{\"n\":12,\"five\":2,\"next\":null}"
+✓ Browser closed
+SAY: I checked both pages of the Mystery category in the browser.
+
+- **Page 1:** 20 books, 3 rated five stars.
+- **Page 2:** 12 books, 2 rated five stars. There is no page 3.
+
+The category has 32 books in total, which matches the count shown on the page. Five of them have a five-star rating.
+
+ANSWER: 5 five-star books; 32 books total in Mystery

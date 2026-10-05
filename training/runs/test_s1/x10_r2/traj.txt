@@ -1,0 +1,29 @@
+TASK x10: On https://the-internet.herokuapp.com/shadowdom there are two custom paragraph components. Report the text content of the second one (it renders a list).
+EXPECT: ["let's have some different text!", 'in a list!']
+RESULT: {"id": "x10_r2", "correct": true, "score": 0.939, "wtok": 40491, "turns": 6, "cost": 0.06, "secs": 155, "infra": false, "answer": "Let's have some different text! In a list!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom; agent-browser wait "my-paragraph"; agent-browser eval "JSON.stringify([...document.querySelectorAll('my-paragraph')].map(e=>({light:e.textContent.trim(), inner:e.innerText, shadow:e.shadowRoot&&e.shadowRoot.textContent.trim()})))"
+-> [74 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+"[]"
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom; agent-browser wait "my-paragraph"; agent-browser eval "JSON.stringify([...document.querySelectorAll('my-paragraph')].map(e=>({light:e.textContent.trim(), inner:e.innerText})))"
+-> [74 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+"[]"
+$ agent-browser eval "location.href + ' | ' + document.readyState + ' | ' + document.body?.innerText.slice(0,300)"
+-> [60 chars] "https://the-internet.herokuapp.com/shadowdom | complete | "
+SAY: Page is blank; retry with a reload.
+$ agent-browser reload; agent-browser wait "my-paragraph"; agent-browser eval "JSON.stringify([...document.querySelectorAll('my-paragraph')].map(e=>({light:e.textContent.trim(), inner:e.innerText})))"
+-> [273 chars] https://the-internet.herokuapp.com/shadowdom
+✓ Done
+"[{\"light\":\"Let's have some different text!\",\"inner\":\"Let's have some different text!\"},{\"light\":\"Let's have some different text!\\n    In a list!\",\"inner\":\"Let's have some different text!\\nIn a list!\"}]"
+$ agent-browser eval "document.querySelectorAll('my-paragraph')[1].innerHTML"; agent-browser close
+-> [126 chars] "\n  <ul slot=\"my-text\">\n    <li>Let's have some different text!</li>\n    <li>In a list!</li>\n  </ul>\n"
+✓ Browser closed
+SAY: The second `<my-paragraph>` component renders a list with two items:
+1. "Let's have some different text!"
+2. "In a list!"
+
+The first two page loads came back blank, and a reload fixed it.
+
+ANSWER: Let's have some different text! In a list!

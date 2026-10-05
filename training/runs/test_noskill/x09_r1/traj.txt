@@ -1,0 +1,36 @@
+TASK x09: Open https://the-internet.herokuapp.com/basic_auth . It is protected by HTTP basic authentication: username admin, password admin. Report the paragraph text shown after authenticating.
+EXPECT: ['congratulations! you must have the proper credentials']
+RESULT: {"id": "x09_r1", "correct": true, "score": 0.962, "wtok": 25268, "turns": 4, "cost": 0.048, "secs": 48, "infra": false, "answer": "Congratulations! You must have the proper credentials."}
+
+$ agent-browser --help 2>&1 | head -80
+-> [3506 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …         Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+  storage <local|session>    Manage web storage
+$ agent-browser set credentials admin admin && agent-browser open https://the-internet.herokuapp.com/basic_auth && agent-browser get text body
+-> [101 chars] Exit code 1
+✓ Done
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser get text body
+-> [143 chars] https://the-internet.herokuapp.com/basic_auth
+Basic Auth
+
+Congratulations! You must have the proper credentials.
+
+Powered by Elemental Selenium
+SAY: I set the login (admin / admin) with `agent-browser set credentials` and opened the page in the browser. The `open` command reported a timeout, but the page had loaded anyway. A second check confirmed the browser was at https://the-internet.herokuapp.com/basic_auth and showed the "Basic Auth" page.
+
+The paragraph text after logging in is: "Congratulations! You must have the proper credentials."
+
+ANSWER: Congratulations! You must have the proper credentials.

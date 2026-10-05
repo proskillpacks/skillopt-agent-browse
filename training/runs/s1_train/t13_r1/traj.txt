@@ -1,0 +1,20 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13_r1", "correct": true, "score": 0.977, "wtok": 15227, "turns": 2, "cost": 0.052, "secs": 12, "infra": false, "answer": "Albert Einstein, with 10 quotes"}
+
+$ for i in $(seq 1 12); do agent-browser open "https://quotes.toscrape.com/page/$i/" >/dev/null 2>&1; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote .author')].map(e=>e.textContent))"; done
+-> [1872 chars] "[\"Albert Einstein\",\"J.K. Rowling\",\"Albert Einstein\",\"Jane Austen\",\"Marilyn Monroe\",\"Albert Einstein\",\"André Gide\",\"Thomas A. Edison\",\"Eleanor Roosevelt\",\"Steve Martin\"]"
+"[\"Marilyn Monroe\",\"J.K. Rowling\",\"Albert Einstein\",\"Bob Marley\",\"Dr. Seuss\",\"Douglas Adams\",\"Elie Wiesel\",\"Friedrich Nietzsche\",\"Mark Twain\",\"Allen Saunders\"]"
+"[\"Pablo Neruda\",\"Ralph Waldo Emerson\",\"Mother Teresa\",\"Garrison Keillor\",\"Jim Henson\",\"Dr. Seuss\",\"Albert Einstein …M. Barrie\",\"E.E. Cummings\",\"Khaled Hosseini\",\"Harper Lee\",\"Madeleine L'Engle\",\"Mark Twain\",\"Dr. Seuss\",\"George R.R. Martin\"]"
+"[]"
+"[]"
+SAY: I opened pages 1 through 12 in the browser and read the author of every quote. Pages 1–10 have 10 quotes each, and pages 11 and 12 are empty, so the site has 100 quotes in total.
+
+I counted the authors by hand from the scraped lists:
+- **Albert Einstein:** 10 quotes, spread across pages 1, 2, 3, 4, 5, 6 and 9.
+- **J.K. Rowling:** 9 quotes, so second place.
+- **Marilyn Monroe:** 7 quotes.
+
+Albert Einstein has the most quotes, with 10.
+
+ANSWER: Albert Einstein, with 10 quotes

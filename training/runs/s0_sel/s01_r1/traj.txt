@@ -1,0 +1,41 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": true, "score": 0.953, "wtok": 31271, "turns": 5, "cost": 0.053, "secs": 42, "infra": false, "answer": "name: user3, href: /users/3 (https://the-internet.herokuapp.com/users/3)"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers && agent-browser hover ".figure:nth-of-type(3) img" ; agent-browser eval "Array.from(document.querySelectorAll('.figure')).map(f=>[getComputedStyle(f.querySelector('.figcaption')).display, f.querySelector('h5').textContent, f.querySelector('a').getAttribute('href')])"
+-> [85 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+[]
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser get url; agent-browser snapshot -i
+-> [210 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+https://the-internet.herokuapp.com/hovers
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+$ agent-browser hover ".figure:nth-of-type(3) img"; agent-browser eval "Array.from(document.querySelectorAll('.figure')).map(f=>[getComputedStyle(f.querySelector('.figcaption')).display, f.querySelector('h5').textContent, f.querySelector('a').getAttribute('href')])"
+-> [175 chars] ✓ Done
+[
+  [
+    "none",
+    "name: user1",
+    "/users/1"
+  ],
+  [
+    "none",
+    "name: user2",
+    "/users/2"
+  ],
+  [
+    "block",
+    "name: user3",
+    "/users/3"
+  ]
+]
+$ agent-browser eval "document.querySelectorAll('.figure')[2].querySelector('a').href"; agent-browser close
+-> [61 chars] "https://the-internet.herokuapp.com/users/3"
+✓ Browser closed
+SAY: When I hovered over the third avatar, its caption appeared. The caption says **"name: user3"** and its "View profile" link has the href **`/users/3`**. In full, that link is `https://the-internet.herokuapp.com/users/3`.
+
+I checked this by reading the page after hovering. Only the third caption was visible; the other two were still hidden. The first attempt to open the page timed out, and it loaded normally on the second try.
+
+ANSWER: name: user3, href: /users/3 (https://the-internet.herokuapp.co

@@ -1,0 +1,15 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r1", "correct": true, "score": 0.971, "wtok": 19369, "turns": 3, "cost": 0.041, "secs": 12, "infra": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "#column-a"; agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns .column header')].map(h=>h.textContent))"
+-> [95 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+✓ Done
+✓ Done
+"[\"B\",\"A\"]"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I dragged box A onto box B in the browser and the two boxes swapped places. Reading the headers from left to right after the drop gives B, then A.
+
+ANSWER: B, A

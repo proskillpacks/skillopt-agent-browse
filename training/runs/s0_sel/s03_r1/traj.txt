@@ -1,0 +1,33 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": true, "score": 0.961, "wtok": 25847, "turns": 5, "cost": 0.052, "secs": 17, "infra": false, "answer": "5 one-star books; 26 books total"}
+
+$ agent-browser open https://books.toscrape.com/ >/dev/null; agent-browser eval "[...document.querySelectorAll('.side_categories a')].filter(a=>a.textContent.trim()==='Historical Fiction').map(a=>a.href)"
+-> [91 chars] [
+  "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"
+]
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html >/dev/null; agent-browser eval "({total:document.querySelector('.form-horizontal strong')?.textContent, n:document.querySelectorAll('article.product_pod').length, one:document.querySelectorAll('article.product_pod .star-rating.One').length, next:document.querySelector('li.next a')?.href, cur:document.querySelector('li.current')?.textContent.trim()})"
+-> [164 chars] {
+  "cur": "Page 1 of 2",
+  "n": 20,
+  "next": "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html",
+  "one": 5,
+  "total": "26"
+}
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html >/dev/null; agent-browser eval "({n:document.querySelectorAll('article.product_pod').length, one:document.querySelectorAll('article.product_pod .star-rating.One').length, next:document.querySelector('li.next a')?.href, cur:document.querySelector('li.current')?.textContent.trim()})"
+-> [48 chars] {
+  "cur": "Page 2 of 2",
+  "n": 6,
+  "one": 0
+}
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: The Historical Fiction category has 26 books, and 5 of them have a one-star rating.
+
+I checked both pages of the category in the browser:
+- **Page 1 of 2:** 20 books, 5 rated one star.
+- **Page 2 of 2:** 6 books, none rated one star.
+
+The page's own count of 26 matches the 20 + 6 books listed.
+
+ANSWER: 5 one-star books; 26 books total

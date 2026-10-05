@@ -1,0 +1,80 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r1", "correct": true, "score": 0.934, "wtok": 44071, "turns": 7, "cost": 0.06, "secs": 49, "infra": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu && agent-browser snapshot -i
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser snapshot -i; agent-browser get url
+-> [74 chars] (no interactive elements)
+https://the-internet.herokuapp.com/jqueryui/menu
+$ agent-browser wait 3000; agent-browser snapshot
+-> [1060 chars] ✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e2]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e4]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of elements is actually not in the html itself, but don …
+      - link "Enabled" [ref=e8]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e9]
+$ agent-browser hover @e8; agent-browser wait 1000; agent-browser snapshot -i
+-> [600 chars] ✓ Done
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+    - menuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+$ agent-browser hover @e12; agent-browser wait 1000; agent-browser snapshot -i; agent-browser eval "[...document.querySelectorAll('#ui-id-4 + ul li, a')].filter(e=>e.offsetParent).map(e=>e.innerText.trim())"
+-> [944 chars] ✓ Done
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+      - menuitem "PDF" [ …9]
+[
+  "",
+  "JQuery UI Menus",
+  "Disabled",
+  "Enabled",
+  "Downloads",
+  "PDF",
+  "CSV",
+  "Excel",
+  "Back to JQuery UI",
+  "Elemental Selenium"
+]
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I opened the page in the browser, hovered over **Enabled** and then **Downloads**. The Downloads submenu showed three items, in this order:
+
+1. PDF
+2. CSV
+3. Excel
+
+These are the items actually on screen after the submenu opened, not just entries in the page's HTML: I checked for elements being shown, and all three were.
+
+ANSWER: PDF, CSV, Excel

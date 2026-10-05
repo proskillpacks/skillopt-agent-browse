@@ -1,0 +1,67 @@
+TASK x09: Open https://the-internet.herokuapp.com/basic_auth . It is protected by HTTP basic authentication: username admin, password admin. Report the paragraph text shown after authenticating.
+EXPECT: ['congratulations! you must have the proper credentials']
+RESULT: {"id": "x09_r2", "correct": true, "score": 0.912, "wtok": 58729, "turns": 8, "cost": 0.083, "secs": 98, "infra": false, "answer": "Congratulations! You must have the proper credentials."}
+
+$ agent-browser --help 2>&1 | head -80
+-> [3506 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …         Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+  storage <local|session>    Manage web storage
+$ agent-browser set credentials admin admin && agent-browser open https://the-internet.herokuapp.com/basic_auth && agent-browser get text "#content p"
+-> [101 chars] Exit code 1
+✓ Done
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser get text body
+-> [165 chars] Exit code 1
+https://the-internet.herokuapp.com/basic_auth
+✗ Element not found: body. Verify the selector, role, or name is correct and the element exists in the DOM.
+SAY: Likely stuck on auth. Try headers approach.
+$ agent-browser set headers '{"Authorization":"Basic YWRtaW46YWRtaW4="}' && agent-browser open https://the-internet.herokuapp.com/basic_auth; agent-browser get text "#content p"
+-> [215 chars] Exit code 1
+✓ Done
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: #content p. Verify the selector, role, or name is correct and the element exists in the DOM.
+$ agent-browser open about:blank; agent-browser open https://admin:admin@the-internet.herokuapp.com/basic_auth; agent-browser get text body
+-> [219 chars] Exit code 1
+✓ 
+  about:blank
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: body. Verify the selector, role, or name is correct and the element exists in the DOM.
+$ agent-browser network requests 2>&1 | tail -10; agent-browser get url; agent-browser screenshot /tmp/s.png
+-> [1398 chars] [283490.2] GET https://admin:admin@the-internet.herokuapp.com/js/vendor/298279967.js (Script) 200
+[283490.3] GET https://admin:admin@the-internet.herokuapp.com/css/app.css (Stylesheet) 200
+[283490.4] GET https://admin:admin@the-internet.herokuapp.com/css/font-awesome.css (Stylesheet) 200
+[283490.5] GET https://admin:admin@the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js (Script)
+[283490.6] GET https://admin:admin@the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js (Script …15862892769688364&wxhr=true&t=1791189485458&f=298349752,318188263 (XHR)
+https://the-internet.herokuapp.com/basic_auth
+✓ Screenshot saved to /tmp/s.png
+SAY: The page loaded (assets returned 200); the load event is just slow. Reading the text now:
+$ agent-browser eval "document.querySelector('#content').innerText"; agent-browser snapshot 2>&1 | head -30
+-> [399 chars] "Basic Auth\n\nCongratulations! You must have the proper credentials."
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "Basic Auth" [level=3, ref=e2]
+  - paragraph
+    - StaticText "Congratulations! You must have the proper credentials."
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e3]
+SAY: I opened the page in the browser session with `agent-browser` and logged in as admin/admin. The accessibility snapshot shows the "Basic Auth" heading, followed by this paragraph:
+
+**"Congratulations! You must have the proper credentials."**
+
+The first two login attempts timed out: setting credentials with `set credentials`, then sending an Authorization header. The third attempt worked, with the username and password put directly in the address (`https://admin:admin@...`). The page's files loade

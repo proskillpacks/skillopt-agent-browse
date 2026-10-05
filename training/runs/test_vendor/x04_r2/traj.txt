@@ -1,0 +1,27 @@
+TASK x04: On https://quotes.toscrape.com/ click the tag 'life' and count how many quotes carry that tag across all result pages. Also report the author of the last quote on the last page.
+EXPECT: ['\\b13\\b']
+RESULT: {"id": "x04_r2", "correct": true, "score": 0.915, "wtok": 56990, "turns": 3, "cost": 0.15, "secs": 11, "infra": false, "answer": "13 quotes tagged 'life'; last quote on the last page is by Khaled Hosseini"}
+
+$ agent-browser open https://quotes.toscrape.com/ && agent-browser find text "life" click --exact && agent-browser get url
+-> [101 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✓ Done
+https://quotes.toscrape.com/tag/life/page/1/
+$ for i in 1 2 3 4 5; do
+cat <<'EOF' | agent-browser eval --stdin
+JSON.stringify({url:location.href,n:document.querySelectorAll('.quote').length,last:[...document.querySelectorAll('.quote .author')].pop()?.innerText,next:!!document.querySelector('li.next a')})
+EOF
+agent-browser find css "li.next a" click 2>/dev/null || agent-browser click "li.next a" 2>/dev/null || break
+agent-browser wait --load load >/dev/null
+done
+-> [236 chars] "{\"url\":\"https://quotes.toscrape.com/tag/life/page/1/\",\"n\":10,\"last\":\"Ralph Waldo Emerson\",\"next\":true}"
+✓ Done
+"{\"url\":\"https://quotes.toscrape.com/tag/life/page/2/\",\"n\":3,\"last\":\"Khaled Hosseini\",\"next\":false}"
+SAY: I clicked the 'life' tag in the browser, which opened https://quotes.toscrape.com/tag/life/page/1/, then followed the "Next" link until it ran out.
+
+- **Page 1:** 10 quotes
+- **Page 2:** 3 quotes. This is the last page, since it has no "Next" link.
+
+That makes **13 quotes** tagged 'life'. The last quote on the last page is by **Khaled Hosseini**.
+
+ANSWER: 13 quotes tagged 'life'; last quote on the last page is by Khaled Hosseini

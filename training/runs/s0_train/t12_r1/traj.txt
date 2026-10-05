@@ -1,0 +1,35 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r1", "correct": true, "score": 0.945, "wtok": 36818, "turns": 6, "cost": 0.055, "secs": 48, "infra": false, "answer": "Heading \"File Uploaded!\" \u2014 uploaded file shown: skillopt-note.txt"}
+
+$ echo "SkillOpt test note." > skillopt-note.txt && agent-browser open https://the-internet.herokuapp.com/upload && agent-browser snapshot -i
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser snapshot -i; agent-browser get url
+-> [67 chars] (no interactive elements)
+https://the-internet.herokuapp.com/upload
+$ agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "#file-upload"; agent-browser snapshot -i
+-> [257 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "File Uploader" [level=3, ref=e2]
+- button "Choose File" [ref=e3]: No file chosen
+- button "Upload" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+$ agent-browser upload "#file-upload" /home/user/skill-research/runs/s0_train/t12_r1/skillopt-note.txt && agent-browser click "#file-submit" && agent-browser wait --text "File Uploaded" && agent-browser get text h3 && agent-browser get text "#uploaded-files"
+-> [60 chars] ✓ Done
+✓ Done
+File Uploaded
+File Uploaded!
+skillopt-note.txt
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: The upload worked. I created `skillopt-note.txt` containing one line ("SkillOpt test note.") and opened the upload page with `agent-browser`. The first page load timed out, so I opened it again and waited for the form to appear. Then I attached the file and clicked Upload.
+
+- **Heading after upload:** "File Uploaded!"
+- **File name shown on the page:** `skillopt-note.txt`
+
+The browser session is now closed.
+
+ANSWER: Heading "File Uploaded!" — uploaded file shown: skillopt-note.txt

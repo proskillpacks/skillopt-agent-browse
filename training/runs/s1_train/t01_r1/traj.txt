@@ -1,0 +1,24 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r1", "correct": true, "score": 0.971, "wtok": 19617, "turns": 3, "cost": 0.044, "secs": 100, "infra": false, "answer": "Hello World!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2; agent-browser wait "#start button"; agent-browser click "#start button"; agent-browser wait "#finish h4"; agent-browser get text "#finish h4"; agent-browser close
+-> [258 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #finish h4. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+SAY: Load timed out; scripts may not have attached. Retry.
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2; agent-browser wait "#start button"; agent-browser click "#start button"; agent-browser wait --text "Hello" ; agent-browser get text "#finish"; agent-browser close
+-> [132 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+Hello
+Hello World!
+✓ Browser closed
+SAY: After clicking Start on the page, the text that appeared was **"Hello World!"**.
+
+The first attempt failed because the page load timed out and the text never showed up. The second attempt worked.
+
+ANSWER: Hello World!

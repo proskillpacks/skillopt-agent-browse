@@ -1,0 +1,25 @@
+TASK x06: On https://www.scrapethissite.com/pages/frames/ find the turtle family Cheloniidae, open its 'Learn more' details, and report its common name, the year it was discovered and by whom.
+EXPECT: ['sea turtle', '1811', 'oppel']
+RESULT: {"id": "x06_r1", "correct": true, "score": 0.946, "wtok": 36293, "turns": 5, "cost": 0.063, "secs": 16, "infra": false, "answer": "Sea turtles; discovered in 1811 by Oppel"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/frames/; agent-browser eval "JSON.stringify([...document.querySelectorAll('iframe')].map(f=>f.src))"
+-> [216 chars] ✓ Turtles All the Way Down: Frames & iFrames | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/frames/
+"[\"https://www.scrapethissite.com/pages/frames/?frame=i\"]"
+$ agent-browser open "https://www.scrapethissite.com/pages/frames/?frame=i"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.turtle-family-card')].map(c=>[c.innerText,c.querySelector('a')?.href]))"
+-> [1727 chars] ✓ Turtles All the Way Down: Frames & iFrames | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/frames/?frame=i
+"[[\"Carettochelyidae\\nLearn more →\",\"https://www.scrapethissite.com/pages/frames/?frame=i&family=Carettochelyidae\"],[\"Cheloniidae\\nLearn more →\",\"https://www.scrapethissite.com/pages/frames/?frame=i&family=Cheloniidae\"],[\"Chelydridae\\nLearn more →\",\"https://www.scrapethissite.com/pages/frames/?frame=i&family=Chelydridae\ …/?frame=i&family=Pelomedusidae\"],[\"Podocnemididae\\nLearn more →\",\"https://www.scrapethissite.com/pages/frames/?frame=i&family=Podocnemididae\"]]"
+$ agent-browser click "a[href*='family=Cheloniidae']"; agent-browser wait --text "discovered"; agent-browser eval "document.querySelector('.container')?.innerText || document.body.innerText"; agent-browser close
+-> [1087 chars] ✓ Done
+discovered
+"\n                \n                    \n                        \n                            \n                                \n                                Scrape This Site\n                            \n                        \n                        \n                            \n                                \n                                Sandbox\n                            \n                        \n                        \n                            \n …                          \n                        \n                        \n                    \n                \n            "
+✓ Browser closed
+$ agent-browser open "https://www.scrapethissite.com/pages/frames/?frame=i&family=Cheloniidae"; agent-browser eval "document.body.innerText"; agent-browser close
+-> [358 chars] ✓ Turtles All the Way Down: Frames & iFrames | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/frames/?frame=i&family=Cheloniidae
+"Cheloniidae\n\nThe Cheloniidae family of turtles — more commonly known as \"Sea turtles\" — were first discovered in 1811 by Oppel.\n\n← Back to all Turtles"
+✓ Browser closed
+SAY: The turtle list on that page is inside an iframe (`?frame=i`). I opened it in the browser and followed the Cheloniidae "Learn more" link. The details page says the family is commonly known as **Sea turtles** and was first discovered in **1811** by **Oppel**.
+
+ANSWER: Sea turtles; discovered in 1811 by Oppel

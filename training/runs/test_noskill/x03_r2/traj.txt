@@ -1,0 +1,42 @@
+TASK x03: https://quotes.toscrape.com/scroll loads more quotes as you scroll. Scroll until no more load. How many quotes are there in total, and who is the author of the very last one?
+EXPECT: ['\\b100\\b', 'george r\\.? ?r\\.? martin']
+RESULT: {"id": "x03_r2", "correct": true, "score": 0.962, "wtok": 25205, "turns": 4, "cost": 0.049, "secs": 35, "infra": false, "answer": "100 quotes; the last one is by George R.R. Martin"}
+
+$ agent-browser --help 2>&1 | head -60; agent-browser open https://quotes.toscrape.com/scroll
+-> [2688 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …isible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/scroll
+$ prev=-1; for i in $(seq 1 30); do agent-browser scroll down 10000 >/dev/null; agent-browser wait 1500 >/dev/null; n=$(agent-browser get count .quote); echo $n; [ "$n" = "$prev" ] && break; prev=$n; done
+-> [31 chars] 20
+30
+40
+50
+60
+70
+80
+90
+100
+100
+$ agent-browser scroll down 10000 >/dev/null; agent-browser wait 2500 >/dev/null; agent-browser get count .quote; agent-browser eval 'const q=[...document.querySelectorAll(".quote")].pop(); q.querySelector(".author").textContent+" | "+q.querySelector(".text").textContent'
+-> [108 chars] 100
+"George R.R. Martin | “... a mind needs books as a sword needs a whetstone, if it is to keep its edge.”"
+SAY: I scrolled the page in the browser until no more quotes loaded. There are **100 quotes** in total. Each scroll added 10, and the count stayed at 100 after two more scrolls with waits.
+
+The last one is by **George R.R. Martin**: "... a mind needs books as a sword needs a whetstone, if it is to keep its edge."
+
+ANSWER: 100 quotes; the last one is by George R.R. Martin

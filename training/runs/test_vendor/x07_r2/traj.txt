@@ -1,0 +1,112 @@
+TASK x07: Complete the onboarding form at http://localhost:8791/wizard.html with: full name Mira Okonkwo, email mira@example.org, department Research, start date 23 November 2026, and confirm the handbook. Submit it and report the confirmation code.
+EXPECT: ['wz-19873']
+RESULT: {"id": "x07_r2", "correct": true, "score": 0.7, "wtok": 244633, "turns": 12, "cost": 0.231, "secs": 28, "infra": false, "answer": "WZ-19873"}
+
+$ agent-browser open http://localhost:8791/wizard.html && agent-browser snapshot -i
+-> [243 chars] ✓ Onboarding
+  http://localhost:8791/wizard.html
+- heading "New starter onboarding" [level=1, ref=e1]
+- heading "Step 1 of 3 — About you" [level=2, ref=e2]
+- textbox "Full name" [ref=e4]
+- textbox "Work email" [ref=e5]
+- button "Next" [ref=e3]
+$ agent-browser fill @e4 "Mira Okonkwo" && agent-browser fill @e5 "mira@example.org" && agent-browser click @e3 && agent-browser snapshot -i
+-> [641 chars] ✓ Done
+✓ Done
+✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- heading "Step 2 of 3 — Role" [level=2, ref=e6]
+- combobox "Department" [expanded=false, ref=e10]: — select —
+  - option "— select —" [selected, ref=e12]
+  - option "Engineering" [ref=e13]
+  - option "Finance" [ref=e14]
+  - option "Research" [ref=e15]
+  - option "Operations" [ref=e16]
+- spinbutton "Month Month" [ref=e17]: 0
+- spinbutton "Day Day" [ref=e18]: 0
+- spinbutton "Year Year" [ref=e19]: 0
+- button "Show date picker Show date picker" [ref=e11]
+- checkbox "I have read the handbook" [checked=false, ref=e7]
+- button "Back" [ref=e8]
+- button "Next" [ref=e9]
+SAY: Date input; find its selector.
+$ agent-browser select @e10 "Research" && agent-browser eval "document.querySelector('input[type=date]').outerHTML"
+-> [42 chars] ✓ Done
+"<input id=\"date\" type=\"date\">"
+$ agent-browser fill "#date" "2026-11-23" && agent-browser get value "#date" && agent-browser check @e7 && agent-browser click @e9 && agent-browser snapshot -i
+-> [639 chars] ✓ Done
+
+✓ Done
+✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- heading "Step 2 of 3 — Role" [level=2, ref=e6]
+- combobox "Department" [expanded=false, ref=e10]: Research
+  - option "— select —" [ref=e12]
+  - option "Engineering" [ref=e13]
+  - option "Finance" [ref=e14]
+  - option "Research" [selected, ref=e15]
+  - option "Operations" [ref=e16]
+- spinbutton "Month Month" [ref=e20]: 0
+- spinbutton "Day Day" [ref=e21]: 0
+- spinbutton "Year Year" [ref=e22]: 0
+- button "Show date picker Show date picker" [ref=e11]
+- checkbox "I have read the handbook" [checked=true, ref=e7]
+- button "Back" [ref=e8]
+- button "Next" [ref=e9]
+SAY: Fill didn't take. Type into the segments via keyboard.
+$ agent-browser click @e20 && agent-browser keyboard type "11232026" && agent-browser get value "#date"
+-> [13 chars] ✓ Done
+✓ Done
+$ agent-browser snapshot -i; agent-browser eval "document.querySelector('#date').value + '|' + document.querySelectorAll('input[type=date]').length"
+-> [622 chars] - heading "New starter onboarding" [level=1, ref=e1]
+- heading "Step 2 of 3 — Role" [level=2, ref=e6]
+- combobox "Department" [expanded=false, ref=e10]: Research
+  - option "— select —" [ref=e12]
+  - option "Engineering" [ref=e13]
+  - option "Finance" [ref=e14]
+  - option "Research" [selected, ref=e15]
+  - option "Operations" [ref=e16]
+- spinbutton "Month Month" [ref=e20]: 0
+- spinbutton "Day Day" [ref=e21]: 0
+- spinbutton "Year Year" [ref=e22]: 0
+- button "Show date picker Show date picker" [ref=e11]
+- checkbox "I have read the handbook" [checked=true, ref=e7]
+- button "Back" [ref=e8]
+- button "Next" [ref=e9]
+"|1"
+$ agent-browser focus "#date" && agent-browser keyboard type "11" && agent-browser keyboard type "23" && agent-browser keyboard type "2026" && agent-browser eval "document.querySelector('#date').value"
+-> [30 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+""
+$ agent-browser focus "#date"; for k in 1 1 2 3 2 0 2 6; do agent-browser press $k >/dev/null; done; agent-browser eval "document.querySelector('#date').value"
+-> [19 chars] ✓ Done
+"2026-11-23"
+$ agent-browser click @e9 && agent-browser snapshot
+-> [223 chars] ✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- generic
+  - heading "Step 3 of 3 — Review" [level=2, ref=e23]
+  - StaticText "Mira Okonkwo\nmira@example.org\nResearch\n2026-11-23"
+  - button "Submit" [ref=e24]
+$ agent-browser click @e24 && agent-browser snapshot
+-> [223 chars] ✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- generic
+  - heading "Step 3 of 3 — Review" [level=2, ref=e23]
+  - StaticText "Mira Okonkwo\nmira@example.org\nResearch\n2026-11-23"
+  - button "Submit" [ref=e24]
+SAY: I submitted the form and I'm waiting for the confirmation to show up.
+$ agent-browser wait --text "onfirm" ; agent-browser snapshot
+-> [179 chars] onfirm
+- heading "New starter onboarding" [level=1, ref=e1]
+- generic
+  - heading "All set" [level=2, ref=e25]
+  - paragraph
+    - StaticText "Confirmation: WZ-19873 (2026-11-23)"
+SAY: I submitted the onboarding form for Mira Okonkwo with email mira@example.org, department Research, start date 2026-11-23 and the handbook box ticked. The page then showed "All set" with **Confirmation: WZ-19873 (2026-11-23)**.
+
+The start date field was the only tricky part: it ignored filled-in or typed text, so I entered the digits one key press at a time. Before submitting, I checked that the field held 2026-11-23 and that the review step showed all four values.
+
+ANSWER: WZ-19873

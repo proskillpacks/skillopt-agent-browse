@@ -1,0 +1,21 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r1", "correct": true, "score": 0.966, "wtok": 22468, "turns": 4, "cost": 0.038, "secs": 17, "infra": false, "answer": "Hello World!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2 && agent-browser snapshot -i
+-> [304 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+- button "Start" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+$ agent-browser click @e4 && agent-browser wait "#finish" && agent-browser get text "#finish"
+-> [26 chars] ✓ Done
+✓ Done
+Hello World!
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I opened the page and clicked Start. After it finished loading, the page showed **"Hello World!"**
+
+ANSWER: Hello World!

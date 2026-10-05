@@ -1,0 +1,32 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r1", "correct": true, "score": 0.94, "wtok": 40329, "turns": 6, "cost": 0.058, "secs": 89, "infra": false, "answer": "You selected a context menu"}
+
+$ agent-browser open https://the-internet.herokuapp.com/context_menu; agent-browser wait "#hot-area"; agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser get box "#hot-area"
+-> [241 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+{}
+✗ Element not found: #hot-area. Verify the selector, role, or name is correct and the element exists in the DOM.
+$ agent-browser open https://the-internet.herokuapp.com/context_menu; agent-browser wait "#hot-area"; agent-browser eval "location.href + ' ' + document.title"
+-> [158 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+✗ Wait timed out after 25000ms
+"https://the-internet.herokuapp.com/context_menu The Internet"
+$ agent-browser eval "document.querySelector('.example')?.innerHTML || document.body.innerHTML.slice(0,2000)"
+-> [394 chars] "\n  <h3>Context Menu</h3>\n  <p>Context menu items are custom additions that appear in the right-click menu.</p>\n  <p>Right-click in the box below to see one called 'the-internet'. When you click it, it will trigger a JavaScript alert.</p>\n  <div id=\"hot-spot\" style=\"border-style: dashed; border-width: 5px; width: 250px; height: 150px;\" oncontextmenu=\"displayMessage()\">\n  </div>\n"
+$ agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser get box "#hot-spot"
+-> [53 chars] {}
+x:      15
+y:      179.875
+width:  250
+height: 150
+$ agent-browser mouse move 140 255; agent-browser mouse down right; agent-browser mouse up right; agent-browser eval "JSON.stringify(window.__a)"; agent-browser close
+-> [73 chars] ✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+✓ Browser closed
+SAY: I right-clicked in the centre of the dashed box (`#hot-spot`) in the browser. Beforehand I replaced `window.alert` with a function that records the message, so the text could be read back. That means the alert was captured rather than shown as a native popup. The box's right-click handler fired and passed this message to `alert()`: **"You selected a context menu"**.
+
+ANSWER: You selected a context menu

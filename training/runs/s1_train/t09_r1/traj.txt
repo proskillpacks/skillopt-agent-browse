@@ -1,0 +1,70 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09_r1", "correct": true, "score": 0.922, "wtok": 52064, "turns": 7, "cost": 0.076, "secs": 19, "infra": false, "answer": "Quote ref NOR-2087, total \u20ac1470.00"}
+
+$ agent-browser open http://localhost:8791/shop.html; agent-browser snapshot -i
+-> [445 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+$ agent-browser click @e5; agent-browser snapshot -i
+-> [399 chars] ✓ Done
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+SAY: Let me try interacting with the form directly; if the banner blocks it, I'll deal with it.
+$ agent-browser click @e2; agent-browser snapshot -i
+-> [607 chars] ✗ Element '@e2' is covered by <div#consent> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+SAY: The banner covers the form, and "Manage preferences" did nothing, so I'll accept the banner to continue.
+$ agent-browser click @e6; agent-browser click @e2; agent-browser snapshot -i
+-> [284 chars] ✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+$ agent-browser eval "document.querySelector('form, main, body').outerHTML.slice(0,3000)"
+-> [1835 chars] "<body>\n\n<h1>Request a quote</h1>\n<p>Region</p>\n<div class=\"dd\" id=\"dd\">Choose region…</div><div class=\"opts open\" id=\"opts\"><div class=\"opt\">Benelux</div><div class=\"opt\">Nordics</div><div class=\"opt\">Iberia</div><div class=\"opt\">DACH</div><div class=\"opt\">Baltics</div></div>\n<p><label>Quantity <input id=\"qty\" type=\"number\" min=\"1\" value=\"1\"></label></p>\n<p><label><input type=\"radio\" name=\"plan\" value=\"basic\" checked=\"\"> Basic</label>\n<label><input type= …ngth*104729+(pro?31337:0))%9973);\nout.innerHTML='<p>Quote ref: <b>'+ref+'</b></p><p>Total: €'+total.toFixed(2)+'</p>';},2500);};\n</script>\n</body>"
+$ agent-browser find text "Nordics" click; agent-browser fill "#qty" "7"; agent-browser check @e8; agent-browser click "#go"; agent-browser wait --text "Quote ref"; agent-browser get text "#out"; agent-browser get text "#dd"; agent-browser close
+-> [99 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+Quote ref
+Quote ref: NOR-2087
+
+Total: €1470.00
+Nordics
+✓ Browser closed
+SAY: I requested the quote for Nordics, quantity 7, plan Pro.
+
+- **Quote reference:** NOR-2087
+- **Total price:** €1470.00
+
+To reach the form I had to click "Accept all" on the cookie banner, because it covered the page. The "Manage preferences" button didn't work.
+
+ANSWER: Quote ref NOR-2087, total €1470.00

@@ -1,0 +1,30 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r2", "correct": true, "score": 0.969, "wtok": 20546, "turns": 3, "cost": 0.048, "secs": 22, "infra": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1; agent-browser wait "article.product_pod" >/dev/null 2>&1; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title,a.querySelector('.price_color').textContent]))"; echo; done > /tmp/books.txt; wc -l /tmp/books.txt; agent-browser close
+-> [35 chars] 100 /tmp/books.txt
+✓ Browser closed
+$ python3 -c "
+import json
+rows=[]
+for l in open('/tmp/books.txt'):
+    l=l.strip()
+    if not l: continue
+    v=json.loads(l)
+    if isinstance(v,str): v=json.loads(v)
+    rows+=v
+print(len(rows))
+p=[(float(pr.replace('£','').replace('Â','')),t) for t,pr in rows]
+print(sum(1 for x,_ in p if x<12))
+p.sort(); print(p[:3])
+"
+-> [155 chars] 1000
+44
+[(10.0, 'An Abundance of Katherines'), (10.01, 'The Origin of Species'), (10.02, 'The Tipping Point: How Little Things Can Make a Big Difference')]
+SAY: I opened all 50 catalogue pages in the browser and collected the title and price of every book, 1,000 in total.
+
+- **Books under £12.00:** 44
+- **Cheapest book:** *An Abundance of Katherines* at £10.00. The next cheapest is *The Origin of Species* at £10.01, so there is no tie.
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00

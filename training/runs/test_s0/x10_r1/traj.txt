@@ -1,0 +1,27 @@
+TASK x10: On https://the-internet.herokuapp.com/shadowdom there are two custom paragraph components. Report the text content of the second one (it renders a list).
+EXPECT: ["let's have some different text!", 'in a list!']
+RESULT: {"id": "x10_r1", "correct": true, "score": 0.952, "wtok": 31840, "turns": 5, "cost": 0.056, "secs": 46, "infra": false, "answer": "Let's have some different text! In a list!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom >/dev/null; agent-browser eval "Array.from(document.querySelectorAll('my-paragraph')).map(e=>({light:e.textContent.trim(), shadow:e.shadowRoot && e.shadowRoot.textContent.trim()}))"
+-> [85 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+[]
+$ agent-browser get url; agent-browser eval "Array.from(document.querySelectorAll('my-paragraph')).map(e=>({light:e.textContent.trim(), html:e.innerHTML}))"
+-> [47 chars] https://the-internet.herokuapp.com/shadowdom
+[]
+$ agent-browser wait 3000; agent-browser eval "document.readyState + ' | ' + document.body.innerHTML.slice(0,2000)"
+-> [1823 chars] ✓ Done
+"complete | \n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <h1>Simple templ …lign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+$ agent-browser eval "Array.from(document.querySelectorAll('my-paragraph')).map(e=>Array.from(e.querySelectorAll('li')).map(l=>l.textContent.trim()).join(' | ') || e.innerText.trim())"; agent-browser close
+-> [106 chars] [
+  "Let's have some different text!",
+  "Let's have some different text! | In a list!"
+]
+✓ Browser closed
+SAY: I opened the page in the browser and read the second `<my-paragraph>` component. It puts a list into the shadow DOM paragraph's slot, and the list has two items:
+
+1. "Let's have some different text!"
+2. "In a list!"
+
+My first read of the page timed out and came back empty. After waiting a few seconds, the page had finished loading and the second read worked.
+
+ANSWER: Let's have some different text! In a list!

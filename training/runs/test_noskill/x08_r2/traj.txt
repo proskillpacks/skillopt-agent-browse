@@ -1,0 +1,44 @@
+TASK x08: Go to https://en.wikipedia.org/ , use the site's search box to find the article on Ada Lovelace, and report her date of birth and date of death as given in the infobox.
+EXPECT: ['10 december 1815|december 10,? 1815', '27 november 1852|november 27,? 1852']
+RESULT: {"id": "x08_r2", "correct": true, "score": 0.953, "wtok": 31572, "turns": 5, "cost": 0.054, "secs": 15, "infra": false, "answer": "Born 10 December 1815; died 27 November 1852"}
+
+$ agent-browser --help 2>&1 | head -60
+-> [2632 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …rl
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+$ agent-browser open https://en.wikipedia.org/ && agent-browser snapshot -i 2>&1 | grep -i search | head
+-> [101 chars] ✓ Wikipedia, the free encyclopedia
+  https://en.wikipedia.org/wiki/Main_Page
+- link "Search" [ref=e5]
+$ agent-browser click @e5; agent-browser snapshot -i 2>&1 | grep -iE "search|textbox|combobox" | head
+-> [77 chars] ✓ Done
+- searchbox "Search Wikipedia" [ref=e297]
+- button "Search" [ref=e295]
+$ agent-browser fill @e297 "Ada Lovelace" && agent-browser press Enter && agent-browser wait 2000; agent-browser get url; agent-browser eval "document.querySelector('.infobox')?.innerText"
+-> [683 chars] ✓ Done
+✓ Done
+✓ Done
+https://en.wikipedia.org/wiki/Ada_Lovelace
+"The Right Honourable\nThe Countess of Lovelace\n\n\nDaguerreotype of Lovelace (c. 1843)[1]\n\nBorn\tAugusta Ada Byron\n10 December 1815\nLondon, England\nDied\t27 November 1852 (aged 36)\nMarylebone, London, England\nResting place\tChurch of St Mary Magdalene, Hucknall, Nottingham, England\nKnown for\tMathematics, computing\nSpouse\tWilliam King-Noel, 1st Earl of Lovelace\n​\n​(m. 1835)​\nChildren\t\nByron King-Noel, Viscount Ockham\nAnne Blunt, 15th Baroness Wentworth\nRalph King-Milbanke, 2nd Earl of Lovelace\n\nParents\t\nGeorge Byron, 6th Baron Byron (father)\nAnne Isabella Milbanke (mother)\n\nSignature\n"
+SAY: I opened Wikipedia in the browser, searched "Ada Lovelace" with the site's search box, and it went straight to the article at https://en.wikipedia.org/wiki/Ada_Lovelace. Her infobox gives:
+
+- **Born:** 10 December 1815, London, England
+- **Died:** 27 November 1852 (aged 36), Marylebone, London, England
+
+ANSWER: Born 10 December 1815; died 27 November 1852

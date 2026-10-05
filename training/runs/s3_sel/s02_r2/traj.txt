@@ -1,0 +1,18 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r2", "correct": true, "score": 0.97, "wtok": 19796, "turns": 3, "cost": 0.044, "secs": 33, "infra": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login; agent-browser wait "#username"; agent-browser fill "#username" "user"; agent-browser fill "#password" "pass"; agent-browser click "input[type=submit]"; agent-browser wait --text "Logout"; agent-browser eval "JSON.stringify([...document.querySelector('.quote').querySelectorAll('a')].map(a=>[a.textContent,a.href]))"
+-> [515 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+Logout
+"[[\"(about)\",\"https://quotes.toscrape.com/author/Albert-Einstein\"],[\"(Goodreads page)\",\"http://goodreads.com/author/show/9810.Albert_Einstein\"],[\"change\",\"https://quotes.toscrape.com/tag/change/page/1/\"],[\"deep-thoughts\",\"https://quotes.toscrape.com/tag/deep-thoughts/page/1/\"],[\"thinking\",\"https://quotes.toscrape.com/tag/thinking/page/1/\"],[\"world\",\"https://quotes.toscrape.com/tag/world/page/1/\"]]"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I logged in through the browser and read the links on the first quote on page 1, which is by Albert Einstein. Its "(Goodreads page)" link goes to `http://goodreads.com/author/show/9810.Albert_Einstein`.
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

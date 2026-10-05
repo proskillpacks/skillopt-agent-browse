@@ -1,0 +1,22 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r1", "correct": true, "score": 0.978, "wtok": 14612, "turns": 2, "cost": 0.046, "secs": 47, "infra": false, "answer": "Remove \u2192 \"It's gone!\"; Enable \u2192 \"It's enabled!\", input value \"hello\""}
+
+SAY: I know this page's structure: #checkbox-example button, #input-example button, #message.
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "#checkbox-example button"; agent-browser click "#checkbox-example button"; agent-browser wait --fn "!document.querySelector('#checkbox') && document.querySelector('#checkbox-example #message')"; agent-browser get text "#checkbox-example #message"; agent-browser click "#input-example button"; agent-browser wait --fn "!document.querySelector('#input-example input').disabled"; agent-browser fill "#input-example input" "hello"; agent-browser eval "JSON.stringify({msg: document.querySelector('#input-example #message')?.innerText, val: document.querySelector('#input-example input').value})"; agent-browser close
+-> [194 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+{}
+It's gone!
+✓ Done
+true
+✓ Done
+"{\"msg\":\"It's enabled!\",\"val\":\"hello\"}"
+✓ Browser closed
+SAY: Both steps worked. The first page load timed out, but the page still loaded and every later step succeeded.
+
+1. After I clicked **Remove**, the checkbox disappeared and the page showed **"It's gone!"**
+2. After I clicked **Enable**, I waited until the text input was enabled and typed `hello`. The page showed **"It's enabled!"** and the input's value was **`hello`**.
+
+ANSWER: Remove → "It's gone!"; Enable → "It's enabled!", input value "hello"

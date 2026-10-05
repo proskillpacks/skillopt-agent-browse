@@ -1,0 +1,11 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07", "correct": true, "score": 0.992, "wtok": 11235, "turns": 2, "cost": 0.013, "secs": 7, "infra": false, "answer": "A Year in Provence (Provence #1) \u2014 \u00a356.88"}
+
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/travel_2/index.html && agent-browser eval "Array.from(document.querySelectorAll('article.product_pod')).map(a=>a.querySelector('h3 a').title+' | '+a.querySelector('.price_color').textContent).join('\n')"
+-> [718 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"It's Only the Himalayas | £45.17\nFull Moon over Noah’s Ark: An Odyssey to Mount Ararat and Beyond | £49.43\nSee America: A Celebration of Our National Parks & Treasured Sites | £48.87\nVagabonding: An Uncommon Guide to the Art of Long-Term World Travel | £36.94\nUnder the Tuscan Sun | £37.33\nA Summer In Europe | £44.34\nThe Great Railway Bazaar | £30.54\nA Year in Provence (Provence  …n in Britain (Notes From a Small Island #2) | £23.21\nNeither Here nor There: Travels in Europe | £38.95\n1,000 Places to See Before You Die | £26.08"
+SAY: I opened the Travel category in the browser. It has 11 books, all on one page. The most expensive is **A Year in Provence (Provence #1)** at **£56.88**. The next highest is *Full Moon over Noah's Ark* at £49.43.
+
+ANSWER: A Year in Provence (Provence #1) — £56.88

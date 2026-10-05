@@ -1,0 +1,56 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r1", "correct": true, "score": 0.875, "wtok": 83099, "turns": 10, "cost": 0.105, "secs": 181, "infra": false, "answer": "You selected a context menu"}
+
+$ agent-browser open https://the-internet.herokuapp.com/context_menu && agent-browser --help | grep -i -E "dialog|right|context|click" 
+-> [442 chars] Command did not complete within its 120s timeout and was moved to the background (ID: bb4du57cq). Output is being written to: /tmp/claude-user/-home-user-skill-research-runs-s0-train-t11-r1/2ffc5180-bba6-467c-9130-7c1cf03031ba/tasks/bb4du57cq.output. You will be notified when it completes. If it is still running after 30m in the background, it will be stopped and you will be notified. To check interim output, use Read on that file path.
+$ cat /tmp/claude-user/-home-user-skill-research-runs-s0-train-t11-r1/2ffc5180-bba6-467c-9130-7c1cf03031ba/tasks/bb4du57cq.output; timeout 30 agent-browser get url
+-> [13 chars] Exit code 124
+$ timeout 20 agent-browser --help 2>&1 | head -80; env | grep -i AGENT_BROWSER
+-> [3783 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …11_r1
+AGENT_BROWSER_SESSION=so-s0_train-t11_r1
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-s0_train-t11_r1
+AGENT_BROWSER_HEADED=1
+$ cat /tmp/claude-user/-home-user-skill-research-runs-s0-train-t11-r1/2ffc5180-bba6-467c-9130-7c1cf03031ba/tasks/bb4du57cq.output; timeout 20 agent-browser --help 2>&1 | grep -i -E "dialog|right|button"
+-> [463 chars] ✗ Failed to read: Resource temporarily unavailable (os error 11) (after 5 retries - daemon may be busy or unresponsive)
+
+[exited with code 1]
+  scroll <dir> [px]          Scroll (up/down/left/right)
+  --no-auto-dialog           Disable automatic dismissal of alert/beforeunload dialogs (or AGENT_BROWSER_NO_AUTO_DIALOG)
+  AGENT_BROWSER_NO_AUTO_DIALOG   Disable automatic dismissal of alert/beforeunload dialogs
+  agent-browser find role button click --name Submit
+$ timeout 90 agent-browser open https://the-internet.herokuapp.com/context_menu; timeout 30 agent-browser get box "#hot-area"
+-> [189 chars] Exit code 1
+✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+✗ Element not found: #hot-area. Verify the selector, role, or name is correct and the element exists in the DOM.
+SAY: Page loaded; locating the dashed box to right-click it.
+$ timeout 30 agent-browser eval "Array.from(document.querySelectorAll('[oncontextmenu], #content div div')).map(e=>e.outerHTML.slice(0,200)).join('\n')"
+-> [148 chars] "<div id=\"hot-spot\" style=\"border-style: dashed; border-width: 5px; width: 250px; height: 150px;\" oncontextmenu=\"displayMessage()\">\n  </div>"
+$ timeout 30 agent-browser eval "window.__msgs=[];const o=window.alert;window.alert=function(m){window.__msgs.push(String(m));return o.call(window,m)};const r=document.querySelector('#hot-spot').getBoundingClientRect();JSON.stringify([r.x+r.width/2,r.y+r.height/2])"
+-> [15 chars] "[140,254.875]"
+$ timeout 30 agent-browser mouse move 140 255 && timeout 30 agent-browser mouse down right && timeout 30 agent-browser mouse up right; timeout 30 agent-browser eval "JSON.stringify(window.__msgs)"
+-> [56 chars] ✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+$ timeout 30 agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I right-clicked inside the dashed box with a real mouse right-click in the browser, and the alert said **"You selected a context menu"**.
+
+`agent-browser` closes alerts automatically, so I didn't read the text from the alert box itself. Before clicking, I added a small wrapper to the page's `alert` function that records the message and then still shows the real alert. That recorded message is the text above.
+
+ANSWER: You selected a context menu

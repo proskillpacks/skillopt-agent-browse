@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Northwind Quotes</title>
+<style>
+body{font-family:sans-serif;margin:40px}
+#consent{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;display:flex;align-items:center;justify-content:center}
+#consent .box{background:#fff;padding:24px;max-width:420px}
+.dd{border:1px solid #888;padding:8px;width:220px;cursor:pointer}
+.opts{border:1px solid #888;width:236px;display:none}.opts.open{display:block}
+.opt{padding:6px;cursor:pointer}.opt:hover{background:#def}
+</style></head><body>
+<div id="consent"><div class="box"><h2>We value your privacy</h2><p>We use cookies to improve your experience.</p>
+<button id="c-manage">Manage preferences</button> <button id="c-ok">Accept all</button></div></div>
+<h1>Request a quote</h1>
+<p>Region</p>
+<div class="dd" id="dd">Choose region…</div><div class="opts" id="opts"></div>
+<p><label>Quantity <input id="qty" type="number" min="1" value="1"></label></p>
+<p><label><input type="radio" name="plan" value="basic" checked> Basic</label>
+<label><input type="radio" name="plan" value="pro"> Pro</label></p>
+<button id="go" disabled>Get quote</button>
+<div id="out" aria-live="polite"></div>
+<script>
+const base={"Benelux":120,"Nordics":140,"Iberia":95,"DACH":160,"Baltics":80};
+let region=null;const dd=document.getElementById('dd'),opts=document.getElementById('opts'),go=document.getElementById('go'),out=document.getElementById('out');
+document.getElementById('c-ok').onclick=()=>document.getElementById('consent').remove();
+document.getElementById('c-manage').onclick=()=>alert('Preferences are unavailable.');
+dd.onclick=()=>{opts.innerHTML='';setTimeout(()=>{Object.keys(base).forEach(r=>{const o=document.createElement('div');o.className='opt';o.textContent=r;o.onclick=()=>{region=r;dd.textContent=r;opts.classList.remove('open');go.disabled=false;};opts.appendChild(o);});opts.classList.add('open');},400);};
+go.onclick=()=>{out.textContent='Calculating…';const qty=+document.getElementById('qty').value,pro=document.querySelector('input[name=plan]:checked').value==='pro';
+setTimeout(()=>{const total=base[region]*qty*(pro?1.5:1);const ref=region.slice(0,3).toUpperCase()+'-'+((qty*7919+region.length*104729+(pro?31337:0))%9973);
+out.innerHTML='<p>Quote ref: <b>'+ref+'</b></p><p>Total: €'+total.toFixed(2)+'</p>';},2500);};
+</script></body></html>

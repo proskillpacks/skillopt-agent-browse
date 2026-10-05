@@ -1,0 +1,24 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01", "correct": true, "score": 0.979, "wtok": 27676, "turns": 5, "cost": 0.025, "secs": 65, "infra": false, "answer": "name: user3, href: /users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers && agent-browser hover ".figure:nth-of-type(3) img" ; agent-browser snapshot
+-> [95 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(empty page)
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser get url; agent-browser snapshot
+-> [137 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+https://the-internet.herokuapp.com/hovers
+(empty page)
+$ agent-browser wait 3000; agent-browser get title; agent-browser snapshot
+-> [32 chars] ✓ Done
+The Internet
+(empty page)
+$ agent-browser eval "document.querySelectorAll('.figure').length"; agent-browser hover ".figure:nth-of-type(3) img"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.figure')].map(f=>[f.querySelector('h5').innerText, f.querySelector('a').getAttribute('href'), getComputedStyle(f.querySelector('.figcaption')).display]))"
+-> [133 chars] 3
+✓ Done
+"[[\"name: user1\",\"/users/1\",\"none\"],[\"name: user2\",\"/users/2\",\"none\"],[\"name: user3\",\"/users/3\",\"block\"]]"
+SAY: After I hovered over the third avatar, only its caption became visible (`display: block`; the other two stayed hidden). It shows the name **"name: user3"**, and its "View profile" link has the href **`/users/3`**, which is `https://the-internet.herokuapp.com/users/3` as a full URL.
+
+The `open` command timed out the first time, but the page did load and the hover worked.
+
+ANSWER: name: user3, href: /users/3

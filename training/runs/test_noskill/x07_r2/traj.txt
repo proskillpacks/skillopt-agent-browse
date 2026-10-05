@@ -1,0 +1,116 @@
+TASK x07: Complete the onboarding form at http://localhost:8791/wizard.html with: full name Mira Okonkwo, email mira@example.org, department Research, start date 23 November 2026, and confirm the handbook. Submit it and report the confirmation code.
+EXPECT: ['wz-19873']
+RESULT: {"id": "x07_r2", "correct": true, "score": 0.884, "wtok": 77656, "turns": 10, "cost": 0.092, "secs": 24, "infra": false, "answer": "WZ-19873"}
+
+$ agent-browser --help | head -50; agent-browser open http://localhost:8791/wizard.html; agent-browser snapshot
+-> [2650 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …textbox "Full name" [ref=e4]
+  - LabelText
+    - StaticText "Work email "
+    - textbox "Work email" [ref=e5]
+  - paragraph
+  - button "Next" [ref=e3]
+$ agent-browser fill @e4 "Mira Okonkwo"; agent-browser fill @e5 "mira@example.org"; agent-browser click @e3; agent-browser snapshot
+-> [1025 chars] ✓ Done
+✓ Done
+✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- generic
+  - heading "Step 2 of 3 — Role" [level=2, ref=e6]
+  - LabelText
+    - StaticText "Department "
+    - combobox "Department" [expanded=false, ref=e10]: — select —
+      - MenuListPopup
+        - option "— select —" [selected, ref=e12]
+        - option "Engineering" [ref=e13]
+        - option "Finance" [ref=e14]
+        - option "Research" [ref=e15]
+        - option "Operations" [ref=e16]
+  - LabelText
+    - Static … picker" [ref=e11]
+  - checkbox "I have read the handbook" [checked=false, ref=e7]
+  - paragraph
+  - button "Back" [ref=e8]
+  - button "Next" [ref=e9]
+$ agent-browser select @e10 Research; agent-browser fill 'input[type=date]' 2026-11-23; agent-browser check @e7; agent-browser eval 'document.querySelector("input[type=date]").value'; agent-browser click @e9; agent-browser snapshot
+-> [1097 chars] ✓ Done
+✓ Done
+✓ Done
+""
+✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- generic
+  - heading "Step 2 of 3 — Role" [level=2, ref=e6]
+  - LabelText
+    - StaticText "Department "
+    - combobox "Department" [expanded=false, ref=e10]: Research
+      - MenuListPopup
+        - option "— select —" [ref=e12]
+        - option "Engineering" [ref=e13]
+        - option "Finance" [ref=e14]
+        - option "Research" [selected, ref=e15]
+        - option "Operations" [ref=e16]
+  - LabelText
+     …ked=true, ref=e7]
+  - paragraph
+    - StaticText "Complete all fields and confirm the handbook."
+  - button "Back" [ref=e8]
+  - button "Next" [ref=e9]
+SAY: Date fill didn't take; type it via keyboard.
+$ agent-browser click @e20; agent-browser keyboard type "11232026"; agent-browser eval 'document.querySelector("input[type=date]").value'
+-> [16 chars] ✓ Done
+✓ Done
+""
+$ agent-browser eval 'document.querySelector("input[type=date]").outerHTML'; agent-browser snapshot | grep -A8 Date
+-> [319 chars] "<input id=\"date\" type=\"date\">"
+    - Date "Start date"
+      - generic
+        - spinbutton "Month Month" [ref=e20]: 0
+          - StaticText "mm"
+        - StaticText "/"
+        - spinbutton "Day Day" [ref=e21]: 0
+          - StaticText "dd"
+        - StaticText "/"
+        - spinbutton "Year Year" [ref=e22]: 0
+$ agent-browser focus '#date'; for k in 1 1 2 3 2 0 2 6; do agent-browser press $k >/dev/null; done; agent-browser eval 'document.querySelector("#date").value'
+-> [19 chars] ✓ Done
+"2026-11-23"
+$ agent-browser click @e9; agent-browser snapshot
+-> [223 chars] ✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- generic
+  - heading "Step 3 of 3 — Review" [level=2, ref=e23]
+  - StaticText "Mira Okonkwo\nmira@example.org\nResearch\n2026-11-23"
+  - button "Submit" [ref=e24]
+$ agent-browser click @e24; agent-browser snapshot
+-> [223 chars] ✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- generic
+  - heading "Step 3 of 3 — Review" [level=2, ref=e23]
+  - StaticText "Mira Okonkwo\nmira@example.org\nResearch\n2026-11-23"
+  - button "Submit" [ref=e24]
+$ agent-browser wait 1500; agent-browser snapshot; agent-browser eval 'document.body.innerText'
+-> [252 chars] ✓ Done
+- heading "New starter onboarding" [level=1, ref=e1]
+- generic
+  - heading "All set" [level=2, ref=e25]
+  - paragraph
+    - StaticText "Confirmation: WZ-19873 (2026-11-23)"
+"New starter onboarding\nAll set\n\nConfirmation: WZ-19873 (2026-11-23)"
+SAY: I filled in and submitted the onboarding form in the browser, and it was accepted. The confirmation code is **WZ-19873**.
+
+The review page before submitting showed Mira Okonkwo, mira@example.org, Research and a start date of 2026-11-23, with the handbook box ticked. The confirmation page said "All set — Confirmation: WZ-19873 (2026-11-23)".
+
+ANSWER: WZ-19873

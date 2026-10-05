@@ -1,0 +1,41 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r1", "correct": true, "score": 0.932, "wtok": 45545, "turns": 6, "cost": 0.077, "secs": 159, "infra": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "#table2"; agent-browser click "#table2 thead .dues"; agent-browser click "#table2 thead .dues"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText))"
+-> [443 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+✓ Done
+"[\"Smith\\tJohn\\tjsmith@example.com\\t$50.00\\thttp://www.jsmith.com\\tedit delete\",\"Bach\\tFrank\\tfbach@yahoo.com\\t$51.00\\thttp://www.frank.com\\tedit delete\",\"Doe\\tJason\\tjdoe@hotmail.com\\t$100.00\\thttp://www.jdoe.com\\tedit delete\",\"Conway\\tTim\\ttconway@earthlink.net\\t$50.00\\thttp://www.timconway.com\\tedit delete\"]"
+SAY: The page load timed out, so the sort scripts probably didn't attach and the order was unchanged. I'll reload and try again.
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "#table2"; agent-browser click "#table2 thead .dues"; agent-browser click "#table2 thead .dues"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText))"
+-> [320 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+✗ Element not found: #table2 thead .dues. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #table2 thead .dues. Verify the selector, role, or name is correct and the element exists in the DOM.
+"[]"
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "#table2"; agent-browser click "#table2 thead .dues"; agent-browser click "#table2 thead .dues"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText))"
+-> [443 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+✓ Done
+"[\"Smith\\tJohn\\tjsmith@example.com\\t$50.00\\thttp://www.jsmith.com\\tedit delete\",\"Bach\\tFrank\\tfbach@yahoo.com\\t$51.00\\thttp://www.frank.com\\tedit delete\",\"Doe\\tJason\\tjdoe@hotmail.com\\t$100.00\\thttp://www.jdoe.com\\tedit delete\",\"Conway\\tTim\\ttconway@earthlink.net\\t$50.00\\thttp://www.timconway.com\\tedit delete\"]"
+$ agent-browser eval "JSON.stringify({jq: typeof window.jQuery, ts: window.jQuery && typeof jQuery.fn.tablesorter, th: document.querySelector('#table2 thead th:nth-child(4)').outerHTML})"
+-> [100 chars] "{\"jq\":\"function\",\"ts\":\"undefined\",\"th\":\"<th><span class=\\\"dues\\\">Due</span></th>\"}"
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait --fn "window.jQuery && jQuery.fn.tablesorter && document.querySelector('#table2 th.header')"; agent-browser click "#table2 thead .dues"; agent-browser click "#table2 thead .dues"; agent-browser eval "JSON.stringify({ts: !!(window.jQuery&&jQuery.fn.tablesorter), th: document.querySelector('#table2 thead th:nth-child(4)').className, rows:[...document.querySelectorAll('#table2 tbody tr')].map(r=>r.innerText)})"
+-> [573 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+{
+  "column": 0,
+  "count": 0,
+  "jQuery111309450203256357051": 23,
+  "order": 0
+}
+✓ Done
+✓ Done
+"{\"ts\":true,\"th\":\"header headerSortUp\",\"rows\":[\"Doe\\tJason\\tjdoe@hotmail.com\\t$100.00\\thttp://www.jdoe.com\\tedit delete\",\"Bach\\tFrank\\tfbach@yahoo.com\\t$51.00\\thttp://www.frank.com\\tedit delete\",\"Smith\\tJohn\\tjsmith@example.com\\t$50.00\\thttp://www.jsmith.com\\tedit delete\",\"Conway\\tTim\\ttconway@earthlink.net\\t$50.00\\thttp://www.timconway.com\\tedit delete\"]}"
+SAY: I clicked the Due header in the Example 2 table twice, and the table is now sorted by Due in descending order, from $100.00 down to $50.00. The first data row is Jason Doe, $100.00, with the email jdoe@hotmail.com.
+
+On the first tries the page load timed out and the sorting script never loaded, so the clicks did nothing. On the last attempt I waited until sorting was working before clicking.
+
+ANSWER: jdoe@hotmail.com

@@ -1,0 +1,24 @@
+TASK x10: On https://the-internet.herokuapp.com/shadowdom there are two custom paragraph components. Report the text content of the second one (it renders a list).
+EXPECT: ["let's have some different text!", 'in a list!']
+RESULT: {"id": "x10_r2", "correct": true, "score": 0.955, "wtok": 29717, "turns": 5, "cost": 0.052, "secs": 103, "infra": false, "answer": "Let's have some different text! In a list!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom && agent-browser eval "Array.from(document.querySelectorAll('my-paragraph')).map(e=>JSON.stringify({text:e.textContent, inner:e.innerText, shadow:e.shadowRoot&&e.shadowRoot.innerHTML}))"
+-> [50 chars] Exit code 1
+✗ CDP command timed out: Page.navigate
+$ agent-browser get url; agent-browser eval "Array.from(document.querySelectorAll('my-paragraph')).map(e=>JSON.stringify({text:e.textContent, inner:e.innerText}))"
+-> [47 chars] https://the-internet.herokuapp.com/shadowdom
+[]
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom; agent-browser wait 3000; agent-browser eval "document.readyState + ' ' + JSON.stringify(Array.from(document.querySelectorAll('my-paragraph')).map(e=>e.innerText))"
+-> [166 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/shadowdom
+✓ Done
+"complete [\"Let's have some different text!\",\"Let's have some different text!\\nIn a list!\"]"
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('my-paragraph')).map(e=>[e.innerHTML, e.shadowRoot&&e.shadowRoot.innerHTML]))"
+-> [582 chars] "[[\"\\n  <span slot=\\\"my-text\\\">Let's have some different text!</span>\\n\",\"\\n  <style>\\n    p {\\n      color: white;\\n      background-color: #666;\\n      padding: 5px;\\n    }\\n  </style>\\n  <p><slot name=\\\"my-text\\\">My default text</slot></p>\\n\"],[\"\\n  <ul slot=\\\"my-text\\\">\\n    <li>Let's have some different text!</li>\\n    <li>In a list!</li>\\n  </ul>\\n\",\"\\n  <style>\\n    p {\\n      color: white;\\n      background-color: #666;\\n      padding: 5px;\\n    }\\n  </style>\\n  <p><slot name=\\\"my-text\\\">My default text</slot></p>\\n\"]]"
+SAY: The second `<my-paragraph>` component puts a `<ul>` into its shadow DOM's `my-text` slot. That replaces the default "My default text". I checked this in the browser with `agent-browser`. The first `open` timed out, but after reopening the page it loaded fully.
+
+The list has two items:
+- Let's have some different text!
+- In a list!
+
+ANSWER: Let's have some different text! In a list!

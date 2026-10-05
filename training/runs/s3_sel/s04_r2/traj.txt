@@ -1,0 +1,20 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r2", "correct": true, "score": 0.967, "wtok": 22026, "turns": 3, "cost": 0.056, "secs": 12, "infra": false, "answer": "49 wins, 269 GF"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/; agent-browser wait "input[name=q]"; agent-browser fill "input[name=q]" "Bruins"; agent-browser press Enter; agent-browser wait --text "Bruins"; agent-browser eval "JSON.stringify([...document.querySelectorAll('tr.team')].map(r=>r.innerText.replace(/\s+/g,' ').trim()))"
+-> [1423 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+✓ Done
+✓ Done
+Bruins
+"[\"Boston Bruins 1990 44 24 0.55 299 264 35\",\"Buffalo Sabres 1990 31 30 0.388 292 278 14\",\"Calgary Flames 1990 46 26 0.575 344 263 81\",\"Chicago Blackhawks 1990 49 23 0.613 284 211 73\",\"Detroit Red Wings 1990 34 38 0.425 273 298 -25\",\"Edmonton Oilers 1990 37 37 0.463 272 272 0\",\"Hartford Whalers 1990  …5\",\"Buffalo Sabres 1991 31 37 0.388 289 299 -10\",\"Calgary Flames 1991 31 37 0.388 296 305 -9\",\"Chicago Blackhawks 1991 36 29 0.45 257 236 21\"]"
+SAY: Search didn't apply yet; check.
+$ agent-browser wait --fn "location.search.includes('q=')"; agent-browser get url; agent-browser eval "JSON.stringify([...document.querySelectorAll('tr.team')].map(r=>r.innerText.replace(/\s+/g,' ').trim()))"
+-> [1052 chars] true
+https://www.scrapethissite.com/pages/forms/?q=Bruins
+"[\"Boston Bruins 1990 44 24 0.55 299 264 35\",\"Boston Bruins 1991 36 32 0.45 270 275 -5\",\"Boston Bruins 1992 51 26 0.607 332 268 64\",\"Boston Bruins 1993 42 29 0.5 289 252 37\",\"Boston Bruins 1994 27 18 0.562 150 127 23\",\"Boston Bruins 1995 40 31 0.488 282 269 13\",\"Boston Bruins 1996 26 47 0.317 234 300 -66\",\"Boston Bruins 1997 39 30 0.476 221 194 27\",\"Boston Bruins 1998 39 30 0.476 214 181 33\",\"Boston Bruins 1999 24 33 6  …8\",\"Boston Bruins 2009 39 30 13 0.476 206 200 6\",\"Boston Bruins 2010 46 25 11 0.561 246 195 51\",\"Boston Bruins 2011 49 29 4 0.598 269 202 67\"]"
+SAY: I searched for "Bruins" on the page. The Boston Bruins row for the 2011 season shows 49 wins, 29 losses and 4 OT losses, with 269 Goals For and 202 Goals Against.
+
+ANSWER: 49 wins, 269 GF

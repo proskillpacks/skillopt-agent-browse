@@ -1,0 +1,90 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10", "correct": true, "score": 0.957, "wtok": 57099, "turns": 8, "cost": 0.061, "secs": 50, "infra": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser --help 2>&1 | head -60; agent-browser open https://the-internet.herokuapp.com/jqueryui/menu && agent-browser snapshot -i
+-> [2728 chars] Exit code 1
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser pr …ind Elements:  agent-browser find <locator> <value> <action> [text]
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser snapshot -i
+-> [74 chars] https://the-internet.herokuapp.com/jqueryui/menu
+(no interactive elements)
+$ agent-browser snapshot | head -50
+-> [12 chars] (empty page)
+$ agent-browser reload; agent-browser wait 3000; agent-browser snapshot | head -50
+-> [1089 chars] https://the-internet.herokuapp.com/jqueryui/menu
+✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e2]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e4]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of ele …
+      - link "Enabled" [ref=e8]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e9]
+$ agent-browser hover @e6; agent-browser wait 1000; agent-browser snapshot -i
+-> [600 chars] ✓ Done
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+    - menuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+SAY: The Enabled submenu is open. Next I'll hover over Downloads.
+$ agent-browser hover @e10; agent-browser wait 1000; agent-browser snapshot -i; agent-browser screenshot /tmp/menu.png
+-> [832 chars] ✓ Done
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+      - menuitem "PDF" [ …item "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+✓ Screenshot saved to /tmp/menu.png
+SAY: Let me confirm the visible rendered text matches.
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#ui-id-4 + ul li, li:has(> a#ui-id-4) > ul > li')].map(l=>[l.innerText, getComputedStyle(l).display, l.getBoundingClientRect().height]))"; agent-browser eval "[...document.querySelectorAll('a')].filter(a=>a.textContent.includes('Downloads')).map(a=>a.closest('li').querySelector('ul')?.innerText).join('|')"
+-> [22 chars] "[]"
+"PDF\nCSV\nExcel"
+SAY: I opened the page in agent-browser, hovered over **Enabled** and then over **Downloads**. The Downloads submenu showed three items, in this order:
+
+1. PDF
+2. CSV
+3. Excel
+
+The accessibility snapshot and the submenu's rendered text (`innerText`) both list the same three names.
+
+ANSWER: PDF, CSV, Excel

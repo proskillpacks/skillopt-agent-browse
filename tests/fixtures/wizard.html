@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Onboarding</title>
+<style>body{font-family:sans-serif;margin:40px}.step{display:none}.step.on{display:block}.err{color:#b00}label{display:block;margin:10px 0}</style></head><body>
+<h1>New starter onboarding</h1>
+<div class="step on" id="s1"><h2>Step 1 of 3 — About you</h2>
+<label>Full name <input id="name"></label><label>Work email <input id="email" type="email"></label>
+<p class="err" id="e1"></p><button id="n1">Next</button></div>
+<div class="step" id="s2"><h2>Step 2 of 3 — Role</h2>
+<label>Department <select id="dept"><option value="">— select —</option><option>Engineering</option><option>Finance</option><option>Research</option><option>Operations</option></select></label>
+<label>Start date <input id="date" type="date"></label>
+<label><input id="agree" type="checkbox"> I have read the handbook</label>
+<p class="err" id="e2"></p><button id="b2">Back</button> <button id="n2">Next</button></div>
+<div class="step" id="s3"><h2>Step 3 of 3 — Review</h2><pre id="rev"></pre><button id="sub">Submit</button></div>
+<div class="step" id="s4"><h2>All set</h2><p id="conf"></p></div>
+<script>
+const $=id=>document.getElementById(id),show=n=>{document.querySelectorAll('.step').forEach(s=>s.classList.remove('on'));$('s'+n).classList.add('on');};
+$('n1').onclick=()=>{if($('name').value.trim().length<3||!/^\S+@\S+\.\S+$/.test($('email').value)){$('e1').textContent='Enter your full name and a valid email.';return;}$('e1').textContent='';show(2);};
+$('b2').onclick=()=>show(1);
+$('n2').onclick=()=>{if(!$('dept').value||!$('date').value||!$('agree').checked){$('e2').textContent='Complete all fields and confirm the handbook.';return;}$('e2').textContent='';
+$('rev').textContent=[$('name').value,$('email').value,$('dept').value,$('date').value].join('\n');show(3);};
+$('sub').onclick=()=>{const nm=$('name').value.trim(),d=$('date').value;let a=0;for(const c of nm)a+=c.charCodeAt(0);let b=0;for(const c of d.replace(/-/g,''))b+=+c;
+const n=(a*13+b*97+$('dept').selectedIndex*1009)%100000;setTimeout(()=>{$('conf').textContent='Confirmation: WZ-'+n+' ('+d+')';show(4);},1200);};
+</script></body></html>

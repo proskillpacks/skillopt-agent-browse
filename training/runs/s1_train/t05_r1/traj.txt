@@ -1,0 +1,30 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r1", "correct": true, "score": 0.943, "wtok": 38101, "turns": 5, "cost": 0.071, "secs": 39, "infra": false, "answer": "\u201cA day without sunshine is like, you know, night.\u201d"}
+
+$ agent-browser open https://quotes.toscrape.com/search.aspx; agent-browser wait "#author"; agent-browser select "#author" "Steve Martin"; agent-browser wait --fn "document.querySelectorAll('#tag option').length>1"; agent-browser select "#tag" "humor"; agent-browser click "input[type=submit]"; agent-browser wait ".quote"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote')].map(q=>q.innerText))"
+-> [129 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+"[]"
+$ agent-browser get url; agent-browser eval "document.querySelector('.results, body').innerText.slice(0,1500)"
+-> [966 chars] https://quotes.toscrape.com/filter.aspx
+"Quotes to Scrape\n\nLogin\n\nAuthor\n----------\nAlbert Einstein\nJ.K. Rowling\nJane Austen\nMarilyn Monroe\nAndré Gide\nThomas A. Edison\nEleanor Roosevelt\nSteve Martin\nBob Marley\nDr. Seuss\nDouglas Adams\nElie Wiesel\nFriedrich Nietzsche\nMark Twain\nAllen Saunders\nPablo Neruda\nRalph Waldo Emerson\nMother Teresa\nGarrison Keillor\nJim Henson\nCharles M. Schulz\nWilliam Nicholson\nJorge Luis Borges\nGeorge Eliot\nGeorge R.R. Martin\nC.S. Lewis\nMart … Cummings\nKhaled Hosseini\nHarper Lee\nMadeleine L'Engle\nTag\n----------\nhumor\nobvious\nsimile\n\nQuotes by: GoodReads.com\n\nMade with ❤ by Zyte"
+$ agent-browser eval "JSON.stringify({a:document.querySelector('#author').value,t:document.querySelector('#tag').value,h:document.querySelector('.container').innerHTML.slice(-1500)})"
+-> [1633 chars] "{\"a\":\"Steve Martin\",\"t\":\"humor\",\"h\":\"class=\\\"btn btn-default\\\">\\n    \\n    <input type=\\\"hidden\\\" name=\\\"__VIEWSTATE\\\" id=\\\"__VIEWSTATE\\\" value=\\\"YzMwMWZkOGMwM2IyNGMyY2E1OWRiMGIzZmRlMTM4YTQsQWxiZXJ0IEVpbnN0ZWluLEouSy4gUm93bGluZyxKYW5lIEF1c3RlbixNYXJpbHluIE1vbnJvZSxBbmRyw6kgR2lkZSxUaG9tYXMgQS4gRWRpc29uLEVsZWFub3IgUm9vc2V2ZWx0LFN0ZXZlIE1hcnRpbixCb2IgTWFybGV5LERyLiBTZXVzcyxEb3VnbGFzIEFkYW1zLEVsaWUgV2llc2VsLEZyaWVkcmljaCBOaWV0enNjaGUsTWFyayBUd2FpbixBbGxlbiBTYXVuZGVycy …() {\\n        if (!theForm.onsubmit || (theForm.onsubmit() != false)) {\\n            theForm.submit();\\n        }\\n    }\\n</script>\\n\\n    \"}"
+$ agent-browser click "input[type=submit]"; agent-browser wait ".quote"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote')].map(q=>q.innerText))"
+-> [95 chars] ✓ Done
+✓ Done
+"[\"“A day without sunshine is like, you know, night.” - Steve Martin (humor)\"]"
+SAY: I selected author "Steve Martin" and tag "humor" and ran the search. It returned one quote:
+
+“A day without sunshine is like, you know, night.” — Steve Martin
+
+The first search came back empty, probably because the page reloads after the author is chosen and that interfered with the tag selection. Both values were still set on the form, so I clicked Search again and that returned the quote above.
+
+ANSWER: “A day without sunshine is like, you know, night.”

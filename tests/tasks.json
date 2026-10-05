@@ -1,0 +1,257 @@
+{
+"t01": {
+"split": "train",
+"task": "Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.",
+"expect": [
+"hello world!"
+]
+},
+"t02": {
+"split": "train",
+"task": "On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.",
+"expect": [
+"you clicked: cancel",
+"you entered: skillopt-42"
+]
+},
+"t03": {
+"split": "train",
+"task": "On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.",
+"expect": [
+"jdoe@hotmail\\.com"
+]
+},
+"t04": {
+"split": "train",
+"task": "Start at https://quotes.toscrape.com/js/ and use the Next link to go to the third page. Report the author of the first quote on page 3.",
+"expect": [
+"pablo neruda"
+]
+},
+"t05": {
+"split": "train",
+"task": "On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.",
+"expect": [
+"day without sunshine is like, you know, night"
+]
+},
+"t06": {
+"split": "train",
+"task": "On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.",
+"expect": [
+"\\b5\\b|\\bfive\\b",
+"\\b32\\b"
+]
+},
+"t07": {
+"split": "train",
+"task": "On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.",
+"expect": [
+"a year in provence",
+"56\\.88"
+]
+},
+"t08": {
+"split": "train",
+"task": "On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?",
+"expect": [
+"gravity",
+"\\b7\\b",
+"12 years a slave"
+]
+},
+"t09": {
+"split": "train",
+"task": "On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.",
+"expect": [
+"nor-2087",
+"1,?470"
+]
+},
+"t10": {
+"split": "train",
+"task": "On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.",
+"expect": [
+"pdf",
+"csv",
+"excel"
+]
+},
+"s01": {
+"split": "sel",
+"task": "On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.",
+"expect": [
+"user3",
+"/users/3"
+]
+},
+"s02": {
+"split": "sel",
+"task": "On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.",
+"expect": [
+"goodreads\\.com/author/show/9810\\.albert_einstein"
+]
+},
+"s03": {
+"split": "sel",
+"task": "On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.",
+"expect": [
+"\\b5\\b|\\bfive\\b",
+"\\b26\\b"
+]
+},
+"s04": {
+"split": "sel",
+"task": "On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).",
+"expect": [
+"\\b49\\b",
+"\\b269\\b"
+]
+},
+"s05": {
+"split": "sel",
+"task": "On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.",
+"expect": [
+"vendor audit",
+"19th",
+"a-7028"
+]
+},
+"s06": {
+"split": "sel",
+"task": "On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.",
+"expect": [
+"it's gone!",
+"it's enabled!",
+"hello"
+]
+},
+"x01": {
+"split": "test",
+"task": "On https://the-internet.herokuapp.com/windows click 'Click Here'. Report the heading text of the page that opens, and its URL.",
+"expect": [
+"new window",
+"/windows/new"
+]
+},
+"x02": {
+"split": "test",
+"task": "Open https://the-internet.herokuapp.com/nested_frames and report the text displayed in each of the four frames (left, middle, right, bottom).",
+"expect": [
+"left",
+"middle",
+"right",
+"bottom"
+]
+},
+"x03": {
+"split": "test",
+"task": "https://quotes.toscrape.com/scroll loads more quotes as you scroll. Scroll until no more load. How many quotes are there in total, and who is the author of the very last one?",
+"expect": [
+"\\b100\\b",
+"george r\\.? ?r\\.? martin"
+]
+},
+"x04": {
+"split": "test",
+"task": "On https://quotes.toscrape.com/ click the tag 'life' and count how many quotes carry that tag across all result pages. Also report the author of the last quote on the last page.",
+"expect": [
+"\\b13\\b"
+]
+},
+"x05": {
+"split": "test",
+"task": "On https://books.toscrape.com/ open the 'Poetry' category, find its cheapest book, open that book's page, and report its title, price and UPC.",
+"expect": [
+"poems that make grown women cry",
+"14\\.19",
+"31001a1210623bd4"
+]
+},
+"x06": {
+"split": "test",
+"task": "On https://www.scrapethissite.com/pages/frames/ find the turtle family Cheloniidae, open its 'Learn more' details, and report its common name, the year it was discovered and by whom.",
+"expect": [
+"sea turtle",
+"1811",
+"oppel"
+]
+},
+"x07": {
+"split": "test",
+"task": "Complete the onboarding form at http://localhost:8791/wizard.html with: full name Mira Okonkwo, email mira@example.org, department Research, start date 23 November 2026, and confirm the handbook. Submit it and report the confirmation code.",
+"expect": [
+"wz-19873"
+]
+},
+"x08": {
+"split": "test",
+"task": "Go to https://en.wikipedia.org/ , use the site's search box to find the article on Ada Lovelace, and report her date of birth and date of death as given in the infobox.",
+"expect": [
+"10 december 1815|december 10,? 1815",
+"27 november 1852|november 27,? 1852"
+]
+},
+"t11": {
+"split": "train",
+"task": "On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.",
+"expect": [
+"you selected a context menu"
+]
+},
+"t12": {
+"split": "train",
+"task": "Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.",
+"expect": [
+"file uploaded!",
+"skillopt-note\\.txt"
+]
+},
+"t13": {
+"split": "train",
+"task": "On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?",
+"expect": [
+"albert einstein",
+"\\b10\\b"
+]
+},
+"s07": {
+"split": "sel",
+"task": "On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.",
+"expect": [
+"\\bB\\s*,\\s*A\\b"
+]
+},
+"s08": {
+"split": "sel",
+"task": "On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than \u00a312.00? Also report the title and price of the single cheapest book.",
+"expect": [
+"\\b44\\b",
+"an\\ abundance\\ of\\ katherine",
+"10\\.0"
+]
+},
+"x09": {
+"split": "test",
+"task": "Open https://the-internet.herokuapp.com/basic_auth . It is protected by HTTP basic authentication: username admin, password admin. Report the paragraph text shown after authenticating.",
+"expect": [
+"congratulations! you must have the proper credentials"
+]
+},
+"x10": {
+"split": "test",
+"task": "On https://the-internet.herokuapp.com/shadowdom there are two custom paragraph components. Report the text content of the second one (it renders a list).",
+"expect": [
+"let's have some different text!",
+"in a list!"
+]
+},
+"x11": {
+"split": "test",
+"task": "On https://books.toscrape.com/ , across the entire catalogue (every page), how many books have a five-star rating and cost less than \u00a315.00? Also report the title of the most expensive book in the catalogue.",
+"expect": [
+"\\b23\\b",
+"the\\ perfect\\ play\\ \\(play\\ by"
+]
+}
+}

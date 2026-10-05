@@ -1,0 +1,24 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": true, "score": 0.967, "wtok": 21831, "turns": 3, "cost": 0.056, "secs": 27, "infra": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null; agent-browser eval "[...document.querySelectorAll('article.product_pod')].map(a=>a.querySelector('h3 a').title+'\t'+a.querySelector('.price_color').textContent).join('\n')"; done > /tmp/books.txt; wc -l /tmp/books.txt; head -3 /tmp/books.txt
+-> [3014 chars] 50 /tmp/books.txt
+"A Light in the Attic\t£51.77\nTipping the Velvet\t£53.74\nSoumission\t£50.10\nSharp Objects\t£47.82\nSapiens: A Brief History of Humankind\t£54.23\nThe Requiem Red\t£22.65\nThe Dirty Little Secrets of Getting Your Dream Job\t£33.34\nThe Coming Woman: A Novel Based on the Life of the Infamous Feminist, Victoria Woodhull\t£17.93\nThe Boys in the Boat: Nine Americans and Their Epic Quest for Gold at the 1936 Berlin Olympics\t£22.60\nThe Black Maria\t£52.15\nStarving Hearts (Trian …ls, and Other Delicious Ways to Solve Supper!\t£56.41\nThe Past Never Ends\t£56.50\nThe Natural History of Us (The Fine Art of Pretending #2)\t£45.22"
+$ python3 -c "
+import json
+rows=[]
+for l in open('/tmp/books.txt'):
+    for r in json.loads(l).split('\n'):
+        t,p=r.rsplit('\t',1); rows.append((float(p.lstrip('£')),t))
+print(len(rows)); c=[r for r in rows if r[0]<12]; print(len(c)); print(sorted(rows)[:4])
+"; agent-browser close
+-> [193 chars] 1000
+44
+[(10.0, 'An Abundance of Katherines'), (10.01, 'The Origin of Species'), (10.02, 'The Tipping Point: How Little Things Can Make a Big Difference'), (10.16, 'Patience')]
+✓ Browser closed
+SAY: I opened all 50 catalogue pages in the browser and collected 1,000 books. Of these, **44 cost less than £12.00**.
+
+The cheapest book is **"An Abundance of Katherines" at £10.00**. The next cheapest is "The Origin of Species" at £10.01.
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00

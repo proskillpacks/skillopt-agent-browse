@@ -1,0 +1,38 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07", "correct": true, "score": 0.958, "wtok": 27735, "turns": 5, "cost": 0.043, "secs": 70, "infra": false, "answer": "B,A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop && agent-browser drag "#column-a" "#column-b" && agent-browser eval "[...document.querySelectorAll('#columns header')].map(h=>h.textContent).join(',')"
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser eval "[...document.querySelectorAll('#columns header')].map(h=>h.textContent).join(',')"
+-> [51 chars] https://the-internet.herokuapp.com/drag_and_drop
+""
+$ agent-browser reload; agent-browser wait "#column-a"; agent-browser snapshot | head -30; agent-browser eval "[...document.querySelectorAll('#columns header')].map(h=>h.textContent).join(',')"
+-> [421 chars] https://the-internet.herokuapp.com/drag_and_drop
+✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "Drag and Drop" [level=3, ref=e2]
+  - generic
+    - group
+      - banner
+        - StaticText "A"
+    - group
+      - banner
+        - StaticText "B"
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e3]
+"A,B"
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "[...document.querySelectorAll('#columns header')].map(h=>h.textContent).join(',')"
+-> [12 chars] ✓ Done
+"B,A"
+SAY: I dragged box A onto box B in the browser, and the two boxes swapped places. Reading the headers left to right now gives B, then A.
+
+My first drag attempt timed out before the page had loaded. I reloaded the page, waited until box A was on screen, confirmed the headers read A, B, and then the drag worked.
+
+ANSWER: B,A

@@ -1,0 +1,13 @@
+TASK x09: Open https://the-internet.herokuapp.com/basic_auth . It is protected by HTTP basic authentication: username admin, password admin. Report the paragraph text shown after authenticating.
+EXPECT: ['congratulations! you must have the proper credentials']
+RESULT: {"id": "x09_r2", "correct": true, "score": 0.982, "wtok": 12144, "turns": 2, "cost": 0.035, "secs": 35, "infra": false, "answer": "Congratulations! You must have the proper credentials."}
+
+$ agent-browser open https://admin:admin@the-internet.herokuapp.com/basic_auth; agent-browser wait "p"; agent-browser get text "#content p"
+-> [144 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+Congratulations! You must have the proper credentials.
+SAY: I opened the page in the browser with the credentials admin/admin in the URL. The open command reported a timeout, but the page still loaded and I read this paragraph after logging in:
+
+"Congratulations! You must have the proper credentials."
+
+ANSWER: Congratulations! You must have the proper credentials.

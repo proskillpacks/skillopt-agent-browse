@@ -1,0 +1,31 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r2", "correct": true, "score": 0.946, "wtok": 35877, "turns": 4, "cost": 0.078, "secs": 38, "infra": false, "answer": "49 wins, 269 GF"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/ && agent-browser snapshot -i
+-> [6581 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 … "Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+$ agent-browser fill @e9 "Bruins" && agent-browser click @e10 && agent-browser wait --load networkidle; agent-browser eval "[...document.querySelectorAll('tr.team')].map(r=>[...r.querySelectorAll('td')].map(t=>t.innerText.trim()).join('|')).join('\n')"; agent-browser get url
+-> [1011 chars] ✓ Done
+✓ Done
+✓ Done
+"Boston Bruins|1990|44|24||0.55|299|264|35\nBoston Bruins|1991|36|32||0.45|270|275|-5\nBoston Bruins|1992|51|26||0.607|332|268|64\nBoston Bruins|1993|42|29||0.5|289|252|37\nBoston Bruins|1994|27|18||0.562|150|127|23\nBoston Bruins|1995|40|31||0.488|282|269|13\nBoston Bruins|1996|26|47||0.317|234|300|-66\nBoston Bruins|1997|39|30||0.476|221|194|27\nBoston Bruins|1998|39|30||0.476|214|181|33\nBoston Bruins|1999|24|33|6|0.293|210|248|-38\nBoston Bruins|2000|36|30|8|0.439|227|24 …200|6\nBoston Bruins|2010|46|25|11|0.561|246|195|51\nBoston Bruins|2011|49|29|4|0.598|269|202|67"
+https://www.scrapethissite.com/pages/forms/?q=Bruins
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: I searched for "Bruins" with the site's search box. In the results, the Boston Bruins 2011 row shows **49 wins** and **269 Goals For (GF)**. The rest of that row is 29 losses, 4 OT losses, 202 goals against and +67.
+
+ANSWER: 49 wins, 269 GF

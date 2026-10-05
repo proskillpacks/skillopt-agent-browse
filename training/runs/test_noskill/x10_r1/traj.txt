@@ -1,0 +1,24 @@
+TASK x10: On https://the-internet.herokuapp.com/shadowdom there are two custom paragraph components. Report the text content of the second one (it renders a list).
+EXPECT: ["let's have some different text!", 'in a list!']
+RESULT: {"id": "x10_r1", "correct": true, "score": 0.966, "wtok": 22837, "turns": 4, "cost": 0.043, "secs": 37, "infra": false, "answer": "Let's have some different text! In a list!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom && agent-browser eval "Array.from(document.querySelectorAll('my-paragraph')).map(e=>JSON.stringify({text:e.textContent, shadow:e.shadowRoot?e.shadowRoot.textContent:null}))"
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser eval "Array.from(document.querySelectorAll('my-paragraph')).map(e=>JSON.stringify({text:e.textContent, inner:e.innerText}))"; agent-browser get url
+-> [47 chars] []
+https://the-internet.herokuapp.com/shadowdom
+$ agent-browser wait --load load; agent-browser eval "Array.from(document.querySelectorAll('my-paragraph')).map(e=>JSON.stringify({text:e.textContent, inner:e.innerText}))"
+-> [263 chars] ✓ Done
+[
+  "{\"text\":\"\\n  Let's have some different text!\\n\",\"inner\":\"Let's have some different text!\"}",
+  "{\"text\":\"\\n  \\n    Let's have some different text!\\n    In a list!\\n  \\n\",\"inner\":\"Let's have some different text!\\nIn a list!\"}"
+]
+SAY: The second `<my-paragraph>` component on the page renders a list with two items:
+
+- Let's have some different text!
+- In a list!
+
+I read this in the browser with agent-browser, using the element's slotted light-DOM content. The first try timed out while the page was still loading, so I waited for it to finish loading and ran it again.
+
+ANSWER: Let's have some different text! In a list!

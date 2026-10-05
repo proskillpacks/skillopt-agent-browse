@@ -1,0 +1,25 @@
+TASK x05: On https://books.toscrape.com/ open the 'Poetry' category, find its cheapest book, open that book's page, and report its title, price and UPC.
+EXPECT: ['poems that make grown women cry', '14\\.19', '31001a1210623bd4']
+RESULT: {"id": "x05_r2", "correct": true, "score": 0.964, "wtok": 23743, "turns": 3, "cost": 0.062, "secs": 12, "infra": false, "answer": "Poems That Make Grown Women Cry \u2014 \u00a314.19 \u2014 UPC 31001a1210623bd4"}
+
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/poetry_23/index.html; agent-browser wait "article.product_pod"; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title,a.querySelector('.price_color').textContent,a.querySelector('h3 a').href]))"; agent-browser eval "document.querySelector('.pager')?.innerText"
+-> [2604 chars] ✓ Poetry | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/poetry_23/index.html
+✓ Done
+"[[\"A Light in the Attic\",\"£51.77\",\"https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html\"],[\"The Black Maria\",\"£52.15\",\"https://books.toscrape.com/catalogue/the-black-maria_991/index.html\"],[\"Shakespeare's Sonnets\",\"£20.66\",\"https://books.toscrape.com/catalogue/shakespeares-sonnets_989/index.html\"],[\"Olio\",\"£23.88\",\"https://books.toscr …y Love Poems and a Song of Despair\",\"£30.95\",\"https://books.toscrape.com/catalogue/twenty-love-poems-and-a-song-of-despair_91/index.html\"]]"
+null
+SAY: There's only one page of results, and the cheapest book on it is "Poems That Make Grown Women Cry" at £14.19.
+$ agent-browser open https://books.toscrape.com/catalogue/poems-that-make-grown-women-cry_824/index.html; agent-browser wait "table"; agent-browser eval "JSON.stringify([document.querySelector('h1').textContent, document.querySelector('.product_main .price_color').textContent, [...document.querySelectorAll('table tr')].map(r=>r.innerText)])"; agent-browser close
+-> [423 chars] ✓ Poems That Make Grown Women Cry | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/poems-that-make-grown-women-cry_824/index.html
+✓ Done
+"[\"Poems That Make Grown Women Cry\",\"£14.19\",[\"UPC\\t31001a1210623bd4\",\"Product Type\\tBooks\",\"Price (excl. tax)\\t£14.19\",\"Price (incl. tax)\\t£14.19\",\"Tax\\t£0.00\",\"Availability\\tIn stock (15 available)\",\"Number of reviews\\t0\"]]"
+✓ Browser closed
+SAY: The cheapest book in the Poetry category is **Poems That Make Grown Women Cry** at £14.19. The category has 19 books on a single page. The next cheapest is "Untitled Collection: Sabbath Poems 2014" at £14.27.
+
+I took these details from the book's own page:
+- **Title:** Poems That Make Grown Women Cry
+- **Price:** £14.19
+- **UPC:** 31001a1210623bd4
+
+ANSWER: Poems That Make Grown Women Cry — £14.19 — UPC 31001a1210623bd4

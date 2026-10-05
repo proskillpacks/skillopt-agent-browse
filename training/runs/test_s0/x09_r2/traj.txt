@@ -1,0 +1,37 @@
+TASK x09: Open https://the-internet.herokuapp.com/basic_auth . It is protected by HTTP basic authentication: username admin, password admin. Report the paragraph text shown after authenticating.
+EXPECT: ['congratulations! you must have the proper credentials']
+RESULT: {"id": "x09_r2", "correct": true, "score": 0.941, "wtok": 39338, "turns": 6, "cost": 0.061, "secs": 67, "infra": false, "answer": "Congratulations! You must have the proper credentials."}
+
+$ agent-browser open https://admin:admin@the-internet.herokuapp.com/basic_auth && agent-browser read
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser --help 2>&1 | grep -i -E "auth|credential|header" ; agent-browser get url; agent-browser read 2>&1 | head -30
+-> [1593 chars]   offline [on|off], headers <json>, credentials <user> <pass>
+                             Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+Auth Vault:
+  auth save <name> [opts]    Save auth profile (--url, --username, --password/--password-stdin)
+  auth login <name>          Login using saved credentials (waits for form fields)
+  auth login <name> --no-navigate
+                             Use active page after verifying credential URL origin
+  auth  …l.read"]},{"name":"stealth","command":"agent-browser-plugin-stealth","capabilities":["launch.mutate"]}]}
+https://the-internet.herokuapp.com/basic_auth
+SAY: The `set credentials` command is the way.
+$ agent-browser set credentials admin admin && agent-browser open https://the-internet.herokuapp.com/basic_auth && agent-browser read
+-> [101 chars] Exit code 1
+✓ Done
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser open https://the-internet.herokuapp.com/basic_auth --headers '{"Authorization":"Basic YWRtaW46YWRtaW4="}'; agent-browser read 2>&1 | head -30
+-> [164 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/basic_auth
+### Basic Auth
+
+Congratulations! You must have the proper credentials.
+
+Powered by Elemental Selenium
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: The page loaded after authenticating, under the heading "Basic Auth", with this paragraph: **"Congratulations! You must have the proper credentials."**
+
+Getting in took three tries. Putting the credentials in the URL (`admin:admin@...`) timed out, and so did `agent-browser set credentials admin admin`. What worked was opening the page with an `Authorization: Basic` header containing the encoded admin/admin pair. I closed the browser session afterwards.
+
+ANSWER: Congratulations! You must have the

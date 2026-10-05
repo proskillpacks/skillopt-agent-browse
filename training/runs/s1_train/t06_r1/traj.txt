@@ -1,0 +1,20 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r1", "correct": true, "score": 0.97, "wtok": 20299, "turns": 3, "cost": 0.046, "secs": 12, "infra": false, "answer": "5 five-star books; 32 books total in Mystery"}
+
+SAY: Mystery category URL is catalogue/category/books/mystery_3/index.html.
+$ B=https://books.toscrape.com/catalogue/category/books/mystery_3; for p in index.html page-2.html page-3.html; do agent-browser open $B/$p >/dev/null; agent-browser eval "JSON.stringify({p:'$p',total:document.querySelector('form strong')?.textContent,n:document.querySelectorAll('article.product_pod').length,five:document.querySelectorAll('article.product_pod p.star-rating.Five').length,next:!!document.querySelector('li.next')})"; done
+-> [213 chars] "{\"p\":\"index.html\",\"total\":\"32\",\"n\":20,\"five\":3,\"next\":true}"
+"{\"p\":\"page-2.html\",\"total\":\"32\",\"n\":12,\"five\":2,\"next\":false}"
+"{\"p\":\"page-3.html\",\"n\":0,\"five\":0,\"next\":false}"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: The Mystery category has 32 books in total, and 5 of them have a five-star rating.
+
+I opened the category's pages directly by URL in the browser rather than clicking through from the home page. The category spans two pages:
+- **Page 1:** 20 books, 3 with five stars.
+- **Page 2:** 12 books, 2 with five stars. There is no "next" link on this page, so it's the last one.
+
+The two pages add up to 32 books, which matches the total of 32 the site shows for the category.
+
+ANSWER: 5 five-star books; 32 b

@@ -1,0 +1,29 @@
+TASK x11: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books have a five-star rating and cost less than £15.00? Also report the title of the most expensive book in the catalogue.
+EXPECT: ['\\b23\\b', 'the\\ perfect\\ play\\ \\(play\\ by']
+RESULT: {"id": "x11_r2", "correct": true, "score": 0.969, "wtok": 20687, "turns": 3, "cost": 0.049, "secs": 25, "infra": false, "answer": "23 five-star books under \u00a315.00; the most expensive book is \"The Perfect Play (Play by Play #1)\" (\u00a359.99)"}
+
+$ for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1; agent-browser wait "article.product_pod" >/dev/null 2>&1; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title,a.querySelector('.star-rating').className.split(' ')[1],a.querySelector('.price_color').textContent]))"; done > /tmp/books.txt; agent-browser close; wc -l /tmp/books.txt
+-> [34 chars] ✓ Browser closed
+50 /tmp/books.txt
+$ python3 -c "
+import json
+b=[]
+for l in open('/tmp/books.txt'):
+  l=l.strip()
+  d=json.loads(l)
+  if isinstance(d,str): d=json.loads(d)
+  b+=d
+print(len(b))
+p=lambda s: float(s.replace('£','').replace('Â',''))
+print(sum(1 for t,r,pr in b if r=='Five' and p(pr)<15))
+m=max(p(x[2]) for x in b); print([x for x in b if p(x[2])==m])
+"
+-> [67 chars] 1000
+23
+[['The Perfect Play (Play by Play #1)', 'Three', '£59.99']]
+SAY: I went through all 50 catalogue pages in the browser, which covers 1,000 books.
+
+- **Five-star books under £15.00:** 23
+- **Most expensive book:** *The Perfect Play (Play by Play #1)* at £59.99. No other book has that price.
+
+ANSWER: 23 five-star books under £15.00; the most expensive book is "The Perfect Play (Play by Play #1)" (£59.99)

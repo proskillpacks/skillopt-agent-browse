@@ -1,0 +1,21 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r2", "correct": true, "score": 0.956, "wtok": 29443, "turns": 5, "cost": 0.046, "secs": 41, "infra": false, "answer": "B,A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop && agent-browser drag "#column-a" "#column-b"; agent-browser eval "Array.from(document.querySelectorAll('#columns header')).map(h=>h.textContent).join(',')"
+-> [85 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+""
+$ agent-browser get url; agent-browser snapshot -i
+-> [74 chars] https://the-internet.herokuapp.com/drag_and_drop
+(no interactive elements)
+$ agent-browser wait "#column-a" ; agent-browser eval "document.readyState + ' ' + document.body.innerText.slice(0,300)"
+-> [68 chars] ✓ Done
+"complete Drag and Drop\nA\nB\nPowered by Elemental Selenium"
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "Array.from(document.querySelectorAll('#columns header')).map(h=>h.textContent).join(',')"
+-> [12 chars] ✓ Done
+"B,A"
+SAY: I dragged box A onto box B, and the two boxes swapped places. Reading the headers left to right now gives **B, A**.
+
+My first drag attempt timed out before the page finished loading. I waited for the boxes to appear, then the second drag worked.
+
+ANSWER: B,A

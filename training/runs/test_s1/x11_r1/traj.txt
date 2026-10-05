@@ -1,0 +1,36 @@
+TASK x11: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books have a five-star rating and cost less than £15.00? Also report the title of the most expensive book in the catalogue.
+EXPECT: ['\\b23\\b', 'the\\ perfect\\ play\\ \\(play\\ by']
+RESULT: {"id": "x11_r1", "correct": true, "score": 0.967, "wtok": 21909, "turns": 3, "cost": 0.057, "secs": 25, "infra": false, "answer": "23 five-star books cost under \u00a315.00; the most expensive book is \"The Perfect Play (Play by Play #1)\" (\u00a359.99)"}
+
+$ for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>[a.querySelector('h3 a').title,a.querySelector('.star-rating').className.split(' ')[1],a.querySelector('.price_color').textContent]))"; done > /tmp/books.txt; wc -l /tmp/books.txt
+-> [17 chars] 50 /tmp/books.txt
+$ python3 -c "
+import json
+b=[]
+for l in open('/tmp/books.txt'):
+    l=l.strip(); v=json.loads(l)
+    if isinstance(v,str): v=json.loads(v)
+    b+=v
+print(len(b))
+p=lambda s: float(s.replace('£','').replace('Â',''))
+f=[x for x in b if x[1]=='Five' and p(x[2])<15]
+print(len(f)); [print(x) for x in f]
+m=max(b,key=lambda x:p(x[2])); print(m)
+print(sorted(b,key=lambda x:-p(x[2]))[:3])
+"; agent-browser close
+-> [1712 chars] 1000
+23
+['Princess Jellyfish 2-in-1 Omnibus, Vol. 01 (Princess Jellyfish 2-in-1 Omnibus #1)', 'Five', '£13.61']
+['Princess Between Worlds (Wide-Awake Princess #5)', 'Five', '£13.34']
+['The Third Wave: An Entrepreneur’s Vision of the Future', 'Five', '£12.61']
+['Agnostic: A Spirited Manifesto', 'Five', '£12.51']
+["Walt Disney's Alice in Wonderland", 'Five', '£12.96']
+['Superman Vol. 1: Before Truth (Superman by Gene Luen Yang #1)', 'Five', '£11.89']
+['Old School (Diary of a Wimpy Kid #10)', 'Five … 'Three', '£59.99'], ['Last One Home (New Beginnings #1)', 'Three', '£59.98'], ['Civilization and Its Discontents', 'Two', '£59.95']]
+✓ Browser closed
+SAY: I went through all 50 catalogue pages in the browser and collected all 1,000 books.
+
+- **Five-star books under £15.00: 23.** The cheapest is *An Abundance of Katherines* at £10.00 and the dearest is *Hyperbole and a Half* at £14.75.
+- **Most expensive book:** *The Perfect Play (Play by Play #1)* at £59.99. It only just beats *Last One Home (New Beginnings #1)* at £59.98.
+
+ANSWER: 23 five-star books cost under £15.00; the most expensive book is "The Perfect Play (Play by Play #1)" (£59.99)

@@ -1,0 +1,67 @@
+{
+ "tag": "noskill_hard",
+ "skill": "none",
+ "n": 5,
+ "acc": 1.0,
+ "score": 0.9184,
+ "wtok": 54338,
+ "turns": 7.2,
+ "cost": 0.38,
+ "results": [
+  {
+   "id": "t11",
+   "correct": true,
+   "score": 0.799,
+   "wtok": 134317,
+   "turns": 15,
+   "cost": 0.148,
+   "secs": 132,
+   "infra": false,
+   "answer": "You selected a context menu"
+  },
+  {
+   "id": "t12",
+   "correct": true,
+   "score": 0.915,
+   "wtok": 56361,
+   "turns": 8,
+   "cost": 0.079,
+   "secs": 79,
+   "infra": false,
+   "answer": "File Uploaded! \u2014 skillopt-note.txt"
+  },
+  {
+   "id": "t13",
+   "correct": true,
+   "score": 0.96,
+   "wtok": 26882,
+   "turns": 4,
+   "cost": 0.056,
+   "secs": 19,
+   "infra": false,
+   "answer": "Albert Einstein, 10 quotes"
+  },
+  {
+   "id": "s07",
+   "correct": true,
+   "score": 0.958,
+   "wtok": 27735,
+   "turns": 5,
+   "cost": 0.043,
+   "secs": 70,
+   "infra": false,
+   "answer": "B,A"
+  },
+  {
+   "id": "s08",
+   "correct": true,
+   "score": 0.96,
+   "wtok": 26393,
+   "turns": 4,
+   "cost": 0.055,
+   "secs": 31,
+   "infra": false,
+   "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"
+  }
+ ]
+}

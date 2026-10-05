@@ -1,0 +1,46 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13", "correct": true, "score": 0.96, "wtok": 26882, "turns": 4, "cost": 0.056, "secs": 19, "infra": false, "answer": "Albert Einstein, 10 quotes"}
+
+$ agent-browser --help 2>&1 | head -60
+-> [2632 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …rl
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+SAY: Loop through pages in the browser, collecting authors via eval.
+$ cd /tmp; : > authors.txt; p=1; while :; do agent-browser open "https://quotes.toscrape.com/page/$p/" >/dev/null; out=$(agent-browser eval 'JSON.stringify({a:[...document.querySelectorAll(".quote .author")].map(e=>e.textContent),n:!!document.querySelector("li.next a")})'); echo "$p: $out" | cut -c1-80; echo "$out" >> authors.txt; echo "$out" | grep -q '\\"n\\":true\|"n":true' || break; p=$((p+1)); [ $p -gt 20 ] && break; done
+-> [882 chars] 1: "{\"a\":[\"Albert Einstein\",\"J.K. Rowling\",\"Albert Einstein\",\"Jane Aust
+2: "{\"a\":[\"Marilyn Monroe\",\"J.K. Rowling\",\"Albert Einstein\",\"Bob Marley
+3: "{\"a\":[\"Pablo Neruda\",\"Ralph Waldo Emerson\",\"Mother Teresa\",\"Garriso
+4: "{\"a\":[\"Dr. Seuss\",\"J.K. Rowling\",\"Bob Marley\",\"Mother Teresa\",\"J.
+5: "{\"a\":[\"George R.R. Martin\",\"C.S. Lewis\",\"Marilyn Monroe\",\"Marilyn M
+6: "{\"a\":[\"Jane Austen\",\"Eleanor Roosevelt\",\"Marilyn Monroe\",\"Albert Ei
+7: "{\"a\":[\" … "{\"a\":[\"J.K. Rowling\",\"Jimi Hendrix\",\"J.M. Barrie\",\"E.E. Cummings\"
+Shell cwd was reset to /home/user/skill-research/runs/noskill_hard/t13
+$ python3 -c "
+import json,collections
+c=collections.Counter();t=0
+for l in open('/tmp/authors.txt'):
+  d=json.loads(json.loads(l)); c.update(d['a']); t+=len(d['a']); last=d['n']
+print(t,last,c.most_common(4))"
+-> [97 chars] 100 False [('Albert Einstein', 10), ('J.K. Rowling', 9), ('Marilyn Monroe', 7), ('Dr. Seuss', 6)]
+SAY: Albert Einstein has the most quotes on the site, with 10.
+
+I opened all 10 pages in the browser with `agent-browser` and counted the 100 quotes by author. Page 10 has no "Next" link, so that covers the whole site. The next highest are J.K. Rowling with 9, Marilyn Monroe with 7 and Dr. Seuss with 6.
+
+ANSWER: Albert Einstein, 10 quotes

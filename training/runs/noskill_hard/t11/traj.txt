@@ -1,0 +1,128 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11", "correct": true, "score": 0.799, "wtok": 134317, "turns": 15, "cost": 0.148, "secs": 132, "infra": false, "answer": "You selected a context menu"}
+
+$ agent-browser --help 2>&1 | head -80
+-> [3506 chars] agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+  s …         Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+  storage <local|session>    Manage web storage
+$ agent-browser --help 2>&1 | grep -i -E "dialog|alert|button"
+-> [264 chars]   --no-auto-dialog           Disable automatic dismissal of alert/beforeunload dialogs (or AGENT_BROWSER_NO_AUTO_DIALOG)
+  AGENT_BROWSER_NO_AUTO_DIALOG   Disable automatic dismissal of alert/beforeunload dialogs
+  agent-browser find role button click --name Submit
+$ agent-browser open https://the-internet.herokuapp.com/context_menu && agent-browser get box '#hot-container'; agent-browser dialog --help 2>&1 | head -20
+-> [680 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+agent-browser dialog - Handle browser dialogs
+
+Usage: agent-browser dialog <accept|dismiss|status> [text]
+
+Respond to or check for browser dialogs (alert, confirm, prompt).
+
+Operations:
+  accept [text]        Accept dialog, optionally with prompt text
+  dismiss              Dismiss/cancel dialog
+  status               Check if a dialog is currently open
+
+Global Options:
+  --json               Output as JSON
+  --session <name>     Use specific session
+
+Examples:
+  agent-browser dialog accept
+  agent-browser dialog accept "my input"
+  agent-browser dialog dismiss
+  agent-browser dialog status
+$ agent-browser dialog status; agent-browser get url; agent-browser get box '#hot-spot'
+-> [202 chars] Exit code 1
+✓ No dialog is currently open
+https://the-internet.herokuapp.com/context_menu
+✗ Element not found: #hot-spot. Verify the selector, role, or name is correct and the element exists in the DOM.
+$ agent-browser snapshot; agent-browser eval 'document.body.innerHTML.slice(0,3000)'
+-> [132 chars] Exit code 1
+(empty page)
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:15
+SAY: The page didn't load on the first attempt, so I'm reloading it.
+$ agent-browser open https://the-internet.herokuapp.com/context_menu; agent-browser wait '#hot-spot'; agent-browser get box '#hot-spot'
+-> [140 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+x:      15
+y:      179.875
+width:  250
+height: 150
+$ agent-browser mouse move 140 255; agent-browser mouse down right; agent-browser mouse up right; agent-browser dialog status --json
+-> [333 chars] ✓ Done
+✓ Done
+✓ Done
+{"success":true,"data":{"hasDialog":false,"lifecycle":{"effectiveLaunch":{"browserLaunched":true,"engine":"chrome","launchHash":16914894280166936507},"launched":false,"relaunchedBrowser":false,"restartedBackground":false,"restoreStatus":"not_configured","reused":true,"saveStatus":"not_attempted"}},"error":null}
+$ agent-browser --no-auto-dialog mouse down right; agent-browser --no-auto-dialog mouse up right; agent-browser dialog status --json | head -c 400; echo; agent-browser console 2>&1 | tail -5
+-> [325 chars] ✓ Done
+✓ Done
+{"success":true,"data":{"hasDialog":false,"lifecycle":{"effectiveLaunch":{"browserLaunched":true,"engine":"chrome","launchHash":16914894280166936507},"launched":false,"relaunchedBrowser":false,"restartedBackground":true,"restoreStatus":"not_configured","reused":true,"saveStatus":"not_attempted"}},"error":null}
+$ agent-browser eval 'const o=window.alert;window.__msgs=[];window.alert=function(m){window.__msgs.push(String(m));return o.call(window,m)};"ok"'; agent-browser mouse move 140 255; agent-browser mouse down right; agent-browser mouse up right; agent-browser dialog status --json | head -c 120; echo; agent-browser dialog accept; agent-browser eval 'JSON.stringify(window.__msgs)'
+-> [215 chars] "ok"
+✓ Done
+✓ Done
+✓ Done
+{"success":true,"data":{"hasDialog":false,"lifecycle":{"effectiveLaunch":{"browserLaunched":true,"engine":"chrome","laun
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+"[]"
+$ agent-browser click --help 2>&1 | head -20; agent-browser eval 'document.querySelector("#hot-spot").outerHTML + " | " + [...document.scripts].map(s=>s.textContent).join("").slice(0,500)'
+-> [965 chars] Exit code 1
+agent-browser click - Click an element
+
+Usage: agent-browser click <selector> [--new-tab] [--human]
+
+Clicks on the specified element. The selector can be a CSS selector,
+XPath, or an element reference from snapshot (e.g., @e1).
+
+If another element covers the click point, agent-browser reports the
+covering element instead of dispatching a click to the wrong target.
+
+Options:
+  --new-tab            Open link in a new tab instead of navigating current tab.
+                       The new … --session <name>     Use specific session
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'outerHTML')
+    at <anonymous>:1:36
+$ agent-browser get url; agent-browser tab 2>&1 | head; agent-browser snapshot | head -30
+-> [46 chars] about:blank
+→ [t1]  - about:blank
+(empty page)
+SAY: The browser session restarted on a blank page, so I'm reopening the page and trying again.
+$ agent-browser open https://the-internet.herokuapp.com/context_menu; agent-browser wait '#hot-spot'; agent-browser get url; agent-browser get box '#hot-spot'
+-> [188 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+https://the-internet.herokuapp.com/context_menu
+x:      15
+y:      179.875
+width:  250
+height: 150
+$ agent-browser mouse move 140 255; agent-browser mouse down right; agent-browser dialog status --json | head -c 300; echo; agent-browser mouse up right; agent-browser dialog status --json | head -c 300
+-> [622 chars] ✓ Done
+✓ Done
+{"success":true,"data":{"hasDialog":false,"lifecycle":{"effectiveLaunch":{"browserLaunched":true,"engine":"chrome","launchHash":16914894280166936507},"launched":false,"relaunchedBrowser":false,"restartedBackground":false,"restoreStatus":"not_configured","reused":true,"saveStatus":"not_attempted"}},"
+✓ Done
+{"success":true,"data":{"hasDialog":false,"lifecycle":{"effectiveLaunch":{"browserLaunched":true,"engine":"chrome","launchHash":16914894280166936507},"launched":false,"relaunchedBrowser":false,"restartedBackground":false,"restoreStatus":"not_configured","reused":true,"saveStatus":"not_attempted"}},"
+$ agent-browser console 2>&1 | tail; agent-browser eval 'const o=window.alert;window.__msgs=[];window.alert=function(m){window.__msgs.push(String(m));return o.call(window,m)};location.href'; agent-browser mouse move 140 255; agent-browser mouse down right; agent-browser mouse up right; agent-browser eval 'JSON.stringify(window.__msgs)'
+-> [106 chars] "https://the-internet.herokuapp.com/context_menu"
+✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+SAY: The alert says **"You selected a context menu"**.
+
+I opened the page in the browser session and right-clicked inside the dashed box (`#hot-spot`) with real right-button mouse events. The session closes alerts automatically, so the CLI never showed the popup and I couldn't read it from there. To get the text, I wrapped the page's `window.alert` so it records each message and then calls the original, so the real alert still fired. After the right-click, the recorded message was the one above.
+
+ANS

@@ -1,0 +1,15 @@
+TASK x10: On https://the-internet.herokuapp.com/shadowdom there are two custom paragraph components. Report the text content of the second one (it renders a list).
+EXPECT: ["let's have some different text!", 'in a list!']
+RESULT: {"id": "x10_r1", "correct": true, "score": 0.971, "wtok": 19312, "turns": 3, "cost": 0.042, "secs": 38, "infra": false, "answer": "Let's have some different text! In a list!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/shadowdom; agent-browser wait "my-paragraph"; agent-browser eval "JSON.stringify([...document.querySelectorAll('my-paragraph')].map(e=>({light:e.textContent.trim(),inner:e.innerText, shadow:e.shadowRoot&&e.shadowRoot.textContent.trim()})))"
+-> [567 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+"[{\"light\":\"Let's have some different text!\",\"inner\":\"Let's have some different text!\",\"shadow\":\"p {\\n      color: white;\\n      background-color: #666;\\n      padding: 5px;\\n    }\\n  \\n  My default text\"},{\"light\":\"Let's have some different text!\\n    In a list!\",\"inner\":\"Let's have some different text!\\nIn a list!\",\"shadow\":\"p {\\n      color: white;\\n      background-color: #666;\\n      padding: 5px;\\n    }\\n  \\n  My default text\"}]"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: The second `<my-paragraph>` component shows a two-item list that is passed into its shadow DOM slot (which otherwise shows "My default text"):
+- Let's have some different text!
+- In a list!
+
+ANSWER: Let's have some different text! In a list!

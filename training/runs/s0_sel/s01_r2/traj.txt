@@ -1,0 +1,20 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r2", "correct": true, "score": 0.956, "wtok": 29611, "turns": 5, "cost": 0.047, "secs": 40, "infra": false, "answer": "name: user3, href: /users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers && agent-browser snapshot -i
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser snapshot -i; agent-browser get url
+-> [67 chars] (no interactive elements)
+https://the-internet.herokuapp.com/hovers
+$ agent-browser hover ".figure:nth-of-type(3) img" ; agent-browser eval "JSON.stringify([...document.querySelectorAll('.figure')].map(f=>({vis:getComputedStyle(f.querySelector('.figcaption')).display,h:f.querySelector('h5')?.innerText,a:f.querySelector('a')?.getAttribute('href')})))"
+-> [191 chars] ✓ Done
+"[{\"vis\":\"none\",\"h\":\"name: user1\",\"a\":\"/users/1\"},{\"vis\":\"none\",\"h\":\"name: user2\",\"a\":\"/users/2\"},{\"vis\":\"block\",\"h\":\"name: user3\",\"a\":\"/users/3\"}]"
+$ agent-browser close
+-> [16 chars] ✓ Browser closed
+SAY: When I hovered over the third avatar, its caption appeared (the other two stayed hidden). It shows **"name: user3"**, and its "View profile" link's `href` is **`/users/3`**. On the live site that resolves to https://the-internet.herokuapp.com/users/3.
+
+The `open` command timed out, but the page had already loaded at the correct URL, so the hover and the reading of the caption worked normally.
+
+ANSWER: name: user3, href: /users/3

@@ -1,0 +1,30 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01", "correct": true, "score": 0.975, "wtok": 33552, "turns": 6, "cost": 0.028, "secs": 74, "infra": false, "answer": "Hello World!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2 && agent-browser snapshot -i
+-> [94 chars] Exit code 1
+✗ Operation timed out. The page may still be loading or the element may not exist.
+$ agent-browser get url; agent-browser snapshot -i
+-> [78 chars] https://the-internet.herokuapp.com/dynamic_loading/2
+(no interactive elements)
+$ agent-browser snapshot | head -40
+-> [12 chars] (empty page)
+SAY: Page seems blank; reload.
+$ agent-browser reload; agent-browser wait --load load; agent-browser snapshot -i
+-> [294 chars] https://the-internet.herokuapp.com/dynamic_loading/2
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+- button "Start" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+$ agent-browser click @e4 && agent-browser wait "#finish" && agent-browser get text "#finish"
+-> [26 chars] ✓ Done
+✓ Done
+Hello World!
+SAY: I opened the page in `agent-browser`, clicked **Start**, and waited for the loading to finish. The text that appeared was **"Hello World!"**
+
+On the first try the page timed out and showed up blank, so I reloaded it before clicking Start.
+
+ANSWER: Hello World!

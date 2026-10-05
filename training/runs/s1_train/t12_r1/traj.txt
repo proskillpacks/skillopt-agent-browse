@@ -1,0 +1,15 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r1", "correct": true, "score": 0.98, "wtok": 13551, "turns": 2, "cost": 0.041, "secs": 35, "infra": false, "answer": "File Uploaded! \u2014 skillopt-note.txt"}
+
+$ cd /home/user/skill-research/runs/s1_train/t12_r1; echo "skillopt test note" > skillopt-note.txt; agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "#file-upload"; agent-browser upload "#file-upload" "$PWD/skillopt-note.txt" && agent-browser click "#file-submit"; agent-browser wait "#uploaded-files"; agent-browser eval "JSON.stringify({h:document.querySelector('h3')?.innerText,f:document.querySelector('#uploaded-files')?.innerText})"; agent-browser close
+-> [184 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+"{\"h\":\"File Uploaded!\",\"f\":\"skillopt-note.txt\"}"
+✓ Browser closed
+SAY: I created `skillopt-note.txt` and uploaded it through the form at https://the-internet.herokuapp.com/upload using `agent-browser`. The first page load timed out, but the upload still went through. After submitting, the page showed the heading **"File Uploaded!"** and listed the uploaded file as **skillopt-note.txt**.
+
+ANSWER: File Uploaded! — skillopt-note.txt

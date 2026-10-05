@@ -1,0 +1,44 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r1", "correct": true, "score": 0.948, "wtok": 34839, "turns": 4, "cost": 0.082, "secs": 46, "infra": false, "answer": "Boston Bruins 2011: 49 wins, 269 Goals For (GF)"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/; agent-browser wait "input[name=q]"; agent-browser fill "input[name=q]" "Bruins"; agent-browser press Enter; agent-browser wait "tr.team"; agent-browser eval "JSON.stringify([...document.querySelectorAll('tr.team')].map(r=>r.innerText.replace(/\s+/g,' ')))"; agent-browser close
+-> [1440 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+"[\"Boston Bruins 1990 44 24 0.55 299 264 35\",\"Buffalo Sabres 1990 31 30 0.388 292 278 14\",\"Calgary Flames 1990 46 26 0.575 344 263 81\",\"Chicago Blackhawks 1990 49 23 0.613 284 211 73\",\"Detroit Red Wings 1990 34 38 0.425 273 298 -25\",\"Edmonton Oilers 1990 37 37 0.463 272 272 0\",\"Hartford Whalers 1990  …res 1991 31 37 0.388 289 299 -10\",\"Calgary Flames 1991 31 37 0.388 296 305 -9\",\"Chicago Blackhawks 1991 36 29 0.45 257 236 21\"]"
+✓ Browser closed
+SAY: The search didn't submit properly. I'll try clicking the search button.
+$ agent-browser open https://www.scrapethissite.com/pages/forms/; agent-browser wait "input[name=q]"; agent-browser fill "input[name=q]" "Bruins"; agent-browser click "input[type=submit]"; agent-browser wait --fn "location.search.includes('Bruins')"; agent-browser get url; agent-browser eval "JSON.stringify([...document.querySelectorAll('tr.team')].map(r=>r.innerText.replace(/\s+/g,' ')))"; agent-browser close
+-> [1174 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+✓ Done
+✓ Done
+true
+https://www.scrapethissite.com/pages/forms/?q=Bruins
+"[\"Boston Bruins 1990 44 24 0.55 299 264 35\",\"Boston Bruins 1991 36 32 0.45 270 275 -5\",\"Boston Bruins 1992 51 26 0.607 332 268 64\",\"Boston Bruins 1993 42 29 0.5 289 252 37\",\"Boston Bruins 1994 27 18 0.562 150 127 23\",\"Boston Bruins 1995 40 31 0.488 28 …2 222 -10\",\"Boston Bruins 2008 53 19 10 0.646 274 196 78\",\"Boston Bruins 2009 39 30 13 0.476 206 200 6\",\"Boston Bruins 2010\"]"
+✓ Browser closed
+SAY: 2011 must be on page 2.
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser wait "input[name=q]"; agent-browser fill "input[name=q]" "Bruins"; agent-browser click "input[type=submit]"; agent-browser wait --fn "location.search.includes('Bruins')"; agent-browser find text "2" click; agent-browser wait --fn "location.search.includes('page_num=2')"; agent-browser get url; agent-browser eval "JSON.stringify([document.querySelector('tr.team').parentElement.querySelector('tr').innerText, ...[...document.querySelectorAll('tr.team')].map(r=>r.innerText.replace(/\s+/g,' '))])"; agent-browser close
+-> [1389 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+✓ Done
+✓ Done
+true
+✓ Done
+✗ Wait timed out after 25000ms
+https://www.scrapethissite.com/pages/forms/?q=Bruins
+"[\"Team Name\\tYear\\tWins\\tLosses\\tOT Losses\\tWin %\\tGoals For (GF)\\tGoals Against (GA)\\t+ / -\",\"Boston Bruins 1990 44 24 0.55 299 264 35\",\"Boston Bruins 1991 36 32 0.45 270 275 -5\",\"Boston Bruins 1992 51 26 0.6 …ns 2009 39 30 13 0.476 206 200 6\",\"Boston Bruins 2010 46 25 11 0.561 246 195 51\",\"Boston Bruins 2011 49 29 4 0.598 269 202 67\"]"
+✓ Browser closed
+SAY: I searched "Bruins" on the forms page in the browser. In the 2011 season, the Boston Bruins had 49 wins and scored 269 goals (GF).
+
+The full row was: 49 wins, 29 losses, 4 overtime losses, 0.598 win %, 269 goals for, 202 goals against, +67.
+
+The 2011 row is on the first page of search results. An earlier read cut off at the 2010 row, and my click on the "2" page link didn't go anywhere. Reading the same page again showed every row through 2011.
+
+ANSWER: Boston Bruins 2011: 49 wins, 269 Goals For
