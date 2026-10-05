@@ -1,0 +1,56 @@
+TASK t02: On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.
+EXPECT: ['you clicked: cancel', 'you entered: skillopt-42']
+RESULT: {"id": "t02_r1", "correct": true, "score": 0.962, "wtok": 25377, "out_tok": 1128, "turns": 8, "secs": 63, "timed_out": false, "curl": false, "answer": "Confirm (Cancel) \u2192 \"You clicked: Cancel\"; Prompt (skillopt-42) \u2192 \"You entered: skillopt-42\""}
+
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts; agent-browser snapshot -i; agent-browser dialog dismiss
+-> [441 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/javascript_alerts
+- link "Fork me on GitHub" [ref=e1]
+- heading "JavaScript Alerts" [level=3, ref=e2]
+- button "Click for JS Alert" [ref=e4]
+- button "Click for JS Confirm" [ref=e5]
+- button "Click for JS Prompt" [ref=e6]
+- heading "Result:" [level=4, ref=e3]
+- link "Elemental Selenium" [ref=e7]
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+
+
+Command exited with code 1
+$ agent-browser click @e5; agent-browser dialog dismiss; agent-browser get text #h3; agent-browser get text "strong"; agent-browser eval "JSON.stringify({h3:document.getElementById('h3')?document.getElementById('h3').textContent:null, strong:document.querySelector('strong')?document.querySelector('strong').textContent:null})"
+-> [243 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "I am a JS Confirm" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser eval "const el=[...document.querySelectorAll('p,div,td,span')].find(x=>x.textContent.trim().startsWith('You clicked'))||[...document.querySelectorAll('*')].find(x=>x.children.length===0&&x.textContent.includes('You clicked'));JSON.stringify(el?el.textContent:null)"
+-> [26 chars] "\"You clicked: Cancel\""
+
+$ agent-browser click @e6; agent-browser dialog accept "skillopt-42"; agent-browser eval "const el=[...document.querySelectorAll('*')].filter(x=>x.children.length===0).map(x=>x.textContent.trim()).find(t=>t.includes('You clicked'));JSON.stringify(el)"
+-> [243 chars] ✓ Done
+⚠ A JavaScript prompt dialog is blocking the page: "I am a JS prompt" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+✗ Evaluation error: SyntaxError: Identifier 'el' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval "(function(){const n=[...document.querySelectorAll('*')].filter(x=>x.children.length===0).map(x=>x.textContent.trim()).find(t=>t.includes('You clicked'));return JSON.stringify(n);})()"
+-> [505 chars] "\"function jsAlert() {\\n    alert('I am a JS Alert');\\n    log('You successfully clicked an alert');\\n  }\\n\\n  function jsConfirm() {\\n    var c = confirm('I am a JS Confirm');\\n    var result = c === true ? 'Ok' : 'Cancel';\\n    log('You clicked: ' + result);\\n  }\\n\\n  function jsPrompt() {\\n    var p = prompt('I am a JS prompt');\\n    log('You entered: ' + p);\\n  }\\n\\n  function log(msg) {\\n    var result = document.getElementById('result');\\n    result.innerHTML = msg;\\n  }\""
+
+$ agent-browser eval "document.getElementById('result').textContent"
+-> [27 chars] "You entered: skillopt-42"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Both interactions completed on https://the-internet.herokuapp.com/javascript_alerts:
+
+1. **JS Confirm** (clicked "Click for JS Confirm", chose Cancel): Result shown on the page was:
+   - `You clicked: Cancel`
+
+2. **JS Prompt** (clicked "Click for JS Prompt", entered `skillopt-42`, accepted): Result shown on the page was:
+   - `You entered: skillopt-42`
+
+ANSWER: Confirm (Cancel) → "You clicked: Cancel"; Prompt (skillopt-42) → "You entered: skillopt-42"

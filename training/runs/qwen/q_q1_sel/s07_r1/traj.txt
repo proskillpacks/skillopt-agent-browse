@@ -1,0 +1,43 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r1", "correct": true, "score": 0.972, "wtok": 18959, "out_tok": 712, "turns": 6, "secs": 85, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "#dragbox"; agent-browser get text "#dropzone"; agent-browser get attr "#dragbox" style; agent-browser get attr "#dropzone" style
+-> [480 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #dropzone. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #dragbox. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #dropzone. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "body"; agent-browser get text body; agent-browser snapshot -i
+-> [255 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+Drag and Drop
+A
+B
+Powered by Elemental Selenium
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  drag: document.querySelector('#dragbox') ? document.querySelector('#dragbox').textContent : null,
+  drop: document.querySelector('#dropzone') ? document.querySelector('#dropzone').textContent : null,
+  all: Array.from(document.querySelectorAll('#drag-and-drop-container div')).map(d => ({id: d.id, text: d.textContent, left: d.style.left, top: d.style.top}))
+})
+JS
+-> [43 chars] "{\"drag\":null,\"drop\":null,\"all\":[]}"
+
+$ agent-browser eval "JSON.stringify({url: location.href, html: document.querySelector('#cf-content') ? document.querySelector('#cf-content').innerHTML.slice(0,1500) : document.body.innerHTML.slice(0,1500)})"
+-> [1835 chars] "{\"url\":\"https://the-internet.herokuapp.com/drag_and_drop\",\"html\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me …handleDragLeave(e) {\\n  this.classList.remove('over');\\n}\\n\\nfunction handleDrop(e) {\\n  if (e.stopPropagation) {\\n    e.stopPropagation();\"}"
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#columns .column')).map(c => ({id: c.id, header: c.querySelector('header') ? c.querySelector('header').textContent : null, left: c.getBoundingClientRect().left})).sort((a,b)=>a.left-b.left))"
+-> [114 chars] ✓ Done
+"[{\"id\":\"column-a\",\"header\":\"B\",\"left\":15},{\"id\":\"column-b\",\"header\":\"A\",\"left\":230}]"
+
+SAY: The drag succeeded. After dropping box A onto box B, the headers swapped: the left box (column-a) now shows **B** and the right box (column-b) now shows **A**.
+
+ANSWER: B, A

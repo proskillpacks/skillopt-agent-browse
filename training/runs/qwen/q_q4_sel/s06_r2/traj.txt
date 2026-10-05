@@ -1,0 +1,133 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r2", "correct": true, "score": 0.863, "wtok": 91163, "out_tok": 3395, "turns": 17, "secs": 152, "timed_out": false, "curl": false, "answer": "After Remove the checkbox message was \"It's gone!\"; after Enable the message was \"It's enabled!\" and the input's value was \"hello\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "button:has-text('Remove')"; agent-browser snapshot -i
+-> [438 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e5; agent-browser wait --fn "document.querySelector('#checkbox')===null && document.querySelector('#flash').textContent!==''"; agent-browser eval "JSON.stringify({flash:document.querySelector('#flash').textContent, checkbox: !!document.querySelector('#checkbox')})"
+-> [176 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:55
+
+
+Command exited with code 1
+$ agent-browser snapshot -i; agent-browser eval "document.querySelector('#dynamic_controls_example_container').innerHTML"
+-> [422 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:62
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const c = document.getElementById('checkbox_container') || document.querySelector('#checkbox');
+  const all = [...document.querySelectorAll('div,span,p')].filter(e => /checkbox|removed/i.test(e.textContent) && e.children.length===0).map(e=>({id:e.id, tag:e.tagName, text:e.textContent.trim()}));
+  return JSON.stringify(all.slice(0,10));
+})()
+JS
+-> [149 chars] "[{\"id\":\"\",\"tag\":\"P\",\"text\":\"This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\"}]"
+
+SAY: The message disappeared (it's removed after ~5s, and my wait was too long). Let me redo it: Add the checkbox back, then Remove and read the message immediately.
+$ agent-browser click @e5; agent-browser wait --fn "document.querySelector('#checkbox')!==null"; agent-browser eval "document.querySelector('#flash') ? document.querySelector('#flash').textContent : 'no-flash'"; agent-browser click @e5; sleep 1; agent-browser eval "document.querySelector('#flash').textContent"
+-> [168 chars] ✓ Done
+true
+"no-flash"
+✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:33
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const btns = [...document.querySelectorAll('button')];
+  const b = btns.find(x=>x.textContent==='Add');
+  const container = b ? b.closest('div,section') : null;
+  return JSON.stringify({
+    buttons: btns.map(x=>x.textContent.trim()),
+    parentHTML: container ? container.parentElement.outerHTML.slice(0,1500) : 'none'
+  });
+})()
+JS
+-> [1804 chars] "{\"buttons\":[\"Add\",\"Enable\"],\"parentHTML\":\"<div id=\\\"content\\\" class=\\\"large-12 columns\\\">\\n        <script src=\\\"https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js\\\"></script>\\n<script>\\n  function swapInput() {\\n    disableButton(\\\"#input-example button\\\");\\n    clearMessage();\\n    showDelay(\\\"#input-example button\\\");\\n    pauseThenToggleControls(\\\"input\\\");\\n  }\\n\\n  function swapCheckbox (){\\n    disableButton(\\\"#checkbox-example … btn.attr(\\\"disabled\\\", false);\\n      load.hide();\\n    } else {\\n      btn.text(\\\"Remove\\\");\\n      btn.after(\\\"<div><input type=\"}"
+
+SAY: The message element is `#message`, not `#flash`. Let me read it:
+$ agent-browser eval "document.querySelector('#message') ? document.querySelector('#message').textContent : 'no message'"
+-> [13 chars] "It's gone!"
+
+SAY: Message after Remove: **"It's gone!"**. Now the Enable step:
+$ agent-browser snapshot -i
+-> [286 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e7; agent-browser wait --fn "document.querySelector('#input') && !document.querySelector('#input').disabled"
+-> [66 chars] ✓ Done
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({input: !!document.querySelector('#input'), disabled: document.querySelector('#input') ? document.querySelector('#input').disabled : null, message: (document.querySelector('#message')||{}).textContent, inputMsg: (document.querySelector('#input-example p')||{}).textContent})"
+-> [99 chars] "{\"input\":false,\"disabled\":null,\"message\":\"It's enabled!\",\"inputMsg\":\"It's enabled!\"}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#input-example input, input[type=text]')].map(i=>({id:i.id, disabled:i.disabled, value:i.value})))"
+-> [52 chars] "[{\"id\":\"\",\"disabled\":false,\"value\":\"\"}]"
+
+SAY: Input is now enabled and the message shows "It's enabled!". Now type hello:
+$ agent-browser fill "#input-example input" "hello"; agent-browser eval "JSON.stringify({value: document.querySelector('#input-example input').value, message: (document.querySelector('#message')||{}).textContent, msg2: [...document.querySelectorAll('p')].filter(p=>p.textContent.includes('entered')).map(p=>p.textContent)})"
+-> [73 chars] ✓ Done
+"{\"value\":\"hello\",\"message\":\"It's enabled!\",\"msg2\":[]}"
+
+SAY: The value is "hello". On the standard page, typing triggers a "You entered..." message — my `fill` may have set the value without key events. Let me check and fire a keyup:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const inp = document.querySelector('#input-example input');
+  inp.dispatchEvent(new KeyboardEvent('keyup', {bubbles:true}));
+  return JSON.stringify({
+    value: inp.value,
+    message: (document.querySelector('#message')||{}).textContent,
+    inputMsg: (document.querySelector('#input-example p')||{}).textContent
+  });
+})()
+JS
+-> [85 chars] "{\"value\":\"hello\",\"message\":\"It's enabled!\",\"inputMsg\":\"It's enabled!\"}"
+
+$ agent-browser eval "document.querySelector('script').textContent.match(/toggleInputControls[\s\S]{0,600}/)"
+-> [5 chars] null
+
+$ agent-browser eval "document.querySelector('#content script').textContent.slice(1400, 2400)"
+-> [3 chars] ""
+
+SAY: All done. Here's the full sequence on the Dynamic Controls page:
+
+1. **Remove checkbox**: Clicked "Remove" — after the "Wait for it..." delay, the checkbox was removed and the button became "Add". The message shown was: **`It's gone!`** (in `#message`).
+2. **Enable input**: Clicked "Enable" — after the delay the text input became enabled (`disabled: false`) and the message shown was: **`It's enabled!`**
+3. **Type "hello"**: Typed into the input. Its value is **`hello`**. This version of the page

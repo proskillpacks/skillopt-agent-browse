@@ -1,0 +1,32 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r6", "correct": true, "score": 0.978, "wtok": 14689, "out_tok": 473, "turns": 5, "secs": 89, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" && break; sleep 5; done; agent-browser snapshot -i
+-> [349 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser drag "#column-a" "#column-b" && agent-browser eval "JSON.stringify([document.querySelector('#column-a h2').textContent, document.querySelector('#column-b h2').textContent, document.querySelector('#column-a').innerHTML, document.querySelector('#column-b').innerHTML])"
+-> [145 chars] ✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:55
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({a: document.querySelector('#column-a').innerHTML, b: document.querySelector('#column-b').innerHTML, msg: (document.querySelector('#message')||{}).textContent})"
+-> [62 chars] "{\"a\":\"<header>B</header>\",\"b\":\"<header>A</header>\"}"
+
+SAY: The drag swapped the boxes' headers. After dropping box A onto box B:
+- Left box (#column-a) header: **B**
+- Right box (#column-b) header: **A**
+
+ANSWER: B, A

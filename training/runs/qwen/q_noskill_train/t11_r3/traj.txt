@@ -1,0 +1,156 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r3", "correct": true, "score": 0.833, "wtok": 111603, "out_tok": 2564, "turns": 17, "secs": 48, "timed_out": false, "curl": false, "answer": "You selected a context menu"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser skills get core 2>&1 | grep -i -A5 -B2 dialog
+-> [1961 chars] 
+- **Discarded tab (Chrome Memory Saver).** A backgrounded tab may have its renderer dropped. Switching to it reactivates the tab, which reloads the page and discards unsaved state (form input, scroll position). The switch result then includes `"revived": true`, so treat prior in-page state as gone and re-snapshot. Closing the active tab onto a discarded successor reports `"activeTabRevived": true` for the same reason.
+- **Tab blocked by a dialog.** If the target tab has an open dialog (`confirm …nd Windows terminates that tree even if the daemon is forcibly killed. Browsers attached through `--cdp` or `--auto-connect` remain externally owned.
+
+$ agent-browser skills get core --full 2>&1 | grep -i -B2 -A6 "right"
+-> [3104 chars] # agent-browser core
+
+Fast browser automation CLI for AI agents. Chrome/Chromium via CDP, no Playwright or Puppeteer dependency. Accessibility-tree snapshots with compact `@eN` refs let agents interact with pages in ~200-400 tokens instead of parsing raw HTML.
+
+Most normal web tasks (navigate, read, click, fill, extract, screenshot) are covered here. Load a specialized skill when the task falls outside browser web pages — see [When to load another skill](#when-to-load-another-skill).
+
+## The cor …cookies + localStorage to a JSON file. Treat the path the same as a cookies file: don't paste its contents, don't share it with third-party services.
+
+$ agent-browser click --help 2>&1 | head -40; echo ---; agent-browser --help 2>&1 | tail -60
+-> [4837 chars] agent-browser click - Click an element
+
+Usage: agent-browser click <selector> [--new-tab] [--human]
+
+Clicks on the specified element. The selector can be a CSS selector,
+XPath, or an element reference from snapshot (e.g., @e1).
+
+If another element covers the click point, agent-browser reports the
+covering element instead of dispatching a click to the wrong target.
+
+Options:
+  --new-tab            Open link in a new tab instead of navigating current tab.
+                       The new tab inherit … agent-browser -p ios swipe up                            # Swipe gesture
+  agent-browser -p ios tap @e1                             # Touch element
+
+
+$ agent-browser --help 2>&1 | sed -n '1,80p'
+-> [3508 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …        Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+  storage <local|session>    Manage web storage
+
+$ agent-browser mouse down --help 2>&1; agent-browser mouse --help 2>&1 | head -30
+-> [2147 chars] agent-browser mouse - Low-level mouse operations
+
+Usage: agent-browser mouse <subcommand> [args]
+
+Performs low-level mouse operations for precise control.
+
+Subcommands:
+  move <x> <y>         Move mouse to coordinates
+  down [button]        Press mouse button (left, right, middle)
+  up [button]          Release mouse button
+  wheel <dy> [dx]      Scroll mouse wheel
+
+Movement Options:
+  --duration <ms>       Target total duration, including browser response time
+  --steps <n>           Number of  …mouse move 600 400 --duration 250 --steps 24
+  agent-browser mouse move 600 400 --human --seed 42
+  agent-browser mouse down
+  agent-browser mouse up
+
+$ agent-browser open https://the-internet.herokuapp.com/context_menu && agent-browser eval 'window.__alerts=[]; const _a=window.alert; window.alert=function(m){window.__alerts.push(String(m));}; true'
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser session info 2>&1 | head -20; agent-browser get url 2>&1
+-> [343 chars] Session: so-q_noskill_train-t11_r3
+Socket dir: /run/user/1000/agent-browser/namespaces/so-q_noskill_train-t11_r3/run
+Namespace: so-q_noskill_train-t11_r3
+Daemon: running (pid 794126)
+Version: 0.38.1
+Restore status: not_configured
+Save status: not_attempted
+Engine: chrome
+Browser launched: true
+https://the-internet.herokuapp.com/context_menu
+
+$ agent-browser eval 'window.__alerts=[]; window.alert=function(m){window.__alerts.push(String(m));}; "interceptor installed: "+typeof window.alert'
+-> [34 chars] "interceptor installed: function"
+
+$ agent-browser get box "#context-menu" --json 2>&1; agent-browser get title 2>&1
+-> [156 chars] {"success":false,"data":null,"error":"Element not found: #context-menu. Verify the selector, role, or name is correct and the element exists in the DOM."}
+
+
+$ agent-browser eval 'document.querySelector(".example") ? document.querySelector(".example").id : "none"; document.body.innerHTML.length'
+-> [137 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:100
+
+
+Command exited with code 1
+$ agent-browser wait 3000 && agent-browser eval 'document.readyState' 2>&1
+-> [18 chars] ✓ Done
+"complete"
+
+$ agent-browser eval 'document.body ? document.body.innerHTML.slice(0,400) : "no body"'
+-> [435 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" clas"
+
+$ agent-browser eval 'var el=document.querySelector(".example"); el ? el.outerHTML.slice(0,300) : "none"' && agent-browser get box ".example" 2>&1
+-> [372 chars] "<div class=\"example\">\n  <h3>Context Menu</h3>\n  <p>Context menu items are custom additions that appear in the right-click menu.</p>\n  <p>Right-click in the box below to see one called 'the-internet'. When you click it, it will trigger a JavaScript alert.</p>\n  <div id=\"hot-spot\" style=\"border-style:"
+x:      15
+y:      37.390625
+width:  915
+height: 292.484375
+
+$ agent-browser eval 'window.__alerts=[]; window.alert=function(m){window.__alerts.push(String(m));}; "ok"' && agent-browser get box "#hot-spot"
+-> [56 chars] "ok"
+x:      15
+y:      179.875
+width:  250
+height: 150
+
+$ agent-browser mouse move 140 255 && agent-browser mouse down right && agent-browser mouse up right && agent-browser eval 'JSON.stringify(window.__alerts)'
+-> [57 chars] ✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+
+SAY: I right-clicked inside the dashed box (`#hot-spot` on the context menu page) using low-level mouse operations, and captured the alert text by intercepting `window.alert`. The JavaScript alert's exact message is:
+
+**"You selected a context menu"**
+
+ANSWER: You selected a context menu

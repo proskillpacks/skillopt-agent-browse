@@ -1,0 +1,61 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r1", "correct": true, "score": 0.954, "wtok": 30717, "out_tok": 1139, "turns": 9, "secs": 59, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "#message"; agent-browser snapshot -i
+-> [231 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser eval "JSON.stringify([...document.querySelectorAll('#column-ul li')].map(li => ({id: li.id, text: li.textContent.trim()})))"
+-> [71 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  list: document.querySelector('#column-ul') ? document.querySelector('#column-ul').outerHTML.slice(0,500) : null,
+  bodyText: document.body.innerText.slice(0,400)
+})
+JS
+-> [89 chars] "{\"list\":null,\"bodyText\":\"Drag and Drop\\nA\\nB\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('.active, ul li, .element')].map(e => ({tag: e.tagName, id: e.id, cls: e.className, txt: e.textContent.trim()})).slice(0,20))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  ready: document.readyState,
+  main: document.querySelector('#container') ? document.querySelector('#container').innerHTML.slice(0,800) : document.body.innerHTML.slice(0,800)
+})
+JS
+-> [999 chars] "{\"ready\":\"complete\",\"main\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\ …yle>\\n\\n<div class=\\\"example\\\">\\n  <h3>Drag and Drop</h3>\\n  <div id=\\\"columns\\\">\\n    <div class=\\\"column\\\" id=\\\"column-a\\\"\"}"
+
+SAY: The page uses jQuery UI divs `#column-a` / `#column-b` (not list items). Let me drag A onto B.
+$ agent-browser get box #column-a; agent-browser get box #column-b; agent-browser drag #column-a #column-b; agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns .column')].map(e => ({id: e.id, txt: e.textContent.trim()})))"
+-> [99 chars] Missing arguments for: get box
+Usage: agent-browser get box <selector>
+
+
+Command exited with code 1
+$ agent-browser get box "#column-a"; agent-browser get box "#column-b"
+-> [103 chars] x:      15
+y:      88.6875
+width:  150
+height: 150
+x:      230
+y:      88.6875
+width:  150
+height: 150
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns .column')].map(e => ({id: e.id, txt: e.textContent.trim()})))"
+-> [83 chars] ✓ Done
+"[{\"id\":\"column-a\",\"txt\":\"B\"},{\"id\":\"column-b\",\"txt\":\"A\"}]"
+
+SAY: The drag succeeded — the headers swapped. Reading left to right, the left box now shows **B** and the right box shows **A**.
+
+ANSWER: B, A

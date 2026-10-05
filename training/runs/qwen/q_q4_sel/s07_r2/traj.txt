@@ -1,0 +1,33 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r2", "correct": true, "score": 0.965, "wtok": 23594, "out_tok": 913, "turns": 7, "secs": 82, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "ul#draggable"; agent-browser snapshot -i
+-> [214 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser wait "ul#draggable li"; agent-browser eval "JSON.stringify({items:[...document.querySelectorAll('#draggable li')].map(li=>({header:li.querySelector('.header')?.textContent, rect:{x:li.getBoundingClientRect().x,y:li.getBoundingClientRect().y,w:li.getBoundingClientRect().width,h:li.getBoundingClientRect().height}}))})"
+-> [48 chars] ✗ Wait timed out after 25000ms
+"{\"items\":[]}"
+
+$ agent-browser eval "document.body.innerHTML.slice(0,1500)"
+-> [1613 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <style>\n.columns {\n  width: 400p …function handleDragLeave(e) {\n  this.classList.remove('over');\n}\n\nfunction handleDrop(e) {\n  if (e.stopPropagation) {\n    e.stopPropagation();"
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns .column')].map(c=>({id:c.id, header:c.querySelector('header')?.textContent})))"
+-> [89 chars] ✓ Done
+"[{\"id\":\"column-a\",\"header\":\"B\"},{\"id\":\"column-b\",\"header\":\"A\"}]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns .column')].map(c=>({id:c.id, header:c.querySelector('header')?.textContent, x:Math.round(c.getBoundingClientRect().x)})).sort((a,b)=>a.x-b.x))"
+-> [101 chars] "[{\"id\":\"column-a\",\"header\":\"B\",\"x\":15},{\"id\":\"column-b\",\"header\":\"A\",\"x\":230}]"
+
+SAY: Dragged box A onto box B. The page swapped the contents: the left box now shows header **B** and the right box shows header **A** (the "A" content moved into the right position).
+
+ANSWER: B, A

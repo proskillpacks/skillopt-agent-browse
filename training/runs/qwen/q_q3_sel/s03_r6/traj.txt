@@ -1,0 +1,111 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r6", "correct": true, "score": 0.946, "wtok": 35870, "out_tok": 1671, "turns": 9, "secs": 16, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating, out of 26 total books in the Historical Fiction category."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/history/historical-fiction_23/index.html"
+-> [105 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/history/historical-fiction_23/index.html
+
+$ agent-browser open "https://books.toscrape.com/" && agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('.sidebar a')].filter(a => /Historical Fiction/i.test(a.textContent));
+  return JSON.stringify(links.map(a => a.href));
+})()
+JS
+-> [165 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" && agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = document.querySelectorAll('article');
+  const totalEl = document.querySelector('.recordCount');
+  const total = totalEl ? totalEl.textContent.trim() : null;
+  const stars = [...arts].map(a => a.querySelector('p.starRating') ? [...a.querySelector('p.starRating').classList].find(c => c.startsWith('star')) : null);
+  const oneStar = stars.filter(s => s === 'star one').length;
+  const pages = [...document.querySelectorAll('ul.pagination li a, ul.pagination li span')].map(e => e.textContent.trim());
+  return JSON.stringify({count: arts.length, total, oneStar, stars: [...new Set(stars)], pages});
+})()
+JS
+-> [211 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"count\":20,\"total\":null,\"oneStar\":0,\"stars\":[null],\"pages\":[]}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const a = document.querySelector('article p.starRating');
+  const pag = document.querySelector('.pagination');
+  return JSON.stringify({
+    starHTML: a ? a.outerHTML.slice(0,200) : 'none',
+    pagHTML: pag ? pag.outerHTML : 'none',
+    articles: document.querySelectorAll('article').length
+  });
+})()
+JS
+-> [63 chars] "{\"starHTML\":\"none\",\"pagHTML\":\"none\",\"articles\":20}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const art = document.querySelector('article');
+  return JSON.stringify({html: art ? art.outerHTML.slice(0,600) : 'no article', bodyLen: document.body.innerHTML.length});
+})()
+JS
+-> [730 chars] "{\"html\":\"<article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"../../../tipping-the-velvet_999/index.html\\\"><img src=\\\"../../../../media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg\\\" alt=\\\"Tipping the Velvet\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n                <p …></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n           \",\"bodyLen\":48624}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const stars = [...document.querySelectorAll('p.star-rating')].map(p => [...p.classList].find(c => /^[OFLTS]ne|^two|^three|^four|^five/.test(c)) || p.className);
+  const one = stars.filter(c => c === 'One' || c === 'one').length;
+  const pag = document.querySelector('ul.pagination');
+  const nexts = pag ? [...pag.querySelectorAll('a,span')].map(e => e.textContent.trim()) : 'no pagination';
+  const hasNext = pag ? [...pag.querySelectorAll('a')].some(a => a.textContent.includes('»')) : false;
+  return JSON.stringify({one, total: stars.length, nexts, hasNext});
+})()
+JS
+-> [73 chars] "{\"one\":5,\"total\":20,\"nexts\":\"no pagination\",\"hasNext\":false}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const as = [...document.querySelectorAll('a')].filter(a => /next|page|»/i.test(a.textContent));
+  const uls = [...document.querySelectorAll('ul')].map(u => u.className);
+  return JSON.stringify({links: as.map(a => [a.textContent.trim(), a.href]), uls});
+})()
+JS
+-> [173 chars] "{\"links\":[[\"next\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"]],\"uls\":[\"breadcrumb\",\"nav nav-list\",\"\",\"pager\"]}"
+
+$ for i in 2 3 4 5; do
+  agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$i.html" || break
+  agent-browser eval --stdin <<'JS'
+(() => {
+  const stars = [...document.querySelectorAll('p.star-rating')];
+  const one = stars.filter(p => p.className.split(' ').some(c => /^(O|o)ne$/.test(c))).length;
+  const hasNext = [...document.querySelectorAll('a')].some(a => a.textContent.trim() === 'next');
+  const nextHref = [...document.querySelectorAll('a')].find(a => a.textContent.trim() === 'next')?.href || null;
+  return JSON.stringify({books: stars.length, one, hasNext, nextHref});
+})()
+JS
+  sleep 1
+done
+-> [693 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"books\":6,\"one\":0,\"hasNext\":false,\"nextHref\":null}"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-3.html
+"{\"books\":0,\"one\":0,\"hasNext\":false,\"nextHref\":null}"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-4.html
+"{\"books\":0,\"one\":0,\"hasNext\":false,\"nextHref\":null}"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-5.html
+"{\"books\":0,\"one\":0,\"hasNext\":false,\"nextHref\":null}"
+
+SAY: Complete. Summary of the crawl:
+
+- **Page 1** (historical-fiction_4): 20 books, 5 with a one-star rating (`p.star-rating One`)
+- **Page 2**: 6 books, 0 with a one-star rating, no "next" link
+- Pages 3+ return 404, confirming the category ends at page 2
+
+**Total books in category: 26**
+**Books with a one-star rating: 5**
+
+ANSWER: 5 books have a one-star rating, out of 26 total books in the Historical Fiction category.

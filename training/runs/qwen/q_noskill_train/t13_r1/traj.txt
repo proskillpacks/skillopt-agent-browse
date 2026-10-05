@@ -1,0 +1,66 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13_r1", "correct": true, "score": 0.97, "wtok": 19996, "out_tok": 1920, "turns": 5, "secs": 11, "timed_out": false, "curl": false, "answer": "Albert Einstein, with 10 quotes"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://quotes.toscrape.com/ && agent-browser eval "document.title"
+-> [69 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+"Quotes to Scrape"
+
+$ for p in 1 2 3 4 5 6 7 8 9 10; do
+  agent-browser open "https://quotes.toscrape.com/page/$p/" >/dev/null 2>&1
+  agent-browser eval "Array.from(document.querySelectorAll('.author')).map(e=>e.textContent).join(',')"
+done
+-> [1443 chars] "Albert Einstein,J.K. Rowling,Albert Einstein,Jane Austen,Marilyn Monroe,Albert Einstein,André Gide,Thomas A. Edison,Eleanor Roosevelt,Steve Martin"
+"Marilyn Monroe,J.K. Rowling,Albert Einstein,Bob Marley,Dr. Seuss,Douglas Adams,Elie Wiesel,Friedrich Nietzsche,Mark Twain,Allen Saunders"
+"Pablo Neruda,Ralph Waldo Emerson,Mother Teresa,Garrison Keillor,Jim Henson,Dr. Seuss,Albert Einstein,J.K. Rowling,Albert Einstein,Bob Marley"
+"Dr. Seuss,J.K. Rowling,Bob Marley,Mother Teresa,J.K. Rowling,Charles ….S. Lewis"
+"J.K. Rowling,Jimi Hendrix,J.M. Barrie,E.E. Cummings,Khaled Hosseini,Harper Lee,Madeleine L'Engle,Mark Twain,Dr. Seuss,George R.R. Martin"
+
+$ printf '%s\n' \
+"Albert Einstein,J.K. Rowling,Albert Einstein,Jane Austen,Marilyn Monroe,Albert Einstein,André Gide,Thomas A. Edison,Eleanor Roosevelt,Steve Martin" \
+"Marilyn Monroe,J.K. Rowling,Albert Einstein,Bob Marley,Dr. Seuss,Douglas Adams,Elie Wiesel,Friedrich Nietzsche,Mark Twain,Allen Saunders" \
+"Pablo Neruda,Ralph Waldo Emerson,Mother Teresa,Garrison Keillor,Jim Henson,Dr. Seuss,Albert Einstein,J.K. Rowling,Albert Einstein,Bob Marley" \
+"Dr. Seuss,J.K. Rowling,Bob Marley,Mother Teresa,J.K. Rowling,Charles M. Schulz,William Nicholson,Albert Einstein,Jorge Luis Borges,George Eliot" \
+"George R.R. Martin,C.S. Lewis,Marilyn Monroe,Marilyn Monroe,Albert Einstein,Marilyn Monroe,Marilyn Monroe,Martin Luther King Jr.,J.K. Rowling,James Baldwin" \
+"Jane Austen,Eleanor Roosevelt,Marilyn Monroe,Albert Einstein,Haruki Murakami,Alexandre Dumas fils,Stephenie Meyer,Ernest Hemingway,Helen K
+-> [105 chars]      10 Albert Einstein
+      9 J.K. Rowling
+      7 Marilyn Monroe
+      6 Mark Twain
+      6 Dr. Seuss
+
+SAY: I scraped all 10 pages of quotes.toscrape.com using the `agent-browser` CLI (opening each page in the browser session and reading the `.author` elements), then aggregated the author counts:
+
+| Author | Quotes |
+|---|---|
+| Albert Einstein | 10 |
+| J.K. Rowling | 9 |
+| Marilyn Monroe | 7 |
+| Mark Twain | 6 |
+| Dr. Seuss | 6 |
+
+Albert Einstein has the most quotes, with 10 (out of 100 total quotes across the 10 pages).
+
+ANSWER: Albert Einstein, with 10 quotes

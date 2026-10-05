@@ -1,0 +1,46 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r3", "correct": false, "score": 0.0, "wtok": 12909, "out_tok": 642, "turns": 3, "secs": 912, "timed_out": true, "curl": false, "answer": "Next link is `/catalogue/page-2.html`. Now I'll walk all pages and collect every title/price:"}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval --stdin <<'JS'
+(() => {
+  const books = [...document.querySelectorAll('.book_block h3 a, article h3 a')].map(a => {
+    const art = a.closest('article');
+    const price = art.querySelector('.price_color')?.textContent.trim();
+    return {title: a.title || a.textContent.trim(), price};
+  });
+  return JSON.stringify(books);
+})()
+JS
+-> [1544 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[{\"title\":\"A Light in the Attic\",\"price\":\"£51.77\"},{\"title\":\"Tipping the Velvet\",\"price\":\"£53.74\"},{\"title\":\"Soumission\",\"price\":\"£50.10\"},{\"title\":\"Sharp Objects\",\"price\":\"£47.82\"},{\"title\":\"Sapiens: A Brief History of Humankind\",\"price\":\"£54.23\"},{\"title\":\"The Requiem Red\",\"price\":\"£22.65\"},{\"title\":\"The Dirty Little Secrets of Getting Your Dream Job\",\"price\":\"£33.34 …"price\":\"£37.59\"},{\"title\":\"Libertarianism for Beginners\",\"price\":\"£51.33\"},{\"title\":\"It's Only the Himalayas\",\"price\":\"£45.17\"}]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  // check total pages / next link on page 1
+  const next = [...document.querySelectorAll('li a')].map(a=>a.href);
+  const nav = document.querySelector('.pager') ? 'has pager' : 'no pager';
+  return JSON.stringify({nav, next});
+})()
+JS
+-> [7872 chars] "{\"nav\":\"has pager\",\"next\":[\"https://books.toscrape.com/index.html\",\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\",\"https://books.toscrape.com/c …1/index.html\",\"https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html\",\"https://books.toscrape.com/catalogue/page-2.html\"]}"
+
+SAY: Next link is `/catalogue/page-2.html`. Now I'll walk all pages and collect every title/price:
+$ set -e
+for i in $(seq 1 50); do
+  url="https://books.toscrape.com/catalogue/page-$i/index.html"
+  agent-browser open "$url" > /dev/null 2>&1 || agent-browser open "$url"
+  agent-browser wait ".book_block" 2>/dev/null || true
+  agent-browser eval --stdin <<'JS'
+(() => {
+  const books = [...document.querySelectorAll('.book_block')].map(b => {
+    const t = b.querySelector('h3 a');
+    const p = b.querySelector('.price_color');
+    return {title: t ? t.title : null, price: p ? p.textContent.trim() : null};
+  });
+  return JSON.stringify(books);
+})()
+JS
+done > /tmp/allbooks.jsonl
+wc -l /tmp/allbooks.jsonl

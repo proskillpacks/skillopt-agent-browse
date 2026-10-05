@@ -1,0 +1,125 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r5", "correct": true, "score": 0.924, "wtok": 50948, "out_tok": 2405, "turns": 9, "secs": 28, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ for i in 1 2 3; do agent-browser open "https://books.toscrape.com/index.html" && break; sleep 5; done
+-> [83 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/index.html
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const pods = document.querySelectorAll('.product_pod');
+  const total = document.body.innerText.match(/Page \d+ of \d+/);
+  return JSON.stringify({
+    pods: pods.length,
+    sample: pods.length ? { title: pods[0].querySelector('h3 a')?.getAttribute('title'), price: pods[0].querySelector('.price_color')?.textContent } : null,
+    pagination: total ? total[0] : null,
+    next: document.querySelector('li.next a')?.href
+  });
+})()
+JS
+-> [179 chars] "{\"pods\":20,\"sample\":{\"title\":\"A Light in the Attic\",\"price\":\"£51.77\"},\"pagination\":\"Page 1 of 50\",\"next\":\"https://books.toscrape.com/catalogue/page-2.html\"}"
+
+SAY: 50 pages, 20 books each. I'll walk all pages in one loop, collecting JSON per page:
+$ cd /tmp && mkdir -p books_pages && for p in $(seq 2 50); do
+  ok=0
+  for i in 1 2 3; do
+    agent-browser open "https://books.toscrape.com/catalogue/page-${p}.html" && ok=1 && break
+    sleep 5
+  done
+  [ "$ok" = "1" ] || { echo "page $p failed to open"; break; }
+  agent-browser eval --stdin <<'JS' > /tmp/books_pages/page-$p.json
+JSON.stringify([...document.querySelectorAll('.product_pod')].map(pod => ({
+  title: pod.querySelector('h3 a').getAttribute('title'),
+  price: pod.querySelector('.price_color').textContent
+})))
+JS
+done; echo "collected: $(ls /tmp/books_pages | wc -l) pages"
+-> [4667 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-2.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-3.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-4.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-5.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-6.html
+✓ All products | Books to Scra …oscrape.com/catalogue/page-49.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-50.html
+collected: 49 pages
+
+$ agent-browser open "https://books.toscrape.com/catalogue/page-1.html" && agent-browser eval --stdin <<'JS' > /tmp/books_pages/page-1.json
+JSON.stringify([...document.querySelectorAll('.product_pod')].map(pod => ({
+  title: pod.querySelector('h3 a').getAttribute('title'),
+  price: pod.querySelector('.price_color').textContent
+})))
+JS
+echo "---"
+ls /tmp/books_pages | wc -l
+head -c 200 /tmp/books_pages/page-1.json
+-> [298 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-1.html
+---
+50
+"[{\"title\":\"A Light in the Attic\",\"price\":\"£51.77\"},{\"title\":\"Tipping the Velvet\",\"price\":\"£53.74\"},{\"title\":\"Soumission\",\"price\":\"£50.10\"},{\"title\":\"Sharp Objects\",\"pr
+$ cd /tmp/books_pages && for f in page-*.json; do jq -r . "$f"; done | jq -s '
+  (length) as $total
+  | (map(select((.price | sub("£";"") | tonumber) < 12.00)) | length) as $under12
+  | {
+      total_books: $total,
+      under_12: $under12,
+      cheapest: (sort_by(.price | sub("£";"") | tonumber) | .[0])
+    }' 
+-> [94 chars] jq: error (at <stdin>:50): Cannot index array with string "price"
+
+
+Command exited with code 5
+SAY: The slurp produced nested arrays (each file is an array). Fix with `add`:
+$ cd /tmp/books_pages && for f in page-*.json; do jq -r . "$f"; done | jq -s '
+  add as $all
+  | ($all | length) as $total
+  | ($all | map(select((.price | sub("£";"") | tonumber) < 12.00)) | length) as $under12
+  | {
+      total_books: $total,
+      under_12: $under12,
+      cheapest: ($all | sort_by(.price | sub("£";"") | tonumber) | .[0]),
+      under12_titles: ($all | map(select((.price | sub("£";"") | tonumber) < 12.00)) | map(.title + " " + .price) | .[0:5])
+    }'
+-> [519 chars] {
+  "total_books": 1000,
+  "under_12": 44,
+  "cheapest": {
+    "title": "An Abundance of Katherines",
+    "price": "£10.00"
+  },
+  "under12_titles": [
+    "Miss Peregrine’s Home for Peculiar Children (Miss Peregrine’s Peculiar Children #1) £10.76",
+    "Beauty Restored (Riley Family Legacy Novellas #3) £11.11",
+    "The Lucifer Effect: Understanding How Good People Turn Evil £10.40",
+    "Tastes Like Fear (DI Marnie Rome #3) £10.69",
+    "Superman Vol. 1: Before Truth (Superman by Gene Luen Yang #1) £11.89"
+  ]
+}
+
+$ cd /tmp/books_pages && for f in page-*.json; do jq -r . "$f"; done | jq -s '[.[] | .[] | select((.price | sub("£";"") | tonumber) <= 12.00) | .price | sub("£";"") | tonumber] | (length, (min), (map(. == 10.00) | add))'
+-> [116 chars] jq: error (at <stdin>:50): boolean (false) and boolean (false) cannot be added
+44
+10.00
+
+
+Command exited with code 5
+$ cd /tmp/books_pages && for f in page-*.json; do jq -r . "$f"; done | jq -s '[.[] | .[]] | map(select(.price == "£10.00"))'
+-> [77 chars] [
+  {
+    "title": "An Abundance of Katherines",
+    "price": "£10.00"
+  }
+]
+
+SAY: I crawled all 50 pages of the catalogue in the browser (20 books per page, 1,000 books total), extracting each book's title and price from the listing pages.
+
+**Results:**
+- **Books costing less than £12.00: 44** (no book is priced exactly at £12.00, so the "less than" and "at most" counts are identical)
+- **Cheapest book: "An Abundance of Katherines" at £10.00** — it is the unique minimum (only one book at that price). A few other near-cheapest examples: *The Lucifer Effect* £10.40, *Tastes Lik

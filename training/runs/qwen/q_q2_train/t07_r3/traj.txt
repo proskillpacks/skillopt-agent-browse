@@ -1,0 +1,32 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07_r3", "correct": true, "score": 0.968, "wtok": 21344, "out_tok": 861, "turns": 7, "secs": 7, "timed_out": false, "curl": false, "answer": "A Year in Provence (Provence #1) \u2014 \u00a356.88"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/travel_25/index.html"; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => {const t = a.querySelector('h3 a'); return {title: t ? t.getAttribute('title') : a.querySelector('.star-rating').textContent, price: a.querySelector('.price_color').textContent};}))"
+-> [90 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/travel_25/index.html
+"[]"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.side-section a')].map(a => [a.textContent.trim(), a.getAttribute('href')]))"
+-> [78 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('a')].filter(a=>/travel/i.test(a.textContent)).map(a=>a.getAttribute('href')))"
+-> [53 chars] "[\"catalogue/category/books/travel_2/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => {const t = a.querySelector('h3 a'); return {title: t ? t.getAttribute('title') : a.querySelector('.star-rating').textContent, price: a.querySelector('.price_color').textContent};}));JSON.stringify(document.querySelector('.pagination')?.textContent?.trim() || 'no-pagination')"; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => {const t = a.querySelector('h3 a'); return {title: t ? t.getAttribute('title') : a.querySelector('.star-rating').textContent, price: a.querySelector('.price_color').textContent};}));JSON.stringify(document.querySelector('.pagination')?.textContent?.trim() || 'no-pagination')"
+-> [151 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"\"no-pagination\""
+"\"no-pagination\""
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => a.querySelector('.price_color').textContent))"
+-> [125 chars] "[\"£45.17\",\"£49.43\",\"£48.87\",\"£36.94\",\"£37.33\",\"£44.34\",\"£30.54\",\"£56.88\",\"£23.21\",\"£38.95\",\"£26.08\"]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].filter(a=>a.querySelector('.price_color').textContent==='£56.88').map(a=>a.querySelector('h3 a').getAttribute('title')))"
+-> [41 chars] "[\"A Year in Provence (Provence #1)\"]"
+
+SAY: The Travel category page (no pagination, 11 books) lists these prices, with the maximum being **£56.88** for *A Year in Provence (Provence #1)*.
+
+ANSWER: A Year in Provence (Provence #1) — £56.88

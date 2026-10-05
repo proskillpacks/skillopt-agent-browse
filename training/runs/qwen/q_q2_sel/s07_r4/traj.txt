@@ -1,0 +1,36 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r4", "correct": true, "score": 0.958, "wtok": 28124, "out_tok": 1041, "turns": 9, "secs": 58, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser wait "#a"; agent-browser snapshot -i
+-> [148 chars] ✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval "JSON.stringify(['#a','#b'].map(s=>{const e=document.querySelector(s);return e?{sel:s,text:e.innerText,id:e.id}:null}))"
+-> [14 chars] "[null,null]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.column')].map(e=>({id:e.id,text:e.innerText.slice(0,20)})))"
+-> [78 chars] "[{\"id\":\"column-a\",\"text\":\"A\"},{\"id\":\"column-b\",\"text\":\"B\"}]"
+
+$ agent-browser eval "document.querySelector('#column-a').outerHTML"
+-> [84 chars] "<div class=\"column\" id=\"column-a\" draggable=\"true\"><header>A</header></div>"
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...'x'.split('').length?[]:[...document.querySelectorAll('.column')].map(e=>({id:e.id,text:e.innerText}))])"
+-> [12 chars] ✓ Done
+"[]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.column')].map(e=>({id:e.id,text:e.innerText})))"
+-> [78 chars] "[{\"id\":\"column-a\",\"text\":\"B\"},{\"id\":\"column-b\",\"text\":\"A\"}]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.column')].map(e=>({h:e.querySelector('header').innerText,x:Math.round(e.getBoundingClientRect().left)})).sort((a,b)=>a.x-b.x).map(o=>o.h))"
+-> [16 chars] "[\"B\",\"A\"]"
+
+SAY: The drag-and-drop succeeded. Box A was dropped onto box B, and the two boxes swapped: the left box now shows **B** and the right box shows **A** (verified by their on-screen x-positions after the drop).
+
+ANSWER: B, A

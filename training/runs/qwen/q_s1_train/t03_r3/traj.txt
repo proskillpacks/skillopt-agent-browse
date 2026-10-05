@@ -1,0 +1,30 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r3", "correct": true, "score": 0.975, "wtok": 16568, "out_tok": 791, "turns": 6, "secs": 61, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/tables"; agent-browser eval "(()=>{const t=document.querySelector('#table2');const hdrs=t.querySelectorAll('thead th');const i=[...hdrs].findIndex(h=>h.textContent.trim()==='Due');return i;})()"
+-> [251 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'querySelectorAll')
+    at <anonymous>:1:62
+    at <anonymous>:1:163
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/tables"; agent-browser wait "#table2"; agent-browser eval "(()=>{const t=document.querySelector('#table2');const hdrs=t.querySelectorAll('thead th');return [...hdrs].map((h,i)=>i+':'+h.textContent.trim()).join(' ');})()"
+-> [151 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+"0:Last Name 1:First Name 2:Email 3:Due 4:Web Site 5:Action"
+
+$ agent-browser eval "(()=>{const t=document.querySelector('#table2');const hdrs=t.querySelectorAll('thead th');const due=hdrs[3];due.click();due.click();const firstRow=t.querySelector('tbody tr');return firstRow.querySelector('td').textContent.trim();})()"
+-> [8 chars] "Smith"
+
+$ agent-browser eval "(()=>{const t=document.querySelector('#table2');const rows=[...t.querySelectorAll('tbody tr')].slice(0,3).map(r=>{const c=[...r.querySelectorAll('td')];return c[0].textContent.trim()+' | '+c[3].textContent.trim()+' | '+c[2].textContent.trim();});return JSON.stringify(rows);})()"
+-> [115 chars] "[\"Doe | $100.00 | jdoe@hotmail.com\",\"Bach | $51.00 | fbach@yahoo.com\",\"Smith | $50.00 | jsmith@example.com\"]"
+
+SAY: Sorted descending ($100.00, $51.00, $50.00...) — confirmed the table is sorted by Due descending.
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: I clicked the 'Due' header twice in the Example 2 table (`#table2`). The table now shows descending order: Doe ($100.00), Bach ($51.00), Smith ($50.00)... The first data row after sorting is John Doe's row.
+
+ANSWER: jdoe@hotmail.com

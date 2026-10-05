@@ -1,0 +1,38 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r3", "correct": true, "score": 0.961, "wtok": 25792, "out_tok": 893, "turns": 8, "secs": 85, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" && agent-browser snapshot -i
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#column1"; agent-browser eval "document.querySelector('#column1').innerText + '|' + document.querySelector('#column2').innerText"
+-> [250 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:35
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([location.href, document.title, (document.body||{}).textContent?.slice(0,300)])"
+-> [433 chars] "[\"https://the-internet.herokuapp.com/drag_and_drop\",\"The Internet\",\"\\n    \\n      \\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      \\n    \\n    \\n      \\n      \\n        \\n.columns {\\n  width: 400px;\\n}\\n.column {\\n  height: 150px;\\n  width: 150px;\\n  float: left;\\n  border: 2px solid #666666;\\n  background-color: #ccc;\\n  margin-right: 5px;\\n  text-align: center;\\n  curso\"]"
+
+$ agent-browser eval "JSON.stringify({c1:document.getElementById('column1')?.innerText, c2:document.getElementById('column2')?.innerText, header:document.querySelector('#header h2')?.innerText})"
+-> [5 chars] "{}"
+
+$ sleep 3; agent-browser eval "JSON.stringify([document.getElementById('column1')?.innerText, document.getElementById('column2')?.innerText, document.body.innerHTML.length, document.querySelector('#header')?.textContent])"
+-> [24 chars] "[null,null,2550,null]"
+
+$ agent-browser eval "document.body.innerHTML"
+-> [2714 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <style>\n.columns {\n  width: 400p …ign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns header')].map(h=>h.textContent))"
+-> [23 chars] ✓ Done
+"[\"B\",\"A\"]"
+
+SAY: The drag completed successfully. Box A was dropped onto box B, and the boxes swapped their contents.
+
+After the drop, the two boxes' header letters, left to right, are **B, A**.
+
+ANSWER: B, A

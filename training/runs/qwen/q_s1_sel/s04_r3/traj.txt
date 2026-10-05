@@ -1,0 +1,50 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r3", "correct": true, "score": 0.937, "wtok": 42303, "out_tok": 1532, "turns": 7, "secs": 13, "timed_out": false, "curl": false, "answer": "49 wins, GF 269"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"
+-> [158 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+
+$ agent-browser snapshot -i
+-> [6424 chars] - link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10]
+- columnheader "Team Name" [ref=e11]
+- columnheader "Year" [ref=e12]
+- columnheader "Wins" [ref=e13]
+- columnheader "Losses" [ref=e14]
+- columnheader "OT Lo …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill e9 "Bruins"; agent-browser click e10; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('table tr')).map(r=>Array.from(r.cells).map(c=>c.textContent.trim())).filter(r=>r.length))"
+-> [347 chars] ✓ Done
+✓ Done
+"[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\"]]"
+
+SAY: The search filtered to Boston Bruins but it's paginated. Let me collect all pages:
+$ agent-browser eval "JSON.stringify({next: !!document.querySelector('a[href*=\\\"?query=Bruins&amp;page=2\\\"]')||[...document.querySelectorAll('a')].some(a=>a.textContent.trim()==='Next'), links:[...document.querySelectorAll('a')].map(a=>a.href).filter(h=>h.includes('page='))})"
+-> [32 chars] "{\"next\":false,\"links\":[]}"
+
+$ agent-browser eval "JSON.stringify({rows:document.querySelectorAll('table tr').length, body:document.body.innerText.slice(0,400), pager:[...document.querySelectorAll('a')].map(a=>a.textContent.trim()).filter(t=>/^(\\d+|Next|Prev)$/.test(t))})"
+-> [459 chars] "{\"rows\":22,\"body\":\"Sandbox\\nLessons\\nFAQ\\nLogin\\nHockey Teams: Forms, Searching and Pagination 21 items\\n\\nBrowse through a database of NHL team stats since 1990. Practice building a scraper that handles common website interface components. Take a look at how pagination and search elements change the URL as your browse. Build a web scraper that can conduct searches and paginate through the results.\\n\\n There are 8 video les\",\"pager\":[]}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('table tr')].map(r=>[...r.cells].map(c=>c.textContent.trim())).filter(r=>r.length))" | tail -c 3000
+-> [1839 chars] "[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\",\"0.607\",\"332\",\"268\",\"64\"],[\"Boston Bruins\",\"1993\",\"42\",\"29\",\"\",\"0.5\",\"289\",\"252\",\"37\"],[\"Boston Bruins\",\"1994\",\"27\",\"18\",\"\",\"0.562\", …",\"2010\",\"46\",\"25\",\"11\",\"0.561\",\"246\",\"195\",\"51\"],[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+
+SAY: Found it. The search for "Bruins" returns the Boston Bruins rows, and the 2011 season row reads:
+
+**Boston Bruins — 2011: Wins = 49, Goals For (GF) = 269**
+
+(Other stats that year: 29 losses, 4 OT losses, 0.598 Win %, 202 GA, +67.)
+
+ANSWER: 49 wins, GF 269

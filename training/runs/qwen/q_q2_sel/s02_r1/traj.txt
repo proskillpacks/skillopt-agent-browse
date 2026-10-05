@@ -1,0 +1,85 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r1", "correct": true, "score": 0.967, "wtok": 22289, "out_tok": 557, "turns": 6, "secs": 6, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/; agent-browser snapshot -i
+-> [1663 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e23]
+- link "Login" [ref=e24]
+- link "(about)" [ref=e2]
+- link "change" [ref=e25]
+- link "deep-thoughts" [ref=e26]
+- link "thinking" [ref=e27]
+- link "world" [ref=e28]
+- link "(about)" [ref=e3]
+- link "abilities" [ref=e29]
+- link "choices" [ref=e30]
+- link "(about)" [ref=e4]
+- link "inspirational" [ref=e31]
+- link "life" [ref=e32]
+- link "live" [ref=e33]
+- link "mirac …hip" [ref=e19]
+- link "friends" [ref=e20]
+- link "truth" [ref=e21]
+- link "simile" [ref=e22]
+- link "GoodReads.com" [ref=e55]
+- link "Zyte" [ref=e56]
+
+$ agent-browser click @e24; agent-browser snapshot -i
+-> [262 chars] ✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e58]
+  - link "Quotes to Scrape" [ref=e59]
+- link "Login" [ref=e60]
+- textbox "Username Password" [ref=e62]
+- textbox [ref=e63]
+- button "Login" [ref=e61]
+- link "GoodReads.com" [ref=e64]
+- link "Zyte" [ref=e65]
+
+$ agent-browser fill @e62 "testuser"; agent-browser fill @e63 "testpass"; agent-browser click @e61; agent-browser snapshot -i
+-> [296 chars] ✓ Done
+✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e58]
+  - link "Quotes to Scrape" [ref=e59]
+- link "Login" [ref=e60]
+- textbox "Username Password" [ref=e62]: testuser
+- textbox [ref=e63]: ••••••••
+- button "Login" [ref=e61]
+- link "GoodReads.com" [ref=e64]
+- link "Zyte" [ref=e65]
+
+SAY: The form is still showing — the click may not have submitted. Let me try again.
+$ agent-browser eval "document.querySelector('form').submit()" ; agent-browser snapshot -i
+-> [2121 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'submit')
+    at <anonymous>:1:31
+- heading "Quotes to Scrape" [level=1, ref=e66]
+  - link "Quotes to Scrape" [ref=e98]
+- link "Logout" [ref=e99]
+- link "(about)" [ref=e67]
+- link "(Goodreads page)" [ref=e68]
+- link "change" [ref=e100]
+- link "deep-thoughts" [ref=e101]
+- link "thinking" [ref=e102]
+- link "world" [ref=e103]
+- link "(about)" [ref=e69]
+- link "(Goodreads page)" [ref=e70]
+- link "abilities" [ref=e104]
+- link "cho …p" [ref=e94]
+- link "friends" [ref=e95]
+- link "truth" [ref=e96]
+- link "simile" [ref=e97]
+- link "GoodReads.com" [ref=e130]
+- link "Zyte" [ref=e131]
+
+SAY: Logged in successfully. Now getting the href of the first quote's "(Goodreads page)" link (e68).
+$ agent-browser get attr @e68 href
+-> [54 chars] http://goodreads.com/author/show/9810.Albert_Einstein
+
+SAY: Done. I opened https://quotes.toscrape.com/, clicked Login, filled the username/password form (any credentials accepted), and after logging in the first quote on page 1 (Albert Einstein's "The world as we have created it…") gained a "(Goodreads page)" link. That link's `href` is:
+
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

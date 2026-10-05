@@ -1,0 +1,215 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r1", "correct": true, "score": 0.7, "wtok": 229813, "out_tok": 6490, "turns": 33, "secs": 280, "timed_out": false, "curl": false, "answer": "After clicking Remove, the message is \"It's gone!\"; after clicking Enable and waiting, the message is \"It's enabled!\" and the text input's value is \"hello\"."}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "#disable-text fieldset"
+-> [142 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser click "button:has-text('Remove')"; agent-browser wait "#flash"
+-> [188 chars] ✗ Element not found: button:has-text('Remove'). Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "h2"; agent-browser get text h2
+-> [248 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: h2. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser eval "document.title + ' | ' + document.body.innerHTML.slice(0,300)"
+-> [394 chars] https://the-internet.herokuapp.com/dynamic_controls
+"The Internet | \n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;"
+
+$ agent-browser eval "JSON.stringify({checkbox: !!document.querySelector('#dynamic_controls_example input'), removeBtn: !!document.querySelector('#remove'), flash: document.querySelector('#flash'), fieldset: document.querySelector('fieldset')?.textContent?.trim()})"
+-> [58 chars] "{\"checkbox\":false,\"removeBtn\":false,\"flash\":null}"
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; sleep 2; agent-browser eval "JSON.stringify({checkbox: !!document.querySelector('#checkbox'), remove: !!document.querySelector('#remove'), fieldset: document.querySelector('fieldset')?.textContent?.trim(), disable: !!document.querySelector('#disable')})"
+-> [126 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+"{\"checkbox\":true,\"remove\":false,\"disable\":false}"
+
+$ agent-browser eval "JSON.stringify({fieldset: document.querySelector('fieldset')?.textContent?.trim(), buttons: [...document.querySelectorAll('button')].map(b=>b.textContent.trim())})"
+-> [40 chars] "{\"buttons\":[\"Remove\",\"Enable\"]}"
+
+$ agent-browser click "#remove"; agent-browser wait "#flash"; agent-browser get text #flash
+-> [243 chars] ✗ Element not found: #remove. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('button')].map(b=>({id:b.id, cls:b.className, text:b.textContent.trim()})))"
+-> [98 chars] "[{\"id\":\"\",\"cls\":\"\",\"text\":\"Remove\"},{\"id\":\"\",\"cls\":\"\",\"text\":\"Enable\"}]"
+
+$ agent-browser find text "Remove" click; agent-browser wait "#flash"; agent-browser get text "#flash"
+-> [423 chars] ✗ Element '[data-agent-browser-located='true']' is covered by <div#flash-messages> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).
+✗ Wait timed out after 25000ms
+✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='Remove'); const fm=document.querySelector('#flash-messages'); const r=b.getBoundingClientRect(); const f=fm.getBoundingClientRect(); JSON.stringify({btn:{x:r.x,y:r.y,w:r.width,h:r.height}, flash:{x:f.x,y:f.y,w:f.width,h:f.height}, cs:getComputedStyle(fm).position})"
+-> [127 chars] "{\"btn\":{\"x\":15,\"y\":214.5625,\"w\":112.25,\"h\":45},\"flash\":{\"x\":0,\"y\":0,\"w\":945,\"h\":32},\"cs\":\"relative\"}"
+
+$ agent-browser mouse move 71 237; agent-browser mouse down left; agent-browser mouse up left; sleep 1; agent-browser eval "document.querySelector('#flash')?.textContent.trim()"
+-> [26 chars] ✓ Done
+✓ Done
+✓ Done
+null
+
+$ agent-browser eval "JSON.stringify({checkbox: !!document.querySelector('#checkbox'), flash: document.querySelector('#flash')?.textContent})"
+-> [22 chars] "{\"checkbox\":true}"
+
+$ agent-browser get box "button"; agent-browser eval "JSON.stringify({iw:innerWidth, ih:innerHeight, dpr:devicePixelRatio})"
+-> [90 chars] x:      15
+y:      214.5625
+width:  112.25
+height: 45
+"{\"iw\":945,\"ih\":973,\"dpr\":1}"
+
+$ agent-browser click "button"; agent-browser wait "#flash" 2>/dev/null; agent-browser eval "JSON.stringify({checkbox: !!document.querySelector('#checkbox'), flash: document.querySelector('#flash')?.textContent})"
+-> [29 chars] ✓ Done
+"{\"checkbox\":true}"
+
+$ for i in 1 2 3 4 5; do sleep 1; r=$(agent-browser eval "JSON.stringify({cb: !!document.querySelector('#checkbox'), flash: document.querySelector('#flash')?.textContent})"); echo "$i: $r"; echo "$r" | grep -q gone && break; done
+-> [123 chars] 1: "{\"cb\":true}"
+2: "{\"cb\":true}"
+3: "{\"cb\":true}"
+4: "{\"cb\":true}"
+5: "{\"cb\":true}"
+
+
+Command exited with code 1
+$ agent-browser mouse --help 2>&1 | head -30
+-> [1024 chars] agent-browser mouse - Low-level mouse operations
+
+Usage: agent-browser mouse <subcommand> [args]
+
+Performs low-level mouse operations for precise control.
+
+Subcommands:
+  move <x> <y>         Move mouse to coordinates
+  down [button]        Press mouse button (left, right, middle)
+  up [button]          Release mouse button
+  wheel <dy> [dx]      Scroll mouse wheel
+
+Movement Options:
+  --duration <ms>       Target total duration, including browser response time
+  --steps <n>           Number of  …mouse move 600 400 --duration 250 --steps 24
+  agent-browser mouse move 600 400 --human --seed 42
+  agent-browser mouse down
+  agent-browser mouse up
+
+$ agent-browser find text "Remove" click; agent-browser wait "#flash" --timeout 3000 2>/dev/null; agent-browser eval "JSON.stringify({cb: !!document.querySelector('#checkbox'), flash: document.querySelector('#flash')?.textContent})"
+-> [270 chars] ✗ Element '[data-agent-browser-located='true']' is covered by <div#flash-messages> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).
+"{\"cb\":true}"
+
+$ agent-browser eval "const el=document.elementFromPoint(71,237); JSON.stringify({tag:el?.tagName, id:el?.id, cls:el?.className, html:el?.outerHTML?.slice(0,200)})"
+-> [322 chars] "{\"tag\":\"FORM\",\"id\":\"checkbox-example\",\"cls\":\"\",\"html\":\"<form id=\\\"checkbox-example\\\">\\n    \\n    <button autocomplete=\\\"off\\\" type=\\\"button\\\" onclick=\\\"swapCheckbox()\\\">Remove</button><p id=\\\"message\\\">It's back!</p><div><input type=\\\"checkbox\\\" id=\\\"checkbox\\\"> A checkb\"}"
+
+$ agent-browser click "button"; for i in 1 2 3 4 5 6; do sleep 1; r=$(agent-browser eval "document.getElementById('message')?.textContent"); echo "$i: msg='$r'"; case "$r" in *"gone!"*) break;; esac; done
+-> [57 chars] ✓ Done
+1: msg='null'
+2: msg='null'
+3: msg='"It's gone!"'
+
+SAY: The checkbox is gone and the message is **"It's gone!"**. Now the Enable part:
+$ agent-browser eval "JSON.stringify({buttons:[...document.querySelectorAll('button')].map(b=>b.textContent.trim()), enableVisible: !!document.querySelector('input#type')})"; agent-browser find text "Enable" click 2>/dev/null; for i in 1 2 3 4 5; do sleep 1; r=$(agent-browser eval "JSON.stringify({input: !!document.querySelector('input#type'), disabled: document.querySelector('input#type')?.disabled, msg: document.getElementById('message')?.textContent})"); echo "$i: $r"; echo "$r" | grep -v '"disabled":true' | grep -q '"input":true' && break; done
+-> [319 chars] "{\"buttons\":[\"Add\",\"Enable\"],\"enableVisible\":false}"
+1: "{\"input\":false,\"msg\":\"It's gone!\"}"
+2: "{\"input\":false,\"msg\":\"It's gone!\"}"
+3: "{\"input\":false,\"msg\":\"It's gone!\"}"
+4: "{\"input\":false,\"msg\":\"It's gone!\"}"
+5: "{\"input\":false,\"msg\":\"It's gone!\"}"
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({input: !!document.querySelector('input#type'), fieldset: document.querySelector('fieldset#enable')?.style?.display, html: document.querySelector('fieldset#enable')?.outerHTML?.slice(0,200)})"
+-> [20 chars] "{\"input\":false}"
+
+$ agent-browser eval "JSON.stringify(document.body.innerText)"
+-> [277 chars] "\"Dynamic Controls\\n\\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\\n\\nRemove/add\\n\\n\\nAdd\\n\\nIt's gone!\\n\\n\\n\\nA checkbox\\n\\n\\n\\n\\n\\nEnable/disable\\n\\n\\nEnable\\nPowered by Elemental Selenium\""
+
+$ agent-browser find text "Enable" click; for i in 1 2 3 4 5 6; do sleep 1; r=$(agent-browser eval "JSON.stringify({input: !!document.querySelector('input#type'), disabled: document.querySelector('input#type')?.disabled, msg: document.getElementById('message')?.textContent})"); echo "$i: $r"; echo "$r" | grep -q '"input":true' && echo "$r" | grep -v '"disabled":true' && break; done
+-> [558 chars] ✗ Element '[data-agent-browser-located='true']' is covered by <div#flash-messages> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).
+1: "{\"input\":false,\"msg\":\"It's gone!\"}"
+2: "{\"input\":false,\"msg\":\"It's gone!\"}"
+3: "{\"input\":false,\"msg\":\"It's gone!\"}"
+4: "{\"input\":false,\"msg\":\"It's gone!\"}"
+5: "{\"input\":false,\"msg\":\"It's gone!\"}"
+6: "{\"input\":false,\"msg\":\"It's gone!\"}"
+
+
+Command exited with code 1
+$ agent-browser eval "const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='Enable'); const r=b.getBoundingClientRect(); JSON.stringify({box:{x:r.x,y:r.y,w:r.width,h:r.height}, cover:(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)||{}).tagName, fm: JSON.stringify(document.querySelector('#flash-messages').getBoundingClientRect()), scrollY: window.scrollY})"
+-> [102 chars] ✗ Evaluation error: SyntaxError: Identifier 'b' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='Enable');
+  const r=b.getBoundingClientRect();
+  const c=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2);
+  const fm=document.querySelector('#flash-messages');
+  const fr=fm.getBoundingClientRect();
+  return JSON.stringify({box:{x:r.x,y:r.y,w:r.width,h:r.height}, cover:c?.tagName+'#'+c?.id, fmBox:{x:fr.x,y:fr.y,w:fr.width,h:fr.height}, fmHeight:fm.offsetHeight});
+})()
+JS
+-> [148 chars] "{\"box\":{\"x\":15,\"y\":526.8125,\"w\":102.46875,\"h\":45},\"cover\":\"BUTTON#\",\"fmBox\":{\"x\":0,\"y\":0,\"w\":945,\"h\":32},\"fmHeight\":32}"
+
+$ agent-browser click --help 2>&1 | head -40
+-> [1080 chars] agent-browser click - Click an element
+
+Usage: agent-browser click <selector> [--new-tab] [--human]
+
+Clicks on the specified element. The selector can be a CSS selector,
+XPath, or an element reference from snapshot (e.g., @e1).
+
+If another element covers the click point, agent-browser reports the
+covering element instead of dispatching a click to the wrong target.
+
+Options:
+  --new-tab            Open link in a new tab instead of navigating current tab.
+                       The new tab inherit …browser click "button.primary"
+  agent-browser click "//button[@type='submit']"
+  agent-browser click @e3 --new-tab
+  agent-browser click @e3 --human
+
+$ agent-browser click "//button[text()='Enable']"; for i in 1 2 3 4 5; do sleep 1; r=$(agent-browser eval "JSON.stringify({input: !!document.querySelector('input#type'), disabled: document.querySelector('input#type')?.disabled, msg: document.getElementById('message')?.textContent})"); echo "$i: $r"; echo "$r" | grep -q '"input":true' && echo "$r" | grep -qv '"disabled":true' && break; done
+-> [387 chars] ✗ Element not found: //button[text()='Enable']. Verify the selector, role, or name is correct and the element exists in the DOM.
+1: "{\"input\":false,\"msg\":\"It's gone!\"}"
+2: "{\"input\":false,\"msg\":\"It's gone!\"}"
+3: "{\"input\":false,\"msg\":\"It's gone!\"}"
+4: "{\"input\":false,\"msg\":\"It's gone!\"}"
+5: "{\"input\":false,\"msg\":\"It's gone!\"}"
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('form')].map(f=>({id:f.id, btn:f.querySelector('button')?.textContent.trim()})))"
+-> [96 chars] "[{\"id\":\"checkbox-example\",\"btn\":\"Add\"},{\"id\":\"input-example\",\"btn\":\"Enable\"}]"
+
+$ agent-browser click "#input-example button"; agent-browser wait "input#type" --timeout 5000 2>/dev/null; agent-browser eval "JSON.stringify({input: !!document.querySelector('input#type'), disabled: document.querySelector('input#type')?.disabled, msg: document.getElementById('message')?.textContent})"
+-> [53 chars] ✓ Done
+"{\"input\":false,\"msg\":\"It's enabled!\"}"
+
+$ agent-browser eval "JSON.stringify({formHTML: document.getElementById('input-example').outerHTML.slice(0,400), inputs: [...document.querySelectorAll('input')].map(i=>({id:i.id, type:i.type, disabled:i.disabled}))})"
+-> [417 chars] "{\"formHTML\":\"<form id=\\\"input-example\\\">\\n    <input type=\\\"text\\\" style=\\\"width: 30%;\\\">\\n    <button autocomplete=\\\"off\\\" type=\\\"button\\\" onclick=\\\"swapInput()\\\">Disable</button><p id=\\\"message\\\">It's enabled!</p><div id=\\\"loading\\\">Wait for it... <img src=\\\"/img/ajax-loader.gif\\\"></div><br>\\n  </form>\",\"inputs\":[{\"id\":\"\",\"type\":\"text\",\"disabled\":false}]}"
+
+SAY: The input appeared and is enabled (button now reads "Disable", message "It's enabled!"). Now type hello:
+$ agent-browser fill "#input-example input" "hello"; agent-browser eval "JSON.stringify({value: document.querySelector('#input-example input').value, msg: document.getElementById('message').textContent.trim(), disabled: document.querySelector('#input-example input').disabled})"
+-> [76 chars] ✓ Done
+"{\"value\":\"hello\",\"msg\":\"It's enabled!\",\"disabled\":false}"
+
+SAY: All done in the browser:
+
+1. **Remove** → the checkbox disappeared and the message shown was: **It's gone!**
+2. **Enable** → after the input appeared and became enabled, the message was: **It's enabled!**, and after typing, the input's value was: **hello**
+
+ANSWER: After clicking Remove, the message is "It's gone!"; after clicking Enable and waiting, the message is "It's enabled!" and the text input's value is "hello".

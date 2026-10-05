@@ -1,0 +1,92 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r3", "correct": true, "score": 0.93, "wtok": 46661, "out_tok": 1676, "turns": 11, "secs": 47, "timed_out": false, "curl": false, "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; archived after confirming \"Archive this message?\"; receipt #A-7028"}
+
+$ agent-browser open "http://localhost:8791/inbox.html"; agent-browser wait "body"; agent-browser snapshot -i
+-> [426 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✓ Done
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('button')].map((b,i) => { let row = b.closest('li,div,tr'); return row ? row.innerText.replace(/\n/g,' | ') : '?'; }))"
+-> [1003 chars] "[\"Alex A. | Invoice #100 | Archive\",\"Femi H. | Lunch order #113 | Archive\",\"Kai C. | On-call swap #126 | Archive\",\"Dana K. | Retro actions #139 | Archive\",\"Ivo E. | Release checklist #152 | Archive\",\"Bo M. | Design review #165 | Archive\",\"Gus G. | Hiring loop #178 | Archive\",\"Lena B. | Standup notes #191 | Archive\",\"Elif J. | Travel booking #204 | Archive\",\"Jude D. | Budget draft #217 | Archive\",\"Chen L. | Invoice #230 | Archive\",\"Hana F. | Lunch order #243 | Archive\",\" …oice #360 | Archive\",\"Jude D. | Lunch order #373 | Archive\",\"Chen L. | On-call swap #386 | Archive\",\"Hana F. | Retro actions #399 | Archive\"]"
+
+$ agent-browser eval "JSON.stringify({total: (document.body.innerText.match(/\\d+ messages?/i)||[])[0], nexts: [...document.querySelectorAll('a')].map(a=>a.textContent.trim()+' => '+a.href).slice(0,20), buttons: [...document.querySelectorAll('button')].map(b=>b.textContent.trim()).filter(t=>!/Archive/.test(t))})"
+-> [32 chars] "{\"nexts\":[],\"buttons\":[]}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  text: document.body.innerText.slice(0,2000),
+  inputs: [...document.querySelectorAll('input,select')].map(e=>e.name||e.id||e.placeholder),
+  scripts: [...document.querySelectorAll('script')].map(s=>s.src).filter(Boolean)
+})
+JS
+-> [1044 chars] "{\"text\":\"Inbox\\n\\nShowing 24 of 60\\n\\nAlex A.\\nInvoice #100\\nArchive\\nFemi H.\\nLunch order #113\\nArchive\\nKai C.\\nOn-call swap #126\\nArchive\\nDana K.\\nRetro actions #139\\nArchive\\nIvo E.\\nRelease checklist #152\\nArchive\\nBo M.\\nDesign review #165\\nArchive\\nGus G.\\nHiring loop #178\\nArchive\\nLena B.\\nStandup notes #191\\nArchive\\nElif J.\\nTravel booking #204\\nArchive\\nJude D.\\nBudget draft #217\\nArchive\\nChen L.\\nInvoice #230\\nArchive\\nHana F.\\nLunch order …rder #373\\nArchive\\nChen L.\\nOn-call swap #386\\nArchive\\nHana F.\\nRetro actions #399\\nArchive\\nLoading more…\",\"inputs\":[],\"scripts\":[]}"
+
+$ agent-browser eval --stdin <<'JS'
+window.scrollTo(0, document.body.scrollHeight);
+JSON.stringify(document.querySelector('body').innerText.length)
+JS
+sleep 1; agent-browser eval "JSON.stringify([...document.querySelectorAll('button')].length + ' ' + document.body.innerText.match(/Showing \\d+ of \\d+/))"
+-> [32 chars] "845"
+"\"36 Showing 36 of 60\""
+
+$ for i in 1 2 3 4 5 6; do agent-browser eval "window.scrollTo(0, document.body.scrollHeight)" >/dev/null; sleep 0.7; done; agent-browser eval "document.body.innerText.match(/Showing \\d+ of \\d+/)[0] + ' | ' + (document.body.innerText.includes('Priya N.') ? 'PRIYA FOUND' : 'not yet')"
+-> [33 chars] "Showing 60 of 60 | PRIYA FOUND"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('button')].map((b,i)=>i).filter(i=>{const r=b.closest('li,div');return r && r.innerText.startsWith('Priya N.');}).length); JSON.stringify([0] .map(_=>null))" >/dev/null; agent-browser snapshot -i | grep -A1 -i priya; agent-browser eval "const rows=[...document.querySelectorAll('button')].map(b=>b.closest('li,div')); const idx=rows.findIndex(r=>r&&r.innerText.startsWith('Priya N.')); JSON.stringify(rows[idx].innerText)"
+-> [204 chars] ✗ Evaluation error: ReferenceError: b is not defined
+    at <anonymous>:1:90
+    at Array.filter (<anonymous>)
+    at <anonymous>:1:71
+"\"Priya N.\\nQ3 vendor audit — rescheduled to the 19th\\nArchive\""
+
+SAY: Found Priya N.'s message: **"Q3 vendor audit — rescheduled to the 19th"**. Now archiving it:
+$ agent-browser eval --stdin <<'JS'
+const rows=[...document.querySelectorAll('button')].map(b=>b.closest('li,div'));
+const idx=rows.findIndex(r=>r&&r.innerText.startsWith('Priya N.'));
+document.querySelectorAll('button')[idx].click();
+'clicked row '+idx
+JS
+sleep 0.5; agent-browser eval "JSON.stringify([...document.querySelectorAll('[class*=confirm],[class*=dialog],[role=dialog]')].map(e=>e.innerText))"
+-> [82 chars] ✗ Evaluation error: SyntaxError: Identifier 'rows' has already been declared
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+const rs=[...document.querySelectorAll('button')].map(b=>b.closest('li,div'));
+const ix=rs.findIndex(r=>r&&r.innerText.startsWith('Priya N.'));
+document.querySelectorAll('button')[ix].click();
+'clicked '+ix
+JS
+sleep 0.5; agent-browser eval "JSON.stringify([...document.querySelectorAll('[role=dialog],[class*=confirm],[class*=dialog]')].map(e=>e.innerText))"
+-> [355 chars] ✗ CDP command timed out: Runtime.evaluate
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✗ A JavaScript confirm dialog is blocking the page: "Archive this message?". Resolve it with `dialog accept` or `dialog dismiss`, then retry `evaluate`.
+
+
+Command exited with code 1
+SAY: A confirm dialog appeared ("Archive this message?") — accepting it:
+$ agent-browser dialog accept; sleep 0.5; agent-browser eval "JSON.stringify(document.body.innerText.match(/receipt[^\n]*/i)||document.body.innerText.slice(-500))"
+-> [31 chars] ✓ Done
+"[\"Receipt #A-7028\"]"
+
+SAY: Done. Summary:
+
+1. Opened `http://localhost:8791/inbox.html` — the inbox paginates ("Loading more…"), so I scrolled until all 60 of 60 messages were loaded.
+2. Found the message from **Priya N.** with subject: **"Q3 vendor audit — rescheduled to the 19th"**
+3. Clicked its **Archive** button, which triggered a JS confirm dialog: *"Archive this message?"* → accepted it.
+4. The page then showed receipt number: **#A-7028**
+
+ANSWER: Subject "Q3 vendor audit — rescheduled to the 19th"; archived after 

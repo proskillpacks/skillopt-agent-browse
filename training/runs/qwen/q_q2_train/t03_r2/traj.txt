@@ -1,0 +1,54 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r2", "correct": true, "score": 0.942, "wtok": 38372, "out_tok": 2205, "turns": 9, "secs": 45, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "#table2"
+-> [90 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#table2 thead th')].map((th,i)=>[i,th.textContent.trim()]))
+JS
+-> [99 chars] "[[0,\"Last Name\"],[1,\"First Name\"],[2,\"Email\"],[3,\"Due\"],[4,\"Web Site\"],[5,\"Action\"]]"
+
+$ agent-browser click "#table2 thead th:nth-child(4)"; agent-browser click "#table2 thead th:nth-child(4)"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].slice(0,3).map(tr=>[...tr.cells].map(td=>td.textContent.trim())))
+JS
+-> [335 chars] ✓ Done
+✓ Done
+"[[\"Smith\",\"John\",\"jsmith@example.com\",\"$50.00\",\"http://www.jsmith.com\",\"edit\\n          delete\"],[\"Bach\",\"Frank\",\"fbach@yahoo.com\",\"$51.00\",\"http://www.frank.com\",\"edit\\n          delete\"],[\"Doe\",\"Jason\",\"jdoe@hotmail.com\",\"$100.00\",\"http://www.jdoe.com\",\"edit\\n          delete\"]]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].map(tr=>tr.cells[3].textContent.trim()))
+JS
+-> [49 chars] "[\"$50.00\",\"$51.00\",\"$100.00\",\"$50.00\"]"
+
+$ agent-browser click "#table2 thead th:nth-child(4)"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].map(tr=>tr.cells[3].textContent.trim()))
+JS
+-> [56 chars] ✓ Done
+"[\"$50.00\",\"$51.00\",\"$100.00\",\"$50.00\"]"
+
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "#table2"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].map(tr=>tr.cells[3].textContent.trim()))
+JS
+-> [115 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/tables
+✓ Done
+"[\"$50.00\",\"$51.00\",\"$100.00\",\"$50.00\"]"
+
+$ agent-browser click "#table2 thead th:nth-child(4)"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].map(tr=>tr.cells[3].textContent.trim()))
+JS
+-> [56 chars] ✓ Done
+"[\"$50.00\",\"$50.00\",\"$51.00\",\"$100.00\"]"
+
+$ agent-browser click "#table2 thead th:nth-child(4)"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#table2 tbody tr')].map(tr=>[tr.cells[0].textContent.trim(),tr.cells[2].textContent.trim(),tr.cells[3].textContent.trim()]))
+JS
+-> [190 chars] ✓ Done
+"[[\"Doe\",\"jdoe@hotmail.com\",\"$100.00\"],[\"Bach\",\"fbach@yahoo.com\",\"$51.00\"],[\"Smith\",\"jsmith@example.com\",\"$50.00\"],[\"Conway\",\"tconway@earthlink.net\",\"$50.00\"]]"
+
+SAY: The table is now sorted by Due descending ($100.00, $51.00, $50.00, $50.00). The first data row is Jason Doe with a due of $100.00.
+
+ANSWER: jdoe@hotmail.com

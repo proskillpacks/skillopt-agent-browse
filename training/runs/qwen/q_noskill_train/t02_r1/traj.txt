@@ -1,0 +1,154 @@
+TASK t02: On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.
+EXPECT: ['you clicked: cancel', 'you entered: skillopt-42']
+RESULT: {"id": "t02_r1", "correct": true, "score": 0.847, "wtok": 101778, "out_tok": 2393, "turns": 22, "secs": 83, "timed_out": false, "curl": false, "answer": "Confirm (canceled) Result: \"You clicked: Cancel\"; Prompt (entered skillopt-42) Result: \"You entered: skillopt-42\""}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser --help 2>&1 | sed -n '50,150p'
+-> [4620 chars]   back                       Go back
+  forward                    Go forward
+  reload                     Reload page
+
+Get Info:  agent-browser get <what> [selector]
+  text, html, value, attr <name>, title, url, count, box, styles, cdp-url
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+  role, text, label, placeholder, alt, title, testid, first, last, nth
+
+Mouse:  agent-browser mouse <action> [ar …dentials (waits for form fields)
+  auth login <name> --no-navigate
+                             Use active page after verifying credential URL origin
+
+$ agent-browser skills get core 2>&1 | grep -i -A5 dialog
+-> [1533 chars] - **Tab blocked by a dialog.** If the target tab has an open dialog (`confirm`/`prompt`, or `alert`/`beforeunload` under `--no-auto-dialog`) its renderer is paused, not discarded, so the switch leaves it untouched and reports `"dialogBlocked": true`. Resolve the dialog with `dialog accept`/`dialog dismiss` before interacting with the page.
+
+### Run multiple browsers in parallel
+
+Each `--session <name>` is an isolated browser with its own cookies, tabs, and refs. For agent skills, derive stable n …nd Windows terminates that tree even if the daemon is forcibly killed. Browsers attached through `--cdp` or `--auto-connect` remain externally owned.
+
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts && agent-browser get text "#result"
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser dialog status 2>&1
+-> [83 chars] https://the-internet.herokuapp.com/javascript_alerts
+✓ No dialog is currently open
+
+$ agent-browser get text "#result"; agent-browser click "a:has-text('Click for JS Confirm')"
+-> [277 chars] ✗ Element not found: #result. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: a:has-text('Click for JS Confirm'). Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get html | head -40
+-> [73 chars] Missing arguments for: get html
+Usage: agent-browser get html <selector>
+
+$ agent-browser read 2>&1 | head -30
+-> [1 chars] 
+
+$ agent-browser get title; agent-browser get url; agent-browser snapshot 2>&1 | head -40
+-> [67 chars] 
+https://the-internet.herokuapp.com/javascript_alerts
+(empty page)
+
+$ agent-browser reload && sleep 3 && agent-browser snapshot 2>&1 | head -40
+-> [66 chars] https://the-internet.herokuapp.com/javascript_alerts
+(empty page)
+
+$ agent-browser eval "document.body ? document.body.innerHTML.slice(0,500) : 'no body'"
+-> [10 chars] "no body"
+
+$ agent-browser eval "document.readyState" && agent-browser eval "fetch('https://the-internet.herokuapp.com/javascript_alerts').then(r=>r.status)" 2>&1
+-> [14 chars] "loading"
+200
+
+$ sleep 10; agent-browser eval "document.readyState"
+-> [10 chars] "loading"
+
+$ agent-browser eval "fetch('https://the-internet.herokuapp.com/javascript_alerts').then(r=>r.text()).then(t=>{document.open();document.write(t);document.close();return t.length})"
+-> [5 chars] 2483
+
+$ agent-browser eval "document.body ? document.body.innerHTML.slice(0,400) : 'no body'"
+-> [10 chars] "no body"
+
+$ agent-browser eval "document.readyState + ' | ' + document.URL + ' | ' + (document.documentElement ? 'has html' : 'no html')"
+-> [76 chars] "loading | https://the-internet.herokuapp.com/javascript_alerts | has html"
+
+$ agent-browser eval "document.documentElement.outerHTML.length + ' :: ' + document.documentElement.outerHTML.slice(0,300)"
+-> [334 chars] "2352 :: <html class=\"no-js\" lang=\"en\"><!--<![endif]--><head>\n    <script src=\"/js/vendor/298279967.js\"></script>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width\">\n    <title>The Internet</title>\n    <link href=\"/css/app.css\" rel=\"stylesheet\">\n    <link href=\"/css/font-awesom"
+
+$ sleep 15; agent-browser eval "document.readyState + ' | ' + (document.body?'body ok':'no body') + ' | ' + document.documentElement.outerHTML.length"
+-> [28 chars] "complete | body ok | 2352"
+
+$ agent-browser get text "#result"; agent-browser snapshot 2>&1 | head -20
+-> [652 chars] 
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JavaScript Alerts" [level=3, ref=e2]
+  - paragraph
+    - StaticText "Here are some examples of different JavaScript alerts which can be troublesome for automation"
+  - list
+    - listitem [level=1]
+      - button "Click for JS Alert" [ref=e4]
+    - listitem [level=1]
+      - button "Click for JS Confirm" [ref=e5]
+    - listitem [level=1]
+      - button "Click for JS Prompt" [ref=e6]
+  - heading "Result:" [level=4, ref=e3]
+  - paragraph
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e7]
+
+SAY: Page loaded. Now clicking Confirm and cancelling the dialog:
+$ agent-browser click "@e5" && agent-browser dialog status && agent-browser dialog dismiss && agent-browser get text "#result"
+-> [308 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "I am a JS Confirm" — use `dialog accept` or `dialog dismiss` to resolve it
+⚠ JavaScript confirm dialog is open: "I am a JS Confirm"
+  Default prompt text: ""
+  Use `dialog accept [text]` or `dialog dismiss` to resolve it
+✓ Done
+You clicked: Cancel
+
+$ agent-browser click "@e6" && agent-browser dialog status && agent-browser dialog accept "skillopt-42" && agent-browser get text "#result"
+-> [309 chars] ✓ Done
+⚠ A JavaScript prompt dialog is blocking the page: "I am a JS prompt" — use `dialog accept` or `dialog dismiss` to resolve it
+⚠ JavaScript prompt dialog is open: "I am a JS prompt"
+  Default prompt text: ""
+  Use `dialog accept [text]` or `dialog dismiss` to resolve it
+✓ Done
+You entered: skillopt-42
+
+SAY: Both interactions completed successfully in the preselected browser session:
+
+1. **JS Confirm** — clicked "Click for JS Confirm", a confirm dialog ("I am a JS Confirm") appeared, I dismissed it (Cancel). Result text: **`You clicked: Cancel`**
+2. **JS Prompt** — clicked "Click for JS Prompt", a prompt dialog ("I am a JS prompt") appeared, I accepted it with the text `skillopt-42`. Result text: **`You entered: skillopt-42`**
+
+ANSWER: Confirm (canceled) Result: "You clicked: Cancel"; Prompt (entere

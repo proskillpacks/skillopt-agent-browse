@@ -1,0 +1,40 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r3", "correct": true, "score": 0.982, "wtok": 11995, "out_tok": 528, "turns": 4, "secs": 54, "timed_out": false, "curl": false, "answer": "The third avatar shows the name \"user3\" and its 'View profile' link has href /users/3 (https://the-internet.herokuapp.com/users/3)"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "figure"; agent-browser hover "figure:nth-child(3)"; agent-browser snapshot -i
+-> [347 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: figure:nth-child(3). Verify the selector, role, or name is correct and the element exists in the DOM.
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(document.querySelector('#content').innerHTML.slice(0,2000))
+JS
+-> [1069 chars] "\"\\n        <style>\\n.figure {\\n  float: left;\\n  padding-right: 20px;\\n}\\n\\n.figcaption {\\n  display: none;\\n}\\n\\n.figure:hover .figcaption {\\n  display: block;\\n}\\n</style>\\n\\n<div class=\\\"example\\\">\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user1</h5>\\n      <a href=\\\"/users …\"figcaption\\\">\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n</div>\\n\\n      \""
+
+SAY: The elements are `div.figure`, not `<figure>`. Hovering the third:
+$ agent-browser hover ".example div.figure:nth-of-type(3) img"; agent-browser snapshot -i; agent-browser get text ".example div:nth-child(3) .figcaption" 2>/dev/null; agent-browser eval --stdin <<'JS'
+const fig = document.querySelectorAll('.example > div.figure')[2];
+JSON.stringify({ name: fig.querySelector('h5').textContent.trim(), href: fig.querySelector('a').href, display: getComputedStyle(fig.querySelector('.figcaption')).display });
+JS
+-> [340 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- heading "name: user3" [level=5, ref=e4]
+- link "View profile" [ref=e5]
+- link "Elemental Selenium" [ref=e3]
+
+      name: user1
+      View profile
+    
+"{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"display\":\"block\"}"
+
+SAY: Hovering over the third avatar (a `.figure` div, since the avatars on this page use divs rather than `<figure>` elements) reveals its figcaption. The snapshot confirms the caption became visible, showing the name heading and the "View profile" link.
+
+- **Name shown:** `user3` (displayed as "name: user3")
+- **View profile link href:** `/users/3` (absolute: `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: The third avatar shows the name "user3" and its 'View profile' link has href /users/3 (

@@ -1,0 +1,143 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r3", "correct": true, "score": 0.96, "wtok": 26377, "out_tok": 1818, "turns": 7, "secs": 23, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser --help 2>&1 | head -50
+$ env | grep -iE 'browser|agent' | sed 's/=.*KEY.*/=.../' | head -20
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+-> [745 chars] PI_CODING_AGENT=true
+AI_AGENT=pi
+PWD=/home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r3
+AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_sel-s08_r3
+AGENT_BROWSER_SESSION=so-q_noskill_sel-s08_r3
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_sel-s08_r3
+PATH=<scrubbed> …sr/local/cuda/bin:/opt/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+AGENT_BROWSER_HEADED=1
+
+$ agent-browser open "https://books.toscrape.com/" && agent-browser read | head -30
+-> [224 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+Books to Scrape We love being scraped!
+
+-
+Home
+
+- All products
+
+-
+
+Books
+
+-
+
+Travel
+
+-
+
+Mystery
+
+-
+
+Historical Fiction
+
+-
+
+Sequential Art
+
+-
+
+Classics
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].slice(0,3).map(a=>({t:a.querySelector("h3 a")?.textContent.trim(), p:a.querySelector(".price_color")?.textContent.trim()})))'
+-> [140 chars] "[{\"t\":\"A Light in the ...\",\"p\":\"£51.77\"},{\"t\":\"Tipping the Velvet\",\"p\":\"£53.74\"},{\"t\":\"Soumission\",\"p\":\"£50.10\"}]"
+
+SAY: Extraction works. Now I'll loop through all 50 catalogue pages and collect title+price (using the `title` attribute for full titles):
+$ cd /tmp && rm -f books.jsonl
+for p in 1 2 3 4 5 6 7 8 9 10; do
+  if [ "$p" = "1" ]; then url="https://books.toscrape.com/"; else url="https://books.toscrape.com/catalogue/page-$p.html"; fi
+  agent-browser open "$url" >/dev/null
+  agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a")?.title?.trim(), p:parseFloat(a.querySelector(".price_color")?.textContent.trim().replace("£",""))})))' > /tmp/page_$p.json
+  echo "page $p: $(head -c 60 /tmp/page_$p.json)..."
+done
+-> [721 chars] page 1: "[{\"t\":\"A Light in the Attic\",\"p\":51.77},{\"t\":\"Tipp...
+page 2: "[{\"t\":\"In Her Wake\",\"p\":12.84},{\"t\":\"How Music Wor...
+page 3: "[{\"t\":\"Slow States of Collapse: Poems\",\"p\":57.31},{\"...
+page 4: "[{\"t\":\"The Nameless City (The Nameless City #1)\",\"p\":...
+page 5: "[{\"t\":\"Princess Jellyfish 2-in-1 Omnibus, Vol. 01 (Princ...
+page 6: "[{\"t\":\"Immunity: How Elie Metchnikoff Changed the Course...
+page 7: "[{\"t\":\"Algorithms to Live By: The Computer Science of Hu …,...
+page 9: "[{\"t\":\"The Bridge to Consciousness: I'm Writing the Brid...
+page 10: "[{\"t\":\"Modern Romance\",\"p\":28.26},{\"t\":\"Miss Pereg...
+
+$ cd /tmp
+for p in 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$p.html" >/dev/null
+  agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a")?.title?.trim(), p:parseFloat(a.querySelector(".price_color")?.textContent.trim().replace("£",""))})))' > /tmp/page_$p.json
+done
+echo done; ls /tmp/page_*.json | wc -l
+-> [8 chars] done
+50
+
+SAY: All 50 pages captured. Now aggregate the results:
+$ node -e '
+const fs=require("fs");
+let books=[];
+for(let p=1;p<=50;p++){
+  const raw=fs.readFileSync("/tmp/page_"+p+".json","utf8").trim();
+  const arr=JSON.parse(JSON.parse(raw));
+  books.push(...arr);
+}
+console.log("total books:", books.length);
+const under=books.filter(b=>b.p<12.00);
+console.log("under £12.00:", under.length);
+let min=books[0];
+for(const b of books) if(b.p<min.p) min=b;
+console.log("cheapest:", JSON.stringify(min));
+// show the 5 cheapest for sanity
+[...books].sort((a,b)=>a.p-b.p).slice(0,5).forEach(b=>console.log(b.p, b.t));
+// count strictly <12 vs <=12 sanity
+console.log("exactly 12.00:", books.filter(b=>b.p===12).length);
+'
+-> [273 chars] total books: 1000
+under £12.00: 44
+cheapest: {"t":"An Abundance of Katherines","p":10}
+10 An Abundance of Katherines
+10.01 The Origin of Species
+10.02 The Tipping Point: How Little Things Can Make a Big Difference
+10.16 Patience
+10.23 Greek Mythic History
+exactly 12.00: 0
+
+SAY: Done. I navigated through all 50 catalogue pages of books.toscrape.com in the browser (1,000 books total, verified 20 per page) using `agent-browser open` + `eval` extraction, then aggregated the data.
+
+**Results:**
+- **Books priced under £12.00: 44** (out of 1,000; no book was priced at exactly £12.00)
+- **Cheapest book: "An Abundance of Katherines" — £10.00**
+
+Sanity check of the bottom of the price list:
+| Price | Title |
+|---|---|
+| £10.00 | An Abundance of Katherines |
+| £10.01 | The Origin

@@ -1,0 +1,177 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r1", "correct": true, "score": 0.951, "wtok": 32991, "out_tok": 1315, "turns": 10, "secs": 40, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; archived with receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser wait "body"; agent-browser get text body
+-> [489 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✓ Done
+Inbox
+
+Showing 12 of 60
+
+Alex A.
+Invoice #100
+Archive
+Femi H.
+Lunch order #113
+Archive
+Kai C.
+On-call swap #126
+Archive
+Dana K.
+Retro actions #139
+Archive
+Ivo E.
+Release checklist #152
+Archive
+Bo M.
+Design review #165
+Archive
+Gus G.
+Hiring loop #178
+Archive
+Lena B.
+Standup notes #191
+Archive
+Elif J.
+Travel booking #204
+Archive
+Jude D.
+Budget draft #217
+Archive
+Chen L.
+Invoice #230
+Archive
+Hana F.
+Lunch order #243
+Archive
+Loading more…
+
+$ agent-browser snapshot -i
+-> [376 chars] - heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval "const el=[...document.querySelectorAll('*')].find(e=>e.textContent.trim()==='Loading more…'); el? el.outerHTML : 'not found'"
+-> [65 chars] "<div id=\"sentinel\" style=\"height:40px\">Loading more…</div>"
+
+$ agent-browser eval "
+(async()=>{
+  for(let i=0;i<20;i++){
+    window.scrollTo(0, document.body.scrollHeight);
+    await new Promise(r=>setTimeout(r,500));
+    if(document.body.innerText.includes('Priya N.')) return 'found';
+  }
+  return document.body.innerText.slice(-300);
+})()"
+-> [8 chars] "found"
+
+$ agent-browser eval "
+const els=[...document.querySelectorAll('*')].filter(e=>e.children.length===0&&e.textContent.trim()==='Priya N.');
+const p=els[0]; const row=p.closest('li,article,div');
+JSON.stringify({subject: row.innerText})"
+-> [83 chars] "{\"subject\":\"Priya N.\\nQ3 vendor audit — rescheduled to the 19th\\nArchive\"}"
+
+SAY: Found the subject: "Q3 vendor audit — rescheduled to the 19th". Now archiving it:
+$ agent-browser eval "
+const els=[...document.querySelectorAll('button')].filter(b=>b.textContent.trim()==='Archive');
+const rows=els.map(b=>b.closest('li,article,div'));
+const idx=rows.findIndex(r=>r.innerText.includes('Priya N.'));
+if(idx<0) throw new Error('row not found');
+rows[idx].scrollIntoView({block:'center'});
+rows[idx].querySelector('button').click();
+'clicked ' + idx"; agent-browser dialog accept
+-> [168 chars] ✗ Evaluation error: SyntaxError: Identifier 'els' has already been declared
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+
+
+Command exited with code 1
+$ agent-browser eval "
+(()=>{
+  const btns=[...document.querySelectorAll('button')].filter(b=>b.textContent.trim()==='Archive');
+  const rows=btns.map(b=>b.closest('li,article,div'));
+  const idx=rows.findIndex(r=>r.innerText.includes('Priya N.'));
+  if(idx<0) return 'row not found';
+  rows[idx].scrollIntoView({block:'center'});
+  btns[idx].click();
+  return 'clicked';
+})()"; agent-browser dialog accept
+-> [181 chars] ✗ CDP command timed out: Runtime.evaluate
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+
+$ agent-browser dialog accept; agent-browser get text body | head -50
+-> [604 chars] ✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+Inbox
+
+Showing 60 of 60
+
+Alex A.
+Invoice #100
+Archive
+Femi H.
+Lunch order #113
+Archive
+Kai C.
+On-call swap #126
+Archive
+Dana K.
+Retro actions #139
+Archive
+Ivo E.
+Release checklist #152
+Archive
+Bo M.
+Design review #165
+Archive
+Gus G.
+Hiring loop #178
+Archive
+Lena B.
+Standup notes #191
+Archive
+Elif J.
+Travel booking #204
+Archive
+Jude D.
+Budget draft #217
+Archive
+Chen L.
+Invoice #230
+Archive
+Hana F.
+Lunch order #243
+Archive
+Alex A.
+On-call swap #256
+Archive
+Femi H.
+Retro actions #269
+Archive
+Kai C.
+Release checklist #282
+Archive
+Dana K.
+
+$ agent-browser eval "
+(()=>{const t=document.body.innerText; const m=t.match(/[Rr]eceipt[^\n]*\n?[^\n]*/g); const priya=t.includes('Priya N.'); return JSON.stringify({receipts:m, priyaStillThere:priya});})()"
+-> [65 chars] "{\"receipts\":[\"Receipt #A-7028\"],\"priyaStillThere\":false}"
+
+SAY: Done. Summary:
+
+- **Message from Priya N.**: subject is **"Q3 vendor audit — rescheduled to the 19th"**
+- **Archived**: clicked its Archive button, confirmed the "Archive this message?" dialog — the message was removed from the inbox
+- **Receipt shown afterwards**: **Receipt #A-7028**
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; archived with receipt #A-7028

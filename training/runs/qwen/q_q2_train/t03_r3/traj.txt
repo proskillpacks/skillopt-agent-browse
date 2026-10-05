@@ -1,0 +1,148 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r3", "correct": true, "score": 0.882, "wtok": 78984, "out_tok": 4785, "turns": 14, "secs": 59, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "table"
+-> [90 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+const tables = [...document.querySelectorAll('table')];
+JSON.stringify(tables.map((t,i)=>({i, cls:t.className, id:t.id, headers:[...t.querySelectorAll('th')].map(h=>h.textContent)})))
+JS
+-> [278 chars] "[{\"i\":0,\"cls\":\"tablesorter\",\"id\":\"table1\",\"headers\":[\"Last Name\",\"First Name\",\"Email\",\"Due\",\"Web Site\",\"Action\"]},{\"i\":1,\"cls\":\"tablesorter\",\"id\":\"table2\",\"headers\":[\"Last Name\",\"First Name\",\"Email\",\"Due\",\"Web Site\",\"Action\"]}]"
+
+$ agent-browser eval --stdin <<'JS'
+const ths=[...document.querySelectorAll('#table2 thead th')];
+const due=ths.find(h=>h.textContent.trim()==='Due');
+const r=document.elementFromPoint? null:null;
+const rect=due.getBoundingClientRect();
+JSON.stringify({x:Math.round(rect.left+rect.width/2), y:Math.round(rect.top+rect.height/2)})
+JS
+-> [24 chars] "{\"x\":428,\"y\":560}"
+
+$ agent-browser eval --stdin <<'JS'
+const ths=[...document.querySelectorAll('#table2 thead th')];
+const due=ths.find(h=>h.textContent.trim()==='Due');
+due.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+due.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+JSON.stringify([...document.querySelectorAll('#table2 tbody tr')][0].cells[3].textContent)
+JS
+-> [104 chars] ✗ Evaluation error: SyntaxError: Identifier 'ths' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const ths=[...document.querySelectorAll('#table2 thead th')];
+const due=ths.find(h=>h.textContent.trim()==='Due');
+due.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+due.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+return JSON.stringify([...document.querySelectorAll('#table2 tbody tr')][0].cells[3].textContent);
+})()
+JS
+-> [13 chars] "\"$50.00\""
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const rows=[...document.querySelectorAll('#table2 tbody tr')];
+const dues=rows.map(r=>r.cells[3].textContent);
+const email=rows[0].cells[2].textContent;
+return JSON.stringify({dues, email});
+})()
+-> [182 chars] /bin/bash: line 7: warning: here-document at line 1 delimited by end-of-file (wanted `JS')
+"{\"dues\":[\"$50.00\",\"$51.00\",\"$100.00\",\"$50.00\"],\"email\":\"jsmith@example.com\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const h=[...document.querySelectorAll('#table2 thead th')].find(h=>h.textContent.trim()==='Due');
+const rows=[...document.querySelectorAll('#table2 tbody tr')];
+return JSON.stringify({sortIcons:h.className, dues:rows.map(r=>r.cells[3].textContent)});
+})()
+-> [170 chars] /bin/bash: line 6: warning: here-document at line 1 delimited by end-of-file (wanted `JS')
+"{\"sortIcons\":\"\",\"dues\":[\"$50.00\",\"$51.00\",\"$100.00\",\"$50.00\"]}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const t2=document.getElementById('table2');
+return JSON.stringify({
+  t2cls:t2.className,
+  t2parentCls:t2.parentElement.className,
+  jq: typeof jQuery!=='undefined',
+  tablesorter: !!(jQuery && jQuery.tablesorter),
+  hClasses:[...document.querySelectorAll('#table2 thead th')].map(h=>h.className),
+  text:document.querySelector('#content').innerText.slice(0,400)
+});
+})()
+-> [226 chars] /bin/bash: line 12: warning: here-document at line 1 delimited by end-of-file (wanted `JS')
+✗ Evaluation error: ReferenceError: jQuery is not defined
+    at <anonymous>:7:19
+    at <anonymous>:11:3
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const t2=document.getElementById('table2');
+return JSON.stringify({
+  t2cls:t2.className,
+  parentCls:t2.parentElement.className,
+  hClasses:[...document.querySelectorAll('#table2 thead th')].map(h=>h.className),
+  text:document.querySelector('#content').innerText.slice(0,300)
+});
+})()
+-> [519 chars] /bin/bash: line 10: warning: here-document at line 1 delimited by end-of-file (wanted `JS')
+"{\"t2cls\":\"tablesorter\",\"parentCls\":\"example\",\"hClasses\":[\"\",\"\",\"\",\"\",\"\",\"\"],\"text\":\"Data Tables\\n\\nOften times when you see a table it contains data which is sortable -- sometimes with actions that can be taken within each row (e.g. edit, delete). And it can be challenging to automate interaction with sets of data in a table depending on how it is constructed.\\n\\nExample 1\\n\\nNo Class or\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const scripts=[...document.querySelectorAll('script[src]')].map(s=>s.src);
+return JSON.stringify({
+  scripts,
+  hasJq: typeof window.jQuery,
+  hasJQuery: typeof window.jQuery,
+  keys:Object.keys(window).filter(k=>/jquery|jq/i.test(k))
+});
+})()
+-> [601 chars] /bin/bash: line 10: warning: here-document at line 1 delimited by end-of-file (wanted `JS')
+"{\"scripts\":[\"https://the-internet.herokuapp.com/js/vendor/298279967.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js\",\"https://the-internet.herokuapp.com/js/foundation/foundation.js\",\"https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery.tablesorter.min.js\"],\"hasJq\":\"undefined\",\"hasJQuery\":\"undefined\",\"keys\":[]}"
+
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "table#table2"; agent-browser eval --stdin <<'JS'
+(() => {
+return JSON.stringify({
+  hClasses:[...document.querySelectorAll('#table2 thead th')].map(h=>h.className),
+  dues:[...document.querySelectorAll('#table2 tbody tr')].map(r=>r.cells[3].textContent)
+});
+})()
+-> [298 chars] /bin/bash: line 7: warning: here-document at line 1 delimited by end-of-file (wanted `JS')
+✓ The Internet
+  https://the-internet.herokuapp.com/tables
+✓ Done
+"{\"hClasses\":[\"header\",\"header\",\"header\",\"header\",\"header\",\"header\"],\"dues\":[\"$50.00\",\"$51.00\",\"$100.00\",\"$50.00\"]}"
+
+SAY: The page reloaded properly now (headers show tablesorter `header` class). Now click the 'Due' header twice:
+$ agent-browser click "#table2 thead th:nth-child(4)"; sleep 0.5; agent-browser click "#table2 thead th:nth-child(4)"; sleep 0.5; agent-browser eval --stdin <<'JS'
+(() => {
+return JSON.stringify({
+  dueClass:[...document.querySelectorAll('#table2 thead th')][3].className,
+  firstRow:[...document.querySelectorAll('#table2 tbody tr')][0].innerText,
+  dues:[...document.querySelectorAll('#table2 tbody tr')].map(r=>r.cells[3].textContent)
+});
+})()
+-> [296 chars] /bin/bash: line 8: warning: here-document at line 1 delimited by end-of-file (wanted `JS')
+✓ Done
+✓ Done
+"{\"dueClass\":\"header headerSortUp\",\"firstRow\":\"Doe\\tJason\\tjdoe@hotmail.com\\t$100.00\\thttp://www.jdoe.com\\tedit delete\",\"dues\":[\"$100.00\",\"$51.00\",\"$50.00\",\"$50.00\"]}"
+
+SAY: Sorted descending by Due ($100.00 → $51.00 → $50.00 → $50.00). Verifying the first row:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const r=document.querySelectorAll('#table2 tbody tr')[0];
+return JSON.stringify({email:r.cells[2].textContent, due:r.cells[3].textContent});
+})()
+-> [146 chars] /bin/bash: line 5: warning: here-document at line 1 delimited by end-of-file (wanted `JS')
+"{\"email\":\"jdoe@hotmail.com\",\"due\":\"$100.00\"}"
+
+SAY: In the 'Example 2' table (#table2), I clicked the 'Due' column header twice, which sorted the table by Due descending ($100.00, $51.00, $50.00, $50.00). The first data row shows Due = $100.00 with email **jdoe@hotmail.com**.
+
+ANSWER: jdoe@hotmail.com

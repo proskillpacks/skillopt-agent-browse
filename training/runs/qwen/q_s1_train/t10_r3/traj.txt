@@ -1,0 +1,152 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r3", "correct": true, "score": 0.807, "wtok": 128578, "out_tok": 3924, "turns": 24, "secs": 87, "timed_out": false, "curl": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/jqueryui/menu"; agent-browser wait "ul"; agent-browser click "text=Enabled" 2>&1; sleep 0.5; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#demo > ul li.ui-menu-item')).map(li => li.querySelector(':scope > a, :scope > ul > a, :scope > a.ui-menu-item-wrapper').textContent.trim()))"
+-> [211 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✗ Element not found: text=Enabled. Verify the selector, role, or name is correct and the element exists in the DOM.
+"[]"
+
+$ agent-browser eval "Array.from(document.querySelectorAll('ul.ui-menu li a')).map(a=>a.textContent).join('|')"; agent-browser click "a:has-text('Enabled')" 2>&1 || agent-browser eval "var els=[...document.querySelectorAll('a')]; els.filter(a=>a.textContent.trim()==='Enabled')[0].click(); 'clicked'"
+-> [138 chars] ""
+✗ Element not found: a:has-text('Enabled'). Verify the selector, role, or name is correct and the element exists in the DOM.
+"clicked"
+
+$ agent-browser eval "document.querySelectorAll('li').length + '|' + document.body.innerText.slice(0,300)"
+-> [309 chars] "8|JQueryUI - Menu\n\nJQuery UI Menus are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them.\n\nAnother 'fun' aspect is that the visibility of elements is actually not in the html itself, but done mag"
+
+$ agent-browser eval "document.querySelector('ul') ? document.querySelector('ul').outerHTML.slice(0,600) : 'no ul'"
+-> [642 chars] "<ul id=\"menu\">\n    <li class=\"ui-state-disabled\">\n        <a href=\"#\">Disabled</a>\n        <ul>\n            <li><a href=\"#\">Should not see this</a></li>\n        </ul>\n    </li>\n    <li>\n      <a href=\"#\">Enabled</a>\n      <ul>\n        <li>\n          <a href=\"#\">Downloads</a>\n          <ul>\n            <li><a href=\"/download/jqueryui/menu/menu.pdf\">PDF</a></li>\n            <li><a href=\"/download/jqueryui/menu/menu.csv\">CSV</a></li>\n            <li><a href=\"/download/jqueryui/menu/menu.xls\">Excel</a></li>\n          </ul>\n        </li>\n        <li><a href=\"/jqueryui\">Back to JQuery UI</a></li>\n  "
+
+$ agent-browser eval "var a=[...document.querySelectorAll('#menu a')].find(x=>x.textContent.trim()==='Enabled');a.click();'ok'"; agent-browser eval "var a=[...document.querySelectorAll('#menu a')].find(x=>x.textContent.trim()==='Downloads' && x.offsetParent!==null);a.click();'ok'"
+-> [10 chars] "ok"
+"ok"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu li')].filter(li=>li.offsetParent!==null && li.style.display!=='none').map(li=>li.querySelector(':scope > a, :scope > span').textContent.trim()))"
+-> [115 chars] "[\"Disabled\",\"Should not see this\",\"Enabled\",\"Downloads\",\"PDF\",\"CSV\",\"Excel\",\"Back to JQuery UI\"]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu li')].map(li=>({t:li.querySelector(':scope > a, :scope > span').textContent.trim(),vis:getComputedStyle(li).display!=='none'})))"
+-> [283 chars] "[{\"t\":\"Disabled\",\"vis\":true},{\"t\":\"Should not see this\",\"vis\":true},{\"t\":\"Enabled\",\"vis\":true},{\"t\":\"Downloads\",\"vis\":true},{\"t\":\"PDF\",\"vis\":true},{\"t\":\"CSV\",\"vis\":true},{\"t\":\"Excel\",\"vis\":true},{\"t\":\"Back to JQuery UI\",\"vis\":true}]"
+
+SAY: The page's jQuery didn't attach (earlier timeout). Reloading so the jQuery UI menu behaves for real:
+$ agent-browser open "https://the-internet.herokuapp.com/jqueryui/menu"; agent-browser wait "li.ui-menu-item"; agent-browser eval "document.querySelectorAll('#menu li.ui-menu-item').length + ' items, classes on first li: ' + document.querySelector('#menu li').className"
+-> [153 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+"8 items, classes on first li: ui-state-disabled ui-menu-item"
+
+SAY: jQuery UI is now initialized. Interacting with the menu properly:
+$ agent-browser eval "var li=[...document.querySelectorAll('#menu li')].find(l=>l.querySelector(':scope > span').textContent.trim()==='Enabled');li.click();'enabled clicked'"; agent-browser eval "var li=[...document.querySelectorAll('#menu li')].find(l=>l.querySelector(':scope > span').textContent.trim()==='Downloads' && getComputedStyle(l.parentElement).display!=='none');li.click();'downloads clicked'"
+-> [360 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:91
+    at Array.find (<anonymous>)
+    at <anonymous>:1:51
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:91
+    at Array.find (<anonymous>)
+    at <anonymous>:1:51
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu > li')].map(li=>li.firstElementChild.className+' : '+li.firstElementChild.textContent.trim()))"
+-> [96 chars] "[\"ui-menu-icon ui-icon ui-icon-carat-1-e : \",\"ui-menu-icon ui-icon ui-icon-carat-1-e : \"]"
+
+$ agent-browser eval "var top=[...document.querySelectorAll('#menu > li')]; JSON.stringify(top.map(li=>li.querySelector('a') ? li.querySelector('a').textContent.trim() : '?'))"
+-> [109 chars] ✗ Evaluation error: TypeError: top.map is not a function
+    at <anonymous>:1:74
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu > li')].map(li=>li.querySelector('a') ? li.querySelector('a').textContent.trim() : '?'))"
+-> [29 chars] "[\"Disabled\",\"Enabled\"]"
+
+$ agent-browser eval "var e=[...document.querySelectorAll('#menu > li a')].find(a=>a.textContent.trim()==='Enabled'); e.click(); 'ok'" && sleep 0.3 && agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu > li')].filter(li=>li.style.display!=='none').map(li=>li.querySelector('a').textContent.trim()))"
+-> [34 chars] "ok"
+"[\"Disabled\",\"Enabled\"]"
+
+$ agent-browser eval "var uls=[...document.querySelectorAll('#menu ul')]; JSON.stringify(uls.map(u=>({p:u.previousElementSibling.querySelector('a').textContent.trim(), disp:getComputedStyle(u).display, cls:u.className, items:[...u.children].map(l=>l.querySelector('a').textContent.trim()+':'+getComputedStyle(l).display)})))"
+-> [194 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:126
+    at Array.map (<anonymous>)
+    at <anonymous>:1:72
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu li')].filter(li=>li.querySelector(':scope > ul')).map(li=>({label:li.querySelector(':scope > a').textContent.trim(), submenuDisp:getComputedStyle(li.querySelector(':scope > ul')).display, items:[...li.querySelector(':scope > ul').children].map(l=>({name:l.querySelector(':scope > a').textContent.trim(), disp:getComputedStyle(l).display}))})))"
+-> [480 chars] "[{\"label\":\"Disabled\",\"submenuDisp\":\"none\",\"items\":[{\"name\":\"Should not see this\",\"disp\":\"list-item\"}]},{\"label\":\"Enabled\",\"submenuDisp\":\"none\",\"items\":[{\"name\":\"Downloads\",\"disp\":\"list-item\"},{\"name\":\"Back to JQuery UI\",\"disp\":\"list-item\"}]},{\"label\":\"Downloads\",\"submenuDisp\":\"none\",\"items\":[{\"name\":\"PDF\",\"disp\":\"list-item\"},{\"name\":\"CSV\",\"disp\":\"list-item\"},{\"name\":\"Excel\",\"disp\":\"list-item\"}]}]"
+
+SAY: Submenus still closed — the programmatic click didn't trigger the jQuery UI handler. Using real mouse clicks via snapshot refs:
+$ agent-browser snapshot -i
+-> [427 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e8; agent-browser snapshot -i
+-> [434 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu li')].filter(li=>li.querySelector(':scope > ul')).map(li=>({label:li.querySelector(':scope > a').textContent.trim(), disp:getComputedStyle(li.querySelector(':scope > ul')).display})))"
+-> [134 chars] "[{\"label\":\"Disabled\",\"disp\":\"none\"},{\"label\":\"Enabled\",\"disp\":\"block\"},{\"label\":\"Downloads\",\"disp\":\"none\"}]"
+
+$ agent-browser snapshot -i
+-> [587 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+    - menuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e12; agent-browser snapshot -i
+-> [594 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+    - menuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu li')].filter(li=>li.querySelector(':scope > ul')).map(li=>({label:li.querySelector(':scope > a').textContent.trim(), disp:getComputedStyle(li.querySelector(':scope > ul')).display})))"
+-> [135 chars] "[{\"label\":\"Disabled\",\"disp\":\"none\"},{\"label\":\"Enabled\",\"disp\":\"block\"},{\"label\":\"Downloads\",\"disp\":\"block\"}]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu li')].filter(li=>li.querySelector(':scope > a').textContent.trim()==='Downloads').map(li=>[...li.querySelector(':scope > ul').children].map(l=>({name:l.querySelector(':scope > a').textContent.trim(), disp:getComputedStyle(l).display, vis:l.offsetParent!==null}))))"
+-> [173 chars] "[[{\"name\":\"PDF\",\"disp\":\"list-item\",\"vis\":true},{\"name\":\"CSV\",\"disp\":\"list-item\",\"vis\":true},{\"name\":\"Excel\",\"disp\":\"list-item\",\"vis\":true}]]"
+
+$ agent-browser screenshot /tmp/menu.png 2>/dev/null; agent-browser close
+-> [53 chars] ✓ Screenshot saved to /tmp/menu.png
+✓ Browser closed
+
+SAY: Done. In a real browser session on https://the-internet.herokuapp.com/jqueryui/menu:
+
+1. Clicked the top-level **Enabled** menu item → its submenu opened showing "Downloads" and "Back to JQuery UI"
+2. Clicked **Downloads** → its submenu opened (confirmed visible: `display: block`)
+3. The items actually displayed in the opened Downloads submenu were: **PDF**, **CSV**, **Excel** (each with `display: list-item` and visible in the DOM)
+
+ANSWER: PDF, CSV, Excel

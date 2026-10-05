@@ -1,0 +1,42 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": true, "score": 0.967, "wtok": 22258, "out_tok": 1027, "turns": 7, "secs": 89, "timed_out": false, "curl": false, "answer": "name: user3, href: https://the-internet.herokuapp.com/users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "img"; agent-browser eval "(() => { const imgs=[...document.querySelectorAll('img')]; imgs[2].scrollIntoView(); const r=imgs[2].getBoundingClientRect(); return JSON.stringify(r); })"
+-> [93 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+{}
+
+$ agent-browser hover "#flash-gallery img:nth-of-type(3)"; agent-browser eval "JSON.stringify({name: document.querySelector('#avatar > span')?.textContent, link: document.querySelector('#avatar > a')?.href})"; agent-browser close
+-> [159 chars] ✗ Element not found: #flash-gallery img:nth-of-type(3). Verify the selector, role, or name is correct and the element exists in the DOM.
+"{}"
+✓ Browser closed
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "#avatars img"; agent-browser eval "const imgs=[...document.querySelectorAll('#avatars img')]; JSON.stringify({count:imgs.length, html:imgs[2].parentElement.outerHTML.slice(0,200)})"
+-> [260 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of undefined (reading 'parentElement')
+    at <anonymous>:1:108
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait --fn "document.querySelectorAll('img').length>0"; agent-browser eval "JSON.stringify([...document.querySelectorAll('img')].map(i=>i.parentElement.id+'/'+i.alt))"
+-> [142 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+true
+"[\"/Fork me on GitHub\",\"/User Avatar\",\"/User Avatar\",\"/User Avatar\"]"
+
+$ agent-browser eval "JSON.stringify(document.body.innerHTML.slice(0,1500))"
+-> [1826 chars] "\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\" class=\\\"large-12  …4 large-centered columns\\\">\\n        <hr>\\n        <div style=\\\"text-align: center;\\\">Powered by <a target=\\\"_blank\\\" href=\\\"http://\""
+
+$ agent-browser hover ".figure:nth-of-type(3) img"; agent-browser eval "const f=document.querySelectorAll('.figure')[2]; JSON.stringify({name:f.querySelector('h5').textContent, href:f.querySelector('a').href, visible:getComputedStyle(f.querySelector('.figcaption')).display})"; agent-browser close
+-> [131 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"visible\":\"block\"}"
+✓ Browser closed
+
+SAY: I hovered over the third avatar on the hovers page. The tooltip (.figcaption) became visible on hover, showing:
+
+- **Name shown:** `name: user3`
+- **'View profile' link href:** `https://the-internet.herokuapp.com/users/3` (relative `/users/3` in the DOM)
+
+ANSWER: name: user3, href: https://the-internet.herokuapp.com/users/3

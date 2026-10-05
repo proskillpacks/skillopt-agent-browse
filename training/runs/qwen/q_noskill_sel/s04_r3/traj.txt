@@ -1,0 +1,83 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r3", "correct": true, "score": 0.973, "wtok": 18236, "out_tok": 662, "turns": 7, "secs": 6, "timed_out": false, "curl": false, "answer": "Wins: 49, GF: 269"}
+
+$ agent-browser --help 2>&1 | head -50
+$ ls
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+-> [21 chars] raw.jsonl
+stderr.txt
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/" 2>&1
+-> [158 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+
+$ agent-browser snapshot 2>&1 | head -60
+-> [1919 chars] - navigation
+  - list
+    - listitem [level=1]
+    - listitem [level=1]
+      - link "Sandbox" [ref=e3]
+    - listitem [level=1]
+      - link "Lessons" [ref=e4]
+    - listitem [level=1]
+      - link "FAQ" [ref=e5]
+    - listitem [level=1]
+      - link "Login" [ref=e6]
+- generic
+  - heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+    - StaticText "Hockey Teams: Forms, Searching and Pagination 25 items"
+  - separator
+- generic
+  - paragraph
+    - StaticText "Brow … - cell "24" [ref=e23]
+    - cell
+    - cell "0.55" [ref=e24]
+    - cell "299" [ref=e25]
+    - cell "264" [ref=e26]
+    - cell "35" [ref=e27]
+  - row
+
+$ agent-browser fill "@e9" "Bruins" 2>&1 && agent-browser click "@e10" 2>&1
+-> [14 chars] ✓ Done
+✓ Done
+
+$ agent-browser read 2>&1 | grep -A8 -i "2011" | head -30
+-> [23 chars] 2011
+
+49
+
+29
+
+4
+
+0.598
+
+$ agent-browser eval 'Array.from(document.querySelectorAll("table tr")).filter(r => r.textContent.includes("2011")).map(r => r.textContent.trim()).join("\n")' 2>&1
+-> [824 chars] "Boston Bruins\n                        \n                        \n                            2011\n                        \n                        \n                            49\n                        \n                        \n                            29\n                        \n                        \n                            4\n                        \n                        \n                        \n                        \n                            0.598\n         …         202\n                        \n                        \n                        \n                        \n                            67"
+
+SAY: I searched for "Bruins" using the form's search box and confirmed the 2011 season row for the Boston Bruins:
+
+- Wins: 49
+- Goals For (GF): 269
+
+ANSWER: Wins: 49, GF: 269

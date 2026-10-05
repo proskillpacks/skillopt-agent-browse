@@ -1,0 +1,30 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r2", "correct": true, "score": 0.976, "wtok": 16181, "out_tok": 724, "turns": 5, "secs": 105, "timed_out": false, "curl": false, "answer": "name: user3; View profile link href: /users/3 (https://the-internet.herokuapp.com/users/3)"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "img.avatar"; agent-browser snapshot -i
+-> [224 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+SAY: The open timed out (common on slow pages). Let me retry the load and inspect.
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "#thirteen div.hoverstate"; agent-browser eval "(() => { const divs = document.querySelectorAll('#thirteen > div'); return JSON.stringify(divs.length) + ' | ' + document.body.innerText.slice(0,300); })()"
+-> [211 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+"0 | Hovers\n\nHover over the image for additional information\n\nPowered by Elemental Selenium"
+
+$ agent-browser eval "(() => { const m = document.querySelector('#thirteen') || document.querySelector('div.example'); return JSON.stringify({thirteen: !!document.querySelector('#thirteen'), exampleHtml: (m||document.querySelector('.example')).outerHTML.slice(0,2500)}); })()"
+-> [902 chars] "{\"thirteen\":false,\"exampleHtml\":\"<div class=\\\"example\\\">\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user1</h5>\\n      <a href=\\\"/users/1\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n …iv class=\\\"figcaption\\\">\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n</div>\"}"
+
+SAY: The markup uses `.figure` blocks. Now let me actually hover over the third avatar and verify the displayed content.
+$ agent-browser hover ".figure:nth-of-type(3) img" ; agent-browser eval "(() => { const f = document.querySelectorAll('.figure')[2]; const cap = f.querySelector('.figcaption'); const r = f.getBoundingClientRect(); return JSON.stringify({name: cap.querySelector('h5').textContent, href: cap.querySelector('a').getAttribute('href'), visible: getComputedStyle(cap).display, figRect: r.width > 0}); })()"
+-> [97 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"/users/3\",\"visible\":\"block\",\"figRect\":true}"
+
+SAY: The hover worked and the caption appeared. Verified:
+- **Name shown:** `user3`
+- **'View profile' href:** `/users/3` (i.e. `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: name: user3; View profile link href: /users/3 (https://the-internet.herokuapp.com/users/3)

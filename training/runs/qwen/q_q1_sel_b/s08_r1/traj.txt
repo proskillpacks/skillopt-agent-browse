@@ -1,0 +1,51 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": false, "score": 0.0, "wtok": 17480, "out_tok": 988, "turns": 5, "secs": 905, "timed_out": true, "curl": false, "answer": "There are 50 pages, 20 books each. I'll loop through all pages and collect titles and prices."}
+
+$ agent-browser open https://books.toscrape.com/; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  total: document.querySelector('#content_area p').textContent,
+  pages: Array.from(document.querySelectorAll('ul.pagination li a li, ul.pagination li a')).map(a=>a.textContent)
+})
+JS
+-> [211 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:2:51
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  totalP: Array.from(document.querySelectorAll('p')).map(p=>p.textContent.trim()).filter(Boolean).slice(0,10),
+  pagination: Array.from(document.querySelectorAll('ul.pagination li')).map(li=>li.textContent.trim()),
+  samplePrice: document.querySelector('.product_price') ? document.querySelector('.product_price').textContent : null
+})
+JS
+-> [441 chars] "{\"totalP\":[\"£51.77\",\"In stock\",\"£53.74\",\"In stock\",\"£50.10\",\"In stock\",\"£47.82\",\"In stock\",\"£54.23\",\"In stock\"],\"pagination\":[],\"samplePrice\":\"\\n                \\n\\n\\n\\n\\n\\n\\n    \\n        £51.77\\n    \\n\\n\\n    \\n    \\n        In stock\\n    \\n\\n\\n                \\n                    \\n\\n\\n\\n\\n\\n\\n    \\n    \\n        Add to basket\\n    \\n\\n\\n                \\n            \"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(Array.from(document.querySelectorAll('ul.pagination a, .pagination a, a')).slice(0,30).map(a=>a.getAttribute('href')).filter(h=>h&&h.includes('page')))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+const b=document.querySelector('body');
+JSON.stringify({tail: b.innerHTML.slice(-2000)})
+JS
+-> [2375 chars] "{\"tail\":\"      \\n\\n\\n\\n\\n\\n\\n    \\n    <form>\\n        <button type=\\\"submit\\\" class=\\\"btn btn-primary btn-block\\\" data-loading-text=\\\"Adding...\\\">Add to basket</button>\\n    </form>\\n\\n\\n                \\n            </div>\\n        \\n    </article>\\n\\n</li>\\n                    \\n                </ol>\\n                \\n\\n\\n\\n    <div>\\n        <ul class=\\\"pager\\\">\\n            \\n            <li class=\\\"current\\\">\\n            \\n            …t();\\n\\n    oscar.search.init();\\n\\n            });\\n        </script>\\n\\n        \\n        <!-- Version: N/A -->\\n        \\n    \\n\\n\"}"
+
+SAY: There are 50 pages, 20 books each. I'll loop through all pages and collect titles and prices.
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q1_sel_b/s08_r1
+: > all_prices.json
+for p in $(seq 1 50); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$p.html" >/dev/null 2>&1
+  agent-browser wait ".product_list .product_price" >/dev/null 2>&1
+  agent-browser eval --stdin >> all_prices.json <<'JS'
+JSON.stringify(Array.from(document.querySelectorAll('.product_list article')).map(a=>({
+  t: a.querySelector('h3 a').getAttribute('title'),
+  p: parseFloat(a.querySelector('.product_price').textContent.replace('£','').trim())
+})))
+JS
+done
+wc -l all_prices.json

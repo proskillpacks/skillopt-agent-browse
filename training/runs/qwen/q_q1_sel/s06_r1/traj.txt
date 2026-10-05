@@ -1,0 +1,136 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r1", "correct": true, "score": 0.919, "wtok": 54100, "out_tok": 1834, "turns": 13, "secs": 73, "timed_out": false, "curl": false, "answer": "Remove message: \"It's gone!\" | Enable message: \"It's enabled!\" | input value: \"hello\""}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "#checkbox"; agent-browser snapshot -i
+-> [400 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e5; agent-browser wait "#flash"; agent-browser get text #flash; agent-browser eval "document.querySelector('#flash').className"
+-> [139 chars] ✓ Done
+✗ Wait timed out after 25000ms
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser snapshot -i; agent-browser eval --stdin <<'JS'
+JSON.stringify({flash: document.querySelector('#flash') ? document.querySelector('#flash').textContent : null, cb: !!document.querySelector('#checkbox')})
+JS
+-> [318 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+"{\"flash\":null,\"cb\":false}"
+
+SAY: The flash message disappeared (it auto-hides). Let me redo the Remove to catch the message:
+$ agent-browser click @e5; sleep 1; agent-browser snapshot -i; agent-browser click button:has-text("Remove") 2>/dev/null || true
+-> [242 chars] /bin/bash: -c: line 1: syntax error near unexpected token `('
+/bin/bash: -c: line 1: `agent-browser click @e5; sleep 1; agent-browser snapshot -i; agent-browser click button:has-text("Remove") 2>/dev/null || true'
+
+
+Command exited with code 2
+$ agent-browser click @e5; sleep 1; agent-browser snapshot -i
+-> [303 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [disabled, ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser wait "#checkbox"; agent-browser snapshot -i; agent-browser click @e5; agent-browser eval --stdin <<'JS'
+new Promise(r => setTimeout(() => { const f = document.querySelector('#flash'); r(JSON.stringify({flash: f ? f.textContent.trim() : null, cls: f ? f.className : null})); }, 500))
+JS
+-> [371 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Remove" [ref=e5]
+- checkbox [checked=false, ref=e10]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+✓ Done
+"{\"flash\":null,\"cls\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+const main = document.querySelector('#container') || document.body;
+JSON.stringify({html: main.innerHTML.slice(0, 2000), flashDiv: document.querySelector('.flash') ? document.querySelector('.flash').outerHTML : null})
+JS
+-> [2378 chars] "{\"html\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\" class=\\\ …'checkbox'> A checkbox</div>\\\");\\n      btn.after(\\\"<p id='message'>It's back!</p>\\\");\\n      btn.attr(\\\"disabled\\\"\",\"flashDiv\":null}"
+
+SAY: The message element is `#message`. Now click Remove and read it:
+$ agent-browser click @e5; agent-browser eval --stdin <<'JS'
+new Promise(r => setTimeout(() => {
+  const m = document.querySelector('#message');
+  r(JSON.stringify({message: m ? m.textContent.trim() : null, checkboxExists: !!document.querySelector('#checkbox')}));
+}, 500))
+JS
+-> [52 chars] ✓ Done
+"{\"message\":null,\"checkboxExists\":true}"
+
+SAY: There's a 3-second delay before the toggle happens. Wait longer:
+$ agent-browser eval --stdin <<'JS'
+new Promise(r => setTimeout(() => {
+  const m = document.querySelector('#message');
+  r(JSON.stringify({message: m ? m.textContent.trim() : null, checkboxExists: !!document.querySelector('#checkbox')}));
+}, 3500))
+JS
+-> [56 chars] "{\"message\":\"It's gone!\",\"checkboxExists\":false}"
+
+SAY: Remove message: **It's gone!** Now the Enable step:
+$ agent-browser snapshot -i; agent-browser click @e7; agent-browser eval --stdin <<'JS'
+new Promise(r => setTimeout(() => {
+  const inp = document.querySelector('#input-example input');
+  r(JSON.stringify({enabled: inp ? !inp.disabled : null}));
+}, 3500))
+JS
+-> [314 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+✓ Done
+"{\"enabled\":true}"
+
+$ agent-browser fill '#input-example input' "hello"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  message: document.querySelector('#message') ? document.querySelector('#message').textContent.trim() : null,
+  value: document.querySelector('#input-example input').value
+})
+JS
+-> [61 chars] ✓ Done
+"{\"message\":\"It's enabled!\",\"value\":\"hello\"}"
+
+SAY: All done:
+
+1. **Remove**: After the checkbox was removed, the message shown was **"It's gone!"**
+2. **Enable**: After the input became enabled, the message shown was **"It's enabled!"**
+3. Typing into the input set its value to **"hello"**
+
+ANSWER: Remove message: "It's gone!" | Enable message: "It's enabled!" | input value: "hello"

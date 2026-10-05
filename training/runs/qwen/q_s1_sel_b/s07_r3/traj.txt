@@ -1,0 +1,77 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r3", "correct": true, "score": 0.936, "wtok": 42596, "out_tok": 1792, "turns": 11, "secs": 147, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser get text "#drag-box"; agent-browser get text "#drop-box"; agent-browser close
+-> [326 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drop-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+SAY: The first open timed out (slow page) and I closed it prematurely. Retrying with a wait:
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#drag-box"; agent-browser get text "#drag-box"; agent-browser get text "#drop-box"; agent-browser drag "#drag-box" "#drop-box"; agent-browser get text "#drag-box"; agent-browser get text "#drop-box"; agent-browser close
+-> [696 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drop-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drop-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+SAY: Per the guidance, a timed-out open may need a repeat. Let me retry step by step:
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#drag-box"; agent-browser get text "#drag-box"
+-> [238 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+✗ Wait timed out after 25000ms
+✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+SAY: The page opened this time, but the boxes aren't found. Let me inspect the DOM:
+$ agent-browser eval "JSON.stringify({url: location.href, body: document.body ? document.body.innerHTML.slice(0, 500) : null, ready: document.readyState})"; agent-browser close
+-> [721 chars] "{\"url\":\"https://the-internet.herokuapp.com/drag_and_drop\",\"body\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me …columns\\\">\\n        <style>\\n.columns {\\n  width: 400px;\\n}\\n.column {\\n  height: 150px;\\n  widt\",\"ready\":\"complete\"}"
+✓ Browser closed
+
+SAY: Page loads fine (readyState complete). Now open and perform the drag:
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser get text "#drag-box"; agent-browser get text "#drop-box"; agent-browser drag "#drag-box" "#drop-box"; agent-browser get text "#drag-box"; agent-browser get text "#drop-box"; agent-browser close
+-> [621 chars] ✗ CDP command timed out: Page.navigate
+✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drop-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drop-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser eval "document.readyState + ' ' + location.href"
+-> [126 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+"complete https://the-internet.herokuapp.com/drag_and_drop"
+
+$ agent-browser get text "#drag-box"; agent-browser get text "#drop-box"
+-> [254 chars] ✗ Element not found: #drag-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drop-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+SAY: Odd — eval sees the DOM but `get text` doesn't. Let me use eval and check the actual element structure:
+$ agent-browser eval "JSON.stringify({drag: document.querySelector('#drag-box') ? document.querySelector('#drag-box').textContent : null, drop: document.querySelector('#drop-box') ? document.querySelector('#drop-box').textContent : null, box: !!document.querySelector('.column'), ids: Array.from(document.querySelectorAll('[id]')).map(e=>e.id)})"
+-> [140 chars] "{\"drag\":null,\"drop\":null,\"box\":true,\"ids\":[\"flash-messages\",\"content\",\"columns\",\"column-a\",\"column-b\",\"page-footer\"]}"
+
+SAY: The page uses `#column-a` and `#column-b` (not `#drag-box`). Let me get their text and drag:
+$ agent-browser eval "document.querySelector('#column-a').textContent.trim() + '|' + document.querySelector('#column-b').textContent.trim()"
+-> [6 chars] "A|B"
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "document.querySelector('#column-a').textContent.trim() + '|' + document.querySelector('#column-b').textContent.trim()"; agent-browser close
+-> [30 chars] ✓ Done
+"B|A"
+✓ Browser closed
+
+SAY: The drag succeeded. After dropping box A onto box B:
+
+- **Left box** (`#column-a`): **B**
+- **Right box** (`#column-b`): **A**
+
+The contents swapped — dropping A onto B places "B" in the left box and "A" in the right box, left to right.
+
+ANSWER: B, A

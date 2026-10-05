@@ -1,0 +1,140 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r3", "correct": true, "score": 0.943, "wtok": 38110, "out_tok": 1428, "turns": 11, "secs": 17, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; archived with receipt #A-7028"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open http://localhost:8791/inbox.html && agent-browser snapshot 2>&1 | head -100
+-> [1240 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- paragraph
+  - StaticText "Showing 12 of 60"
+- generic
+  - StaticText "Alex A."
+  - StaticText "Invoice #100"
+  - button "Archive" [ref=e2]
+  - StaticText "Femi H."
+  - StaticText "Lunch order #113"
+  - button "Archive" [ref=e3]
+  - StaticText "Kai C."
+  - StaticText "On-call swap #126"
+  - button "Archive" [ref=e4]
+  - StaticText "Dana K."
+  - StaticText "Retro actions #139"
+  - button "Archive" [ref=e5]
+  - StaticT …  - button "Archive" [ref=e12]
+  - StaticText "Hana F."
+  - StaticText "Lunch order #243"
+  - button "Archive" [ref=e13]
+- StaticText "Loading more…"
+
+SAY: Priya N. isn't in the first page. Let me check for a search box or load more messages.
+$ agent-browser read 2>&1 | head -80; agent-browser eval "document.querySelector('input') ? document.querySelector('input').outerHTML : 'no input'"
+-> [835 chars] # Inbox
+
+Showing 24 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Alex A.On-call swap #256Archive
+
+Femi H.Retro actions #269Archive
+
+Kai C.Release chec …if J.Invoice #360Archive
+
+Jude D.Lunch order #373Archive
+
+Chen L.On-call swap #386Archive
+
+Hana F.Retro actions #399Archive
+
+Loading more…
+"no input"
+
+$ for i in 1 2 3 4 5 6; do agent-browser scroll down 500 >/dev/null; sleep 0.5; done; agent-browser read 2>&1 | grep -n "Priya" 
+-> [60 chars] 93:Priya N.Q3 vendor audit — rescheduled to the 19thArchive
+
+SAY: Found it: subject is "Q3 vendor audit — rescheduled to the 19th". Now let me get the ref for its Archive button.
+$ agent-browser snapshot 2>&1 | grep -B3 -A1 "Priya"
+-> [177 chars]   - StaticText "Lena B."
+  - StaticText "Retro actions #659"
+  - button "Archive" [ref=e45]
+  - StaticText "Priya N."
+  - StaticText "Q3 vendor audit — rescheduled to the 19th"
+
+$ agent-browser snapshot 2>&1 | grep -A3 "Priya"
+-> [141 chars]   - StaticText "Priya N."
+  - StaticText "Q3 vendor audit — rescheduled to the 19th"
+  - button "Archive" [ref=e46]
+  - StaticText "Jude D."
+
+$ agent-browser click @e46 2>&1; sleep 0.5; agent-browser snapshot 2>&1 | head -60
+-> [292 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✗ A JavaScript confirm dialog is blocking the page: "Archive this message?". Resolve it with `dialog accept` or `dialog dismiss`, then retry `snapshot`.
+
+$ agent-browser dialog accept 2>&1; sleep 0.5; agent-browser read 2>&1 | grep -A3 -i "receipt\|Priya" | head -20
+-> [33 chars] ✓ Done
+Archived. Receipt #A-7028
+
+$ agent-browser read 2>&1 | grep -n "Receipt\|Priya" 
+-> [30 chars] 125:Archived. Receipt #A-7028
+
+$ agent-browser read 2>&1 | sed -n '118,130p'
+-> [109 chars] 
+Chen L.Travel booking #854Archive
+
+Hana F.Budget draft #867Archive
+
+End of inbox
+
+Archived. Receipt #A-7028
+
+SAY: Done. The message from **Priya N.** has subject **"Q3 vendor audit — rescheduled to the 19th"**. I archived it, accepted the confirmation dialog ("Archive this message?"), and the page then showed the receipt.
+
+- Subject: Q3 vendor audit — rescheduled to the 19th
+- Receipt: #A-7028
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; archived with receipt #A-7028

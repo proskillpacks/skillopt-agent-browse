@@ -1,0 +1,121 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r5", "correct": true, "score": 0.95, "wtok": 33077, "out_tok": 1554, "turns": 7, "secs": 24, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser snapshot -i | head -60
+-> [1914 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfiction" [r …ght in the ..." [ref=e77]
+- button "Add to basket" [ref=e116]
+- link "Tipping the Velvet" [ref=e78]
+- heading "Tipping the Velvet" [level=3, ref=e57]
+
+SAY: The site loads. Now let me walk all catalogue pages and extract book title/price pairs.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const books = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const t = a.querySelector('h3 a').getAttribute('title');
+    const p = parseFloat(a.querySelector('.price_color').textContent.replace('£',''));
+    return [t, p];
+  });
+  const last = document.querySelector('ul.pager a:last-child');
+  return JSON.stringify({count: books.length, lastPage: last ? last.textContent : null, first: books[0], last: books[books.length-1]});
+})()
+JS
+-> [127 chars] "{\"count\":20,\"lastPage\":\"next\",\"first\":[\"A Light in the Attic\",51.77],\"last\":[\"It's Only the Himalayas\",45.17]}"
+
+$ cd /tmp && rm -f books_all.txt
+for i in $(seq 1 50); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null
+  agent-browser eval --stdin <<'JS' >> /tmp/books_all.txt
+(() => {
+  const books = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const t = a.querySelector('h3 a').getAttribute('title');
+    const p = a.querySelector('.price_color').textContent.trim();
+    return t + '|||' + p;
+  });
+  return books.join('\n');
+})()
+JS
+done
+wc -l /tmp/books_all.txt
+-> [22 chars] 50 /tmp/books_all.txt
+
+$ head -c 600 /tmp/books_all.txt; echo; echo ---; grep -c '|||' /tmp/books_all.txt
+-> [595 chars] "A Light in the Attic|||£51.77\nTipping the Velvet|||£53.74\nSoumission|||£50.10\nSharp Objects|||£47.82\nSapiens: A Brief History of Humankind|||£54.23\nThe Requiem Red|||£22.65\nThe Dirty Little Secrets of Getting Your Dream Job|||£33.34\nThe Coming Woman: A Novel Based on the Life of the Infamous Feminist, Victoria Woodhull|||£17.93\nThe Boys in the Boat: Nine Americans and Their Epic Quest for Gold at the 1936 Berlin Olympics|||£22.60\nThe Black Maria|||£52.15\nStarving Hearts (Triangular Trade Trilogy, #1)|||£13.99\nShakespeare's Sonnets|||£20.66\nSet Me Free|||£17.46\nScott 
+---
+50
+
+SAY: Each page produced one JSON-escaped line. Let me parse it into clean records.
+$ python3 - <<'PY'
+import json
+recs=[]
+for line in open('/tmp/books_all.txt'):
+    line=line.strip()
+    if not line: continue
+    s=json.loads(line)
+    for b in s.split('\n'):
+        if b.strip():
+            recs.append(b.strip())
+print(len(recs))
+# prices
+lt12=[]
+allb=[]
+for b in recs:
+    t,p=b.split('|||')
+    price=float(p.replace('£',''))
+    allb.append((price,t))
+    if price<12.0: lt12.append((t,price))
+print('count under 12:',len(lt12))
+mn=min(allb)
+print('cheapest:',mn)
+PY
+-> [71 chars] 1000
+count under 12: 44
+cheapest: (10.0, 'An Abundance of Katherines')
+
+$ python3 - <<'PY'
+import json
+recs=[]
+for line in open('/tmp/books_all.txt'):
+    line=line.strip()
+    if line:
+        for b in json.loads(line).split('\n'):
+            if b.strip(): recs.append(b.strip())
+lt=[r for r in recs if float(r.split('|||')[1].replace('£',''))<12]
+print('\n'.join(lt))
+PY
+-> [2169 chars] Patience|||£10.16
+The Project|||£10.65
+The Long Shadow of Small Ghosts: Murder and Memory in an American City|||£10.97
+The Argonauts|||£10.93
+Miss Peregrine’s Home for Peculiar Children (Miss Peregrine’s Peculiar Children #1)|||£10.76
+Beauty Restored (Riley Family Legacy Novellas #3)|||£11.11
+The Lucifer Effect: Understanding How Good People Turn Evil|||£10.40
+Tastes Like Fear (DI Marnie Rome #3)|||£10.69
+Superman Vol. 1: Before Truth (Superman by Gene Luen Yang #1)|||£11.89
+Pet Sematary|||£10.5 …11.89
+Saga, Volume 2 (Saga (Collected Editions) #2)|||£11.75
+Fruits Basket, Vol. 2 (Fruits Basket #2)|||£11.64
+The Complete Maus (Maus #1-2)|||£10.64
+
+SAY: I walked all 50 catalogue pages (1,000 books) in a real browser using `agent-browser`.
+
+- **Books costing less than £12.00: 44**
+- **Cheapest book: "An Abundance of Katherines" at £10.00** (unique minimum — the next cheapest are "The Tipping Point" at £10.02 and "The Origin of Species" at £10.01)
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of Katherines" at £10.00.

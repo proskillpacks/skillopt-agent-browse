@@ -1,0 +1,54 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r1", "correct": true, "score": 0.957, "wtok": 28442, "out_tok": 1092, "turns": 10, "secs": 33, "timed_out": false, "curl": false, "answer": "\"A day without sunshine is like, you know, night.\""}
+
+$ agent-browser open https://quotes.toscrape.com/search.aspx; agent-browser wait "select"
+-> [68 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+✓ Done
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('select')].map(s=>({id:s.id,name:s.name,opts:s.options.length}))"
+-> [91 chars] ✗ Evaluation error: SyntaxError: missing ) after argument list
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('select')].map(s=>({id:s.id,name:s.name,opts:s.options.length})))"
+-> [101 chars] "[{\"id\":\"author\",\"name\":\"author\",\"opts\":50},{\"id\":\"tag\",\"name\":\"tag\",\"opts\":1}]"
+
+$ agent-browser select "#author" "Steve Martin"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#tag option')].map(o=>o.text))"
+-> [59 chars] ✓ Done
+"[\"----------\",\"humor\",\"obvious\",\"simile\"]"
+
+$ agent-browser select "#tag" "humor"; agent-browser click "button.btn-primary, input[type=submit]"; agent-browser wait "h2.quarter"
+-> [73 chars] ✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser eval "document.querySelector('.quote') ? JSON.stringify([...document.querySelectorAll('.quote')].map(q=>q.querySelector('.text').textContent)) : 'no quotes'"; agent-browser url
+-> [215 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:123
+    at Array.map (<anonymous>)
+    at <anonymous>:1:92
+Unknown command: url
+
+
+Command exited with code 1
+$ agent-browser get location; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote')].map(q=>({text:q.querySelector('.text')&&q.querySelector('.text').textContent, author:q.querySelector('.author')&&q.querySelector('.author').textContent, tags:[...q.querySelectorAll('.tag')].map(t=>t.textContent)})))"; agent-browser eval "document.body.innerText.slice(0,500)"
+-> [717 chars] Unknown subcommand: location
+Valid options: text, html, value, attr, url, title, count, box, styles, cdp-url
+"[{\"text\":null,\"author\":\"Steve Martin\",\"tags\":[\"humor\"]}]"
+"Quotes to Scrape\n\nLogin\n\nAuthor\n----------\nAlbert Einstein\nJ.K. Rowling\nJane Austen\nMarilyn Monroe\nAndré Gide\nThomas A. Edison\nEleanor Roosevelt\nSteve Martin\nBob Marley\nDr. Seuss\nDouglas Adams\nElie Wiesel\nFriedrich Nietzsche\nMark Twain\nAllen Saunders\nPablo Neruda\nRalph Waldo Emerson\nMother Teresa\ …\nJorge Luis Borges\nGeorge Eliot\nGeorge R.R. Martin\nC.S. Lewis\nMartin Luther King Jr.\nJames Baldwin\nHaruki Murakami\nAlexandre Dumas fils\nSte"
+
+$ agent-browser eval "document.querySelector('.quote').outerHTML.slice(0,800)"
+-> [229 chars] "<div class=\"quote\">\n            <span class=\"content\">“A day without sunshine is like, you know, night.”</span> - \n            <span class=\"author\">Steve Martin</span> (<span class=\"tag\">humor</span>)\n        </div>"
+
+$ agent-browser get url
+-> [40 chars] https://quotes.toscrape.com/filter.aspx
+
+SAY: The search (author: Steve Martin, tag: humor) was executed via the form in the browser (redirected to `filter.aspx`), and the result page displayed exactly one matching quote by Steve Martin:
+
+> "A day without sunshine is like, you know, night."
+
+ANSWER: "A day without sunshine is like, you know, night."

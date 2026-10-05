@@ -1,0 +1,66 @@
+TASK t08: On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?
+EXPECT: ['gravity', '\\b7\\b', '12 years a slave']
+RESULT: {"id": "t08_r2", "correct": true, "score": 0.963, "wtok": 24878, "out_tok": 1102, "turns": 7, "secs": 57, "timed_out": false, "curl": false, "answer": "The 2013 films listed include 12 Years a Slave, Gravity, Dallas Buyers Club, Frozen, The Great Gatsby, Her, Blue Jasmine, Mr Hublot, The Lady in Number 6: Music Saved My Life, Helium, The Great Beauty, and 20 Feet from Stardom. Gravity won the most awards (7), and 12 Years a Slave is marked as Best "}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/ajax-javascript/" ; agent-browser wait "#films-table-1"; agent-browser eval "JSON.stringify({rows: document.querySelectorAll('#films-table-1 tbody tr').length, sample: document.querySelector('#films-table-1 tbody tr') ? document.querySelector('#films-table-1 tbody tr').outerHTML.slice(0,400) : null})"
+-> [225 chars] ✓ Oscar Winning Films: AJAX and Javascript | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/ajax-javascript/
+✗ Wait timed out after 25000ms
+"{\"rows\":0,\"sample\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  tableExists: !!document.querySelector('#films-table-1'),
+  bodySnippet: document.body.innerText.slice(0,600),
+  selects: [...document.querySelectorAll('select')].map(s => s.id || s.name || s.className)
+})
+JS
+-> [690 chars] "{\"tableExists\":false,\"bodySnippet\":\"Sandbox\\nLessons\\nFAQ\\nLogin\\nOscar Winning Films: AJAX and Javascript 87 items\\n\\nClick through a bunch of great films. Learn how content is added to the page asynchronously with Javascript and how you can scrape it. Look for ways that you can tell visually when a site is loading content with AJAX. Then, browse through your network tab to see those AJAX requests and scrape them.\\n\\n There are 3 video lessons that show you how to scrape this page.\\n\\nData via https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films\\n\\nChoose a Year to View Films\\n2015 2014 2013 2012 2011 2010\\nLessons and Videos © \",\"selects\":[]}"
+
+$ agent-browser find text "2013" click; agent-browser wait "#films-table-1"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#films-table-1 tbody tr')].map(tr => tr.innerText))"
+-> [43 chars] ✓ Done
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  tables: [...document.querySelectorAll('table')].map(t => t.id || t.className),
+  bodyLen: document.body.innerText.length,
+  snippet: document.body.innerText.slice(0,800)
+})
+JS
+-> [968 chars] "{\"tables\":[\"table\"],\"bodyLen\":899,\"snippet\":\"Sandbox\\nLessons\\nFAQ\\nLogin\\nOscar Winning Films: AJAX and Javascript 87 items\\n\\nClick through a bunch of great films. Learn how content is added to the page asynchronously with Javascript and how you can scrape it. Look for ways that you can tell visually when a site is loading content with AJAX. Then, browse through your network tab to see those AJAX requests and scrape them.\\n\\n There are 3 video lessons that show you how to scr …eat Gatsby\\t2\\t2\\t\\nHer\\t5\\t1\\t\\nBlue Jasmine\\t3\\t1\\t\\nMr Hublot\\t1\\t1\\t\\nThe Lady in Number 6: Music Saved My Life\\t1\\t1\\t\\n\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tr')].slice(1).map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.trim())))
+JS
+-> [463 chars] "[[\"12 Years a Slave\",\"9\",\"3\",\"\"],[\"Gravity\",\"10\",\"7\",\"\"],[\"Dallas Buyers Club\",\"6\",\"3\",\"\"],[\"Frozen\",\"2\",\"2\",\"\"],[\"The Great Gatsby\",\"2\",\"2\",\"\"],[\"Her\",\"5\",\"1\",\"\"],[\"Blue Jasmine\",\"3\",\"1\",\"\"],[\"Mr Hublot\",\"1\",\"1\",\"\"],[\"The Lady in Number 6: Music Saved My Life\",\"1\",\"1\",\"\"],[\"Helium\",\"1\",\"1\",\"\"],[\"The Great Beauty\",\"1\",\"1\",\"\"],[\"20 Feet from Stardom\",\"1\",\"1\",\"\"]]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tr')].slice(1).map(tr => {
+  const tds = tr.querySelectorAll('td');
+  const cell = tds[tds.length-1];
+  return {title: cell.closest('tr').querySelector('td').textContent.trim(), best: cell.innerHTML.trim()};
+}))
+JS
+-> [592 chars] "[{\"title\":\"12 Years a Slave\",\"best\":\"<i class=\\\"glyphicon glyphicon-flag\\\"></i>\"},{\"title\":\"Gravity\",\"best\":\"\"},{\"title\":\"Dallas Buyers Club\",\"best\":\"\"},{\"title\":\"Frozen\",\"best\":\"\"},{\"title\":\"The Great Gatsby\",\"best\":\"\"},{\"title\":\"Her\",\"best\":\"\"},{\"title\":\"Blue Jasmine\",\"best\":\"\"},{\"title\":\"Mr Hublot\",\"best\":\"\"},{\"title\":\"The Lady in Number 6: Music Saved My Life\",\"best\":\"\"},{\"title\":\"Helium\",\"best\":\"\"},{\"title\":\"The Great Beauty\",\"best\":\"\"},{\"title\":\"20 Feet from Stardom\",\"best\":\"\"}]"
+
+SAY: The 2013 table (12 films) shows:
+
+| Film | Nominations | Awards | Best Picture |
+|---|---|---|---|
+| 12 Years a Slave | 9 | 3 | ✓ (flag icon) |
+| Gravity | 10 | **7** | |
+| Dallas Buyers Club | 6 | 3 | |
+| Frozen | 2 | 2 | |
+| The Great Gatsby | 2 | 2 | |
+| Her | 5 | 1 | |
+| Blue Jasmine | 3 | 1 | |
+| Mr Hublot | 1 | 1 | |
+| The Lady in Number 6 | 1 | 1 | |
+| The Great Beauty | 1 | 1 | |
+| 20 Feet from Stardom | 1 | 1 | |
+| Helium | 1 | 1 | |
+
+- **Most awards:** Gravity, with **7** awards
+- **Be

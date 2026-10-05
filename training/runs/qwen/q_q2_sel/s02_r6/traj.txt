@@ -1,0 +1,40 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r6", "correct": true, "score": 0.98, "wtok": 13452, "out_tok": 379, "turns": 5, "secs": 3, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open "https://quotes.toscrape.com/login"; agent-browser snapshot -i
+-> [302 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill @e5 "testuser"; agent-browser fill @e6 "testpass"; agent-browser click @e2; agent-browser wait ".quote"
+-> [28 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(document.querySelector('.quote .author a').href)
+JS
+-> [131 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'href')
+    at <anonymous>:1:58
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(document.querySelector('.quote').outerHTML)
+JS
+-> [1162 chars] "\"<div class=\\\"quote\\\" itemscope=\\\"\\\" itemtype=\\\"http://schema.org/CreativeWork\\\">\\n        <span class=\\\"text\\\" itemprop=\\\"text\\\">“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”</span>\\n        <span>by <small class=\\\"author\\\" itemprop=\\\"author\\\">Albert Einstein</small>\\n        <a href=\\\"/author/Albert-Einstein\\\">(about)</a> - <a href=\\\"http://goodreads.com/author/show/9810.Albert_Einstein …nking</a>\\n            \\n            <a class=\\\"tag\\\" href=\\\"/tag/world/page/1/\\\">world</a>\\n            \\n        </div>\\n    </div>\""
+
+SAY: The first quote (Albert Einstein's "The world as we have created it...") has a "(Goodreads page)" link pointing to:
+
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

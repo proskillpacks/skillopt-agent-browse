@@ -1,0 +1,62 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r1", "correct": true, "score": 0.923, "wtok": 51077, "out_tok": 2499, "turns": 12, "secs": 68, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser eval '(() => { const rows = Array.from(document.querySelectorAll("table table tbody tr")); const headers = Array.from(document.querySelector("table table thead tr").children).map(td => td.textContent.trim()); return JSON.stringify({headers}); })()'
+-> [244 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'children')
+    at <anonymous>:1:159
+    at <anonymous>:1:240
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "table table thead"; agent-browser eval '(() => { const t = document.querySelectorAll("table table")[1]; const rows = Array.from(t.querySelectorAll("tbody tr")); const hdrIdx = Array.from(t.querySelectorAll("thead th, thead td")).map(h=>h.textContent.trim()); return JSON.stringify({headers: hdrIdx, first: rows[0].textContent.trim()}); })()'
+-> [263 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/tables
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of undefined (reading 'querySelectorAll')
+    at <anonymous>:1:91
+    at <anonymous>:1:299
+
+
+Command exited with code 1
+$ agent-browser eval '(() => { const ts = document.querySelectorAll("table"); const tables = document.querySelectorAll("table table"); return JSON.stringify({top: ts.length, nested: tables.length, sample: ts[0]?ts[0].outerHTML.slice(0,300):null}); })()'
+-> [399 chars] "{\"top\":2,\"nested\":0,\"sample\":\"<table id=\\\"table1\\\" class=\\\"tablesorter\\\">\\n    <thead>\\n      <tr>\\n        <th class=\\\"header\\\"><span>Last Name</span></th>\\n        <th class=\\\"header\\\"><span>First Name</span></th>\\n        <th class=\\\"header\\\"><span>Email</span></th>\\n        <th class=\\\"header\\\"><span>Due</span></th>\\n        <th class=\\\"header\\\"\"}"
+
+$ agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); setTimeout(()=>{},0); return "clicked once"; })(); agent-browser wait --fn "document.querySelectorAll('table')[1].querySelectorAll('thead th')[3].className.includes('headerSortDown') || true"; agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); return "clicked twice"; })()'
+-> [662 chars] /bin/bash: -c: line 1: syntax error near unexpected token `('
+/bin/bash: -c: line 1: `agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); setTimeout(()=>{},0); return "clicked once"; })(); agent-browser wait --fn "document.querySelectorAll('table')[1].querySelectorAll('thead th')[3].className.includes('headerSortDown') || true"; agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); return "clicked twice"; })()''
+
+
+Command exited with code 2
+$ agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); return "clicked once"; })()
+-> [97 chars] /bin/bash: -c: line 1: unexpected EOF while looking for matching `''
+
+
+Command exited with code 2
+$ agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); return "clicked once"; })()'
+-> [15 chars] "clicked once"
+
+$ agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); return "clicked twice"; })(); agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const th = t2.querySelectorAll("thead th")[3]; const row1 = t2.querySelectorAll("tbody tr")[0]; return JSON.stringify({thClass: th.className, firstRow: row1.textContent.trim()}); })()'
+-> [571 chars] /bin/bash: -c: line 1: syntax error near unexpected token `('
+/bin/bash: -c: line 1: `agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); return "clicked twice"; })(); agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const th = t2.querySelectorAll("thead th")[3]; const row1 = t2.querySelectorAll("tbody tr")[0]; return JSON.stringify({thClass: th.className, firstRow: row1.textContent.trim()}); })()''
+
+
+Command exited with code 2
+$ agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); return "clicked twice"; })()
+-> [97 chars] /bin/bash: -c: line 1: unexpected EOF while looking for matching `''
+
+
+Command exited with code 2
+$ agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const due = t2.querySelectorAll("thead th")[3]; due.querySelector("span").click(); return "clicked twice"; })()'
+-> [16 chars] "clicked twice"
+
+$ agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const th = t2.querySelectorAll("thead th")[3]; const row1 = t2.querySelectorAll("tbody tr")[0]; return JSON.stringify({thClass: th.className, firstRow: row1.textContent.trim()}); })()'
+-> [199 chars] "{\"thClass\":\"header headerSortUp\",\"firstRow\":\"Doe\\n        Jason\\n        jdoe@hotmail.com\\n        $100.00\\n        http://www.jdoe.com\\n        \\n          edit\\n          delete\"}"
+
+$ agent-browser eval '(() => { const t2 = document.querySelectorAll("table")[1]; const dues = Array.from(t2.querySelectorAll("tbody tr")).map(r=>r.cells[3].textContent.trim()); return JSON.stringify(dues); })()'
+-> [49 chars] "[\"$100.00\",\"$51.00\",\"$50.00\",\"$50.00\"]"
+
+SAY: The table is sorted by Due descending ($100.00 → $51.00 → $50.00 → $50.00), confirmed by the header's `headerSortUp` class. The email in the first data row is **jdoe@hotmail.com**.
+
+ANSWER: jdoe@hotmail.com

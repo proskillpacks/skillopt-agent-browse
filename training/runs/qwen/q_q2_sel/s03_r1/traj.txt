@@ -1,0 +1,105 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": true, "score": 0.936, "wtok": 42495, "out_tok": 1791, "turns": 11, "secs": 14, "timed_out": false, "curl": false, "answer": "5 one-star books out of 26 total books"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_14/index.html"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  total: document.querySelector('.page-inner h1')?.textContent,
+  pagination: document.querySelector('.pagination')?.textContent,
+  items: document.querySelectorAll('ul.row > li').length
+})
+JS
+-> [113 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_14/index.html
+"{\"items\":0}"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a => a.textContent.trim().toLowerCase().includes('historical')).map(a => a.href))
+JS
+-> [246 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical_42/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  h1: document.querySelector('.page-inner h1')?.textContent,
+  pagination: document.querySelector('.pagination')?.textContent.trim(),
+  items: document.querySelectorAll('ul.row > li').length
+})
+JS
+-> [151 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"items\":0}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  h1: document.querySelector('.page-inner h1')?.textContent,
+  pagination: document.querySelector('.pagination')?.textContent.trim(),
+  items: document.querySelectorAll('.row ol li').length,
+  next: [...document.querySelectorAll('.pagination a')].map(a=>a.href)
+})
+JS
+-> [29 chars] "{\"items\":20,\"next\":[]}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  count: document.querySelector('#promos h4')?.textContent,
+  navCount: [...document.querySelectorAll('.nav .active, aside .active')].map(a=>a.textContent.trim()),
+  pageInfo: [...document.querySelectorAll('li.page, .pagination li')].map(li=>li.textContent.trim()),
+  sidebar: [...document.querySelectorAll('li.active')].map(a=>a.textContent.trim())
+})
+JS
+-> [73 chars] "{\"navCount\":[],\"pageInfo\":[],\"sidebar\":[\"Historical Fiction\"]}"
+
+$ agent-browser eval --stdin <<'JS'
+const active = document.querySelector('li.active');
+JSON.stringify({
+  activeText: active ? active.textContent.trim() : null,
+  activeHTML: active ? active.outerHTML.slice(0,300) : null,
+  paginationHTML: (document.querySelector('.pagination')||{}).outerHTML,
+  nextHref: (document.querySelector('a[title="Next"]')||{}).href
+})
+JS
+-> [110 chars] "{\"activeText\":\"Historical Fiction\",\"activeHTML\":\"<li class=\\\"active\\\">Historical Fiction</li>\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  bodyTail: document.body.textContent.slice(-500),
+  links: [...document.querySelectorAll('a')].filter(a=>/next/i.test(a.textContent)).map(a=>a.href)
+})
+JS
+-> [754 chars] "{\"bodyTail\":\"   \\n    \\n\\n\\n\\n    \\n\\n    \\n        \\n    \\n\\n\\n\\n        \\n        \\n  \\n            \\n            \\n            window.jQuery || document.write('<script src=\\\"../../../../static/oscar/js/jquery/jquery-1.9.1.min.js\\\"><\\\\/script>')\\n        \\n  \\n\\n\\n        \\n        \\n    \\n        \\n    \\n    \\n    \\n    \\n\\n    \\n    \\n\\n\\n        \\n        \\n    \\n\\n    \\n\\n\\n        \\n        \\n            $(function() {\\n              …n        \\n        \\n        \\n    \\n\\n\",\"links\":[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"]}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html" ; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  items: document.querySelectorAll('.row ol li').length,
+  links: [...document.querySelectorAll('a')].filter(a=>/next/i.test(a.textContent)).map(a=>a.href),
+  prev: [...document.querySelectorAll('a')].filter(a=>/previous/i.test(a.textContent)).map(a=>a.href)
+})
+JS
+-> [265 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"items\":6,\"links\":[],\"prev\":[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1.html\"]}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" ; agent-browser eval "JSON.stringify(document.querySelectorAll('.row ol li .star-rating.One').length)" ; agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html" ; agent-browser eval "JSON.stringify(document.querySelectorAll('.row ol li .star-rating.One').length)"
+-> [279 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"5"
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"0"
+
+$ agent-browser eval --stdin <<'JS'
+// sanity check on page 2: distribution of star ratings
+JSON.stringify(['One','Two','Three','Four','Five'].map(s => [s, document.querySelectorAll('.row ol li .star-rating.' + s).length]))
+JS
+-> [68 chars] "[[\"One\",0],[\"Two\",0],[\"Three\",2],[\"Four\",1],[\"Five\",3]]"
+
+SAY: Results from the Historical Fiction category (books.toscrape.com), checked page by page in the browser:
+
+- **Page 1:** 20 books, 5 one-star books
+- **Page 2:** 6 books, 0 one-star books (ratings: 2 three-star, 1 four-star, 3 five-star)
+
+**Totals: 26 books in the category, 5 of which have a one-star rating.**
+
+ANSWER: 5 one-star books out of 26 total books

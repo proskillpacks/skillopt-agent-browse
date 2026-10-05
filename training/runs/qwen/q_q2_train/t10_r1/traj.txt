@@ -1,0 +1,158 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r1", "correct": true, "score": 0.9, "wtok": 66417, "out_tok": 2377, "turns": 14, "secs": 162, "timed_out": false, "curl": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu; agent-browser wait "#menu"; agent-browser snapshot -i
+-> [154 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+- Iframe [ref=e1]
+  - link "check your logs for details" [ref=e2]
+  - link [ref=e3]
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu; agent-browser wait "#menu"; agent-browser snapshot -i
+-> [472 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+- link "Fork me on GitHub" [ref=e4]
+- heading "JQueryUI - Menu" [level=3, ref=e5]
+- link "JQuery UI Menus" [ref=e6]
+- link "Disabled" [ref=e7]
+- link "Should not see this" [ref=e10]
+- link "Enabled" [ref=e8]
+- link "Downloads" [ref=e11]
+- link "PDF" [ref=e13]
+- link "CSV" [ref=e14]
+- link "Excel" [ref=e15]
+- link "Back to JQuery UI" [ref=e12]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e8; agent-browser wait @e11; agent-browser click @e11; agent-browser snapshot -i
+-> [427 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✓ Done
+- link "Fork me on GitHub" [ref=e4]
+- heading "JQueryUI - Menu" [level=3, ref=e5]
+- link "JQuery UI Menus" [ref=e6]
+- link "Disabled" [ref=e7]
+- link "Should not see this" [ref=e10]
+- link "Enabled" [ref=e8]
+- link "Downloads" [ref=e11]
+- link "PDF" [ref=e13]
+- link "CSV" [ref=e14]
+- link "Excel" [ref=e15]
+- link "Back to JQuery UI" [ref=e12]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser hover @e8; agent-browser wait @e11 --timeout 5000; agent-browser hover @e11; sleep 1; agent-browser eval "JSON.stringify(['#menu li li a'].map(s=>s))" ; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll("#menu .ui-menu li")].filter(li => !li.style.display && li.offsetParent !== null).map(li => [...li.querySelectorAll(':scope > a')].map(a => ({name: a.textContent, visible: !!(a.offsetParent)}))))
+JS
+-> [71 chars] ✓ Done
+✗ Wait timed out after 5000ms
+✓ Done
+"[\"#menu li li a\"]"
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+const items=[...document.querySelectorAll("#menu li")].map(li=>li.querySelector(":scope > a")?.textContent);
+const open=[...document.querySelectorAll("#menu .ui-menu")].map(u=>({cls:u.className, style:u.style.cssText, hidden:u.classList.contains("ui-hidden")||u.offsetParent===null}));
+JSON.stringify({items, open})
+JS
+-> [139 chars] "{\"items\":[\"Disabled\",\"Should not see this\",\"Enabled\",\"Downloads\",\"PDF\",\"CSV\",\"Excel\",\"Back to JQuery UI\"],\"open\":[]}"
+
+$ agent-browser eval --stdin <<'JS'
+document.querySelector("#menu").outerHTML.slice(0, 2500)
+JS
+-> [671 chars] "<ul id=\"menu\">\n    <li class=\"ui-state-disabled\">\n        <a href=\"#\">Disabled</a>\n        <ul>\n            <li><a href=\"#\">Should not see this</a></li>\n        </ul>\n    </li>\n    <li>\n      <a href=\"#\">Enabled</a>\n      <ul>\n        <li>\n          <a href=\"#\">Downloads</a>\n          <ul>\n            <li><a href=\"/download/jqueryui/menu/menu.pdf\">PDF</a></li>\n            <li><a href=\"/download/jqueryui/menu/menu.csv\">CSV</a></li>\n            <li><a href=\"/download/jqueryui/menu/menu.xls\">Excel</a></li>\n          </ul>\n        </li>\n        <li><a href=\"/jqueryui\">Back to JQuery UI</a></li>\n      </ul>\n    </li>\n  </ul>"
+
+$ agent-browser eval --stdin <<'JS'
+const uls=[...document.querySelectorAll("#menu ul")].map((u,i)=>({i, cls:u.className, display:getComputedStyle(u).display, hiddenClass:u.classList.contains("ui-hidden")}));
+const a=document.querySelector("#menu > li:nth-child(2) a");
+JSON.stringify({uls, menuClass:document.querySelector("#menu").className, hasJqueryMenu:!!a || !!document.querySelector("#menu").hasClass ? "na":"na"})
+JS
+-> [259 chars] "{\"uls\":[{\"i\":0,\"cls\":\"\",\"display\":\"block\",\"hiddenClass\":false},{\"i\":1,\"cls\":\"\",\"display\":\"block\",\"hiddenClass\":false},{\"i\":2,\"cls\":\"\",\"display\":\"block\",\"hiddenClass\":false}],\"menuClass\":\"\",\"hasJqueryMenu\":\"na\"}"
+
+SAY: The menu plugin hasn't initialized on this load (no `ui-menu` classes). Let me reload and verify the normal state:
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu; sleep 2; agent-browser eval --stdin <<'JS'
+JSON.stringify({menuClass:document.getElementById("menu").className, readyState:document.readyState, hasJQuery:typeof jQuery!=="undefined"})
+JS
+-> [219 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'className')
+    at <anonymous>:1:58
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu; agent-browser wait "#menu"; agent-browser eval --stdin <<'JS'
+JSON.stringify({menuClass:document.getElementById("menu").className, hasJQuery:typeof jQuery!=="undefined"})
+JS
+-> [150 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/jqueryui/menu
+✓ Done
+"{\"menuClass\":\"ui-menu ui-widget ui-widget-content\",\"hasJQuery\":true}"
+
+SAY: Plugin initialized now. Opening Enabled > Downloads:
+$ agent-browser hover @e8 || true; agent-browser snapshot -i
+-> [454 chars] ✗ Unknown ref: e8
+- link "Fork me on GitHub" [ref=e16]
+- heading "JQueryUI - Menu" [level=3, ref=e17]
+- link "JQuery UI Menus" [ref=e19]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e18] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e20]
+    - link "Disabled" [disabled, ref=e22]
+  - menuitem "Enabled" [ref=e21]
+    - link "Enabled" [ref=e23]
+- link "Elemental Selenium" [ref=e24]
+
+$ agent-browser hover @e21; agent-browser snapshot -i
+-> [443 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e16]
+- heading "JQueryUI - Menu" [level=3, ref=e17]
+- link "JQuery UI Menus" [ref=e19]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e18] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e20]
+    - link "Disabled" [disabled, ref=e22]
+  - menuitem "Enabled" [ref=e21]
+    - link "Enabled" [ref=e23]
+- link "Elemental Selenium" [ref=e24]
+
+$ agent-browser hover @e23; sleep 1; agent-browser snapshot -i
+-> [603 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e16]
+- heading "JQueryUI - Menu" [level=3, ref=e17]
+- link "JQuery UI Menus" [ref=e19]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e18] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e20]
+    - link "Disabled" [disabled, ref=e22]
+  - menuitem "Enabled" [ref=e21]
+    - link "Enabled" [ref=e23]
+    - menuitem "Downloads" [ref=e25]
+      - link "Downloads" [ref=e27]
+    - menuitem "Back to JQuery UI" [ref=e26]
+      - link "Back to JQuery UI" [ref=e28]
+- link "Elemental Selenium" [ref=e24]
+
+$ agent-browser hover @e27; sleep 1; agent-browser snapshot -i; agent-browser eval --stdin <<'JS'
+const items=[...document.querySelectorAll("#menu .ui-menu li")].filter(li=>li.offsetParent!==null && getComputedStyle(li).display!=="none").map(li=>li.querySelector(":scope > a")?.textContent.trim());
+JSON.stringify(items)
+JS
+-> [865 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e16]
+- heading "JQueryUI - Menu" [level=3, ref=e17]
+- link "JQuery UI Menus" [ref=e19]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e18] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e20]
+    - link "Disabled" [disabled, ref=e22]
+  - menuitem "Enabled" [ref=e21]
+    - link "Enabled" [ref=e23]
+    - menuitem "Downloads" [ref=e25]
+      - link "Downloads" [ref=e27]
+      - menuitem "PDF"  …6]
+      - link "Back to JQuery UI" [ref=e28]
+- link "Elemental Selenium" [ref=e24]
+"[\"Downloads\",\"PDF\",\"CSV\",\"Excel\",\"Back to JQuery UI\"]"
+
+SAY: In a real browser session I opened the page, waited for the jQuery UI menu to initialize, then hovered **Enabled** → the "Downloads" menuitem appeared, and hovering **Downloads** opened its submenu, which rendered these items:
+
+- **PDF**
+- **CSV**
+- **Excel**
+
+ANSWER: PDF, CSV, Excel

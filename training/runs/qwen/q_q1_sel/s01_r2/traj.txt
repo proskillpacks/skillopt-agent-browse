@@ -1,0 +1,30 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r2", "correct": true, "score": 0.973, "wtok": 18020, "out_tok": 666, "turns": 6, "secs": 55, "timed_out": false, "curl": false, "answer": "name: user3; href: /users/3"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#container .avatar')).map((el,i)=>({i, id: el.id, html: el.getAttribute('data-tooltiptext')})))"
+-> [88 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"[]"
+
+$ agent-browser wait "#container .avatar"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#container .avatar')).map((el,i)=>({i, id: el.id, tooltip: el.getAttribute('data-tooltiptext')})))"
+-> [36 chars] ✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser get url; agent-browser get title; agent-browser eval "JSON.stringify({url: location.href, bodyLen: document.body.innerHTML.length, text: document.body.innerText.slice(0,300)})"
+-> [238 chars] https://the-internet.herokuapp.com/hovers
+The Internet
+"{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"bodyLen\":1581,\"text\":\"Hovers\\n\\nHover over the image for additional information\\n\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser eval "JSON.stringify(document.getElementById('container') ? document.getElementById('container').innerHTML : document.body.innerHTML)"
+-> [1920 chars] "\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\" class=\\\"large-12  …Powered by <a target=\\\"_blank\\\" href=\\\"http://elementalselenium.com/\\\">Elemental Selenium</a></div>\\n      </div>\\n    </div>\\n  \\n\\n\""
+
+$ agent-browser hover "div.figure:nth-child(3) img" 2>/dev/null || agent-browser hover "div.figure:nth-of-type(3) img"; agent-browser eval "const f=document.querySelectorAll('#content .figure')[2]; JSON.stringify({name: f.querySelector('h5').textContent, href: f.querySelector('a').getAttribute('href')})"
+-> [58 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"/users/3\"}"
+
+SAY: Hovered over the third avatar image (in a real browser via `agent-browser`). On hover, its figcaption reveals:
+
+- **Name:** `user3` (shown as "name: user3")
+- **View profile link href:** `/users/3` (i.e. `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: name: user3; href: /users/3

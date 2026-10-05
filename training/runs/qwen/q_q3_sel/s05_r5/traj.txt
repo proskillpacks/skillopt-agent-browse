@@ -1,0 +1,118 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r5", "correct": true, "score": 0.933, "wtok": 44872, "out_tok": 1710, "turns": 9, "secs": 45, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; Receipt number: #A-7028"}
+
+$ agent-browser open "http://localhost:8791/inbox.html" && agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser read
+-> [429 chars] # Inbox
+
+Showing 12 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Loading more…
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const main = document.querySelector('main, body');
+  return JSON.stringify(main.innerHTML.slice(0, 1500));
+})()
+JS
+-> [1737 chars] "\"\\n<h1>Inbox</h1><p id=\\\"count\\\">Showing 24 of 60</p><div id=\\\"list\\\"><div class=\\\"row\\\"><span class=\\\"from\\\">Alex A.</span><span class=\\\"subj\\\">Invoice #100</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Femi H.</span><span class=\\\"subj\\\">Lunch order #113</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Kai C.</span><span class=\\\"subj\\\">On-call swap #126</span><button>Archive</button></div><di …0</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Hana F.</span><span class=\\\"subj\\\">Lunch order #243</spa\""
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const loadMore = document.querySelector('.load-more, [data-load-more]');
+  const count = document.getElementById('count')?.textContent;
+  window.scrollTo(0, document.body.scrollHeight);
+  return JSON.stringify({loadMore: loadMore ? loadMore.outerHTML : null, count, hasMore: !!document.querySelector('text') || /Loading more/.test(document.body.textContent)});
+})()
+JS
+-> [70 chars] "{\"loadMore\":null,\"count\":\"Showing 24 of 60\",\"hasMore\":true}"
+
+$ for i in 1 2 3 4 5 6; do agent-browser eval "window.scrollTo(0, document.body.scrollHeight); 1" >/dev/null; sleep 0.7; done; agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('.row')].map(r => [r.querySelector('.from').textContent, r.querySelector('.subj').textContent]);
+  return JSON.stringify({count: document.getElementById('count').textContent, rows});
+})()
+JS
+-> [2219 chars] "{\"count\":\"Showing 60 of 60\",\"rows\":[[\"Alex A.\",\"Invoice #100\"],[\"Femi H.\",\"Lunch order #113\"],[\"Kai C.\",\"On-call swap #126\"],[\"Dana K.\",\"Retro actions #139\"],[\"Ivo E.\",\"Release checklist #152\"],[\"Bo M.\",\"Design review #165\"],[\"Gus G.\",\"Hiring loop #178\"],[\"Lena B.\",\"Standup notes #191\"],[\"Elif J.\",\"Travel booking #204\"],[\"Jude D.\",\"Budget draft #217\"],[\"Chen L.\",\"Invoice #230\"],[\"Hana F.\",\"Lunch order #243\"],[\"Alex A.\",\"On-call swap #256\ …,[\"Elif J.\",\"Hiring loop #828\"],[\"Jude D.\",\"Standup notes #841\"],[\"Chen L.\",\"Travel booking #854\"],[\"Hana F.\",\"Budget draft #867\"]]}"
+
+SAY: Found Priya N.'s message: **"Q3 vendor audit — rescheduled to the 19th"**. Now archiving it:
+$ agent-browser click ".row:has-text(\"Priya N.\") button" 2>/dev/null || agent-browser eval --stdin <<'JS'
+(() => {
+  const row = [...document.querySelectorAll('.row')].find(r => r.querySelector('.from').textContent === 'Priya N.');
+  row.querySelector('button').click();
+  return 'clicked';
+})()
+JS
+-> [202 chars] ✗ CDP command timed out: Runtime.evaluate
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+
+
+Command exited with code 1
+SAY: The click triggered a confirm dialog which is now blocking — accepting it:
+$ agent-browser dialog accept; sleep 1; agent-browser eval --stdin <<'JS'
+(() => {
+  const row = [...document.querySelectorAll('.row')].find(r => r.querySelector('.from').textContent === 'Priya N.');
+  const receipt = document.body.textContent.match(/Receipt[:\s]*([A-Za-z0-9-]+)/);
+  const receiptEl = document.querySelector('.receipt, [class*=receipt], #receipt');
+  return JSON.stringify({rowStillPresent: !!row, receiptMatch: receipt ? receipt[1] : null, receiptEl: receiptEl ? receiptEl.textContent : null, bodyTextTail: document.body.textContent.slice(-400)});
+})()
+JS
+-> [508 chars] ✓ Done
+"{\"rowStillPresent\":false,\"receiptMatch\":null,\"receiptEl\":null,\"bodyTextTail\":\");t.textContent='Archived. Receipt #A-'+(i*137+1000);t.style.display='block';}};\\nlist.appendChild(r);}document.getElementById('count').textContent='Showing '+shown+' of '+msgs.length;if(shown>=msgs.length)document.getElementById('sentinel').textContent='End of inbox';}\\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\\n\\n\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const m = document.body.textContent.match(/Archived\.\s*Receipt\s+#([A-Z0-9-]+)/);
+  return JSON.stringify(m ? m[0] : null);
+})()
+JS
+-> [32 chars] "\"Archived. Receipt #A-7028\""
+
+SAY: Done. Summary:
+
+- **Message from Priya N.** (found after scrolling through the paginated inbox): subject **"Q3 vendor audit — rescheduled to the 19th"**
+- Archived it and confirmed the "Archive this message?" dialog
+- The page then showed: **"Archived. Receipt #A-7028"**
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; Receipt number: #A-7028

@@ -1,0 +1,65 @@
+TASK t08: On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?
+EXPECT: ['gravity', '\\b7\\b', '12 years a slave']
+RESULT: {"id": "t08_r2", "correct": true, "score": 0.97, "wtok": 20261, "out_tok": 927, "turns": 6, "secs": 57, "timed_out": false, "curl": false, "answer": "Gravity won the most awards in 2013 with 7; 12 Years a Slave is marked as Best Picture."}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/ajax-javascript/"; agent-browser wait "#film-table tbody tr"; agent-browser snapshot -i
+-> [691 chars] ✓ Oscar Winning Films: AJAX and Javascript | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/ajax-javascript/
+✗ Wait timed out after 25000ms
+- link "Sandbox" [ref=e9]
+- link "Lessons" [ref=e10]
+- link "FAQ" [ref=e11]
+- link "Login" [ref=e12]
+- heading "Oscar Winning Films: AJAX and Javascript 87 items" [level=1, ref=e1]
+- link "3 video lessons" [ref=e13]
+- link "https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films" [ref=e14]
+- heading "Choose a Year to View Films" [level=3, ref=e2]
+- link "2015" [ref=e3]
+- link "2014" [ref=e4]
+- link "2013" [ref=e5]
+- link "2012" [ref=e6]
+- link "2011" [ref=e7]
+- link "2010" [ref=e8]
+
+$ agent-browser click e5; agent-browser wait "#film-table tbody tr"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#film-table tbody tr')).map(r=>Array.from(r.querySelectorAll('td')).map(c=>c.innerText)))"
+-> [43 chars] ✓ Done
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser snapshot -i; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('table')).map(t=>({id:t.id,rows:t.rows.length})))"
+-> [1609 chars] - link "Sandbox" [ref=e9]
+- link "Lessons" [ref=e10]
+- link "FAQ" [ref=e11]
+- link "Login" [ref=e12]
+- heading "Oscar Winning Films: AJAX and Javascript 87 items" [level=1, ref=e1]
+- link "3 video lessons" [ref=e13]
+- link "https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films" [ref=e14]
+- heading "Choose a Year to View Films" [level=3, ref=e2]
+- link "2015" [ref=e3]
+- link "2014" [ref=e4]
+- link "2013" [ref=e5]
+- link "2012" [ref=e6]
+- link "2011" [ref=e7]
+- link "2010" [ref=e8]
+- c …ll "1" [ref=e51]
+- cell "1" [ref=e52]
+- cell "20 Feet from Stardom" [ref=e53]
+- cell "1" [ref=e54]
+- cell "1" [ref=e55]
+"[{\"id\":\"\",\"rows\":13}]"
+
+SAY: The 2013 table is loaded. Now check which row has a Best Picture marker:
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('table tbody tr')).map(r=>{const c=Array.from(r.cells);return {title:c[0].innerText,awards:c[2].innerText,bp:c[3].innerHTML.trim(),bpText:c[3].innerText.trim()}}).filter(o=>o.bpText||o.bp))"
+-> [128 chars] "[{\"title\":\"12 Years a Slave\",\"awards\":\"3\",\"bp\":\"<i class=\\\"glyphicon glyphicon-flag\\\"></i>\",\"bpText\":\"\"}]"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: For 2013, the page listed 14 films. Results:
+
+- **Most awards:** *Gravity* with **7** awards (also the most nominations, 10)
+- **Best Picture** (flag icon in the Best Picture column): *12 Years a Slave* (which won 3 awards)
+
+Other 2013 films: Dallas Buyers Club (3), Frozen (2), The Great Gatsby (2), Her (1), Blue Jasmine (1), Mr Hublot (1), The Lady in Number 6 (1), Helium (1), The Great Beauty (1), 20 Feet from Stardom (1).
+
+ANSWER: Gravity won the most awards in 2013 with 7; 12 Years a Slave i

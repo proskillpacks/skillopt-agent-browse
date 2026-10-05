@@ -1,0 +1,88 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": true, "score": 0.947, "wtok": 35061, "out_tok": 2636, "turns": 7, "secs": 310, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/page-1/index.html"; agent-browser wait ".row > li" ; agent-browser eval "JSON.stringify({books: document.querySelectorAll('.row > li').length, next: !!document.querySelector('li.next a')})"
+-> [135 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page-1/index.html
+✗ Wait timed out after 25000ms
+"{\"books\":0,\"next\":false}"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait ".row > li"; agent-browser eval "JSON.stringify({title: document.title, books: document.querySelectorAll('.row > li').length, next: document.querySelector('li.next a')?.href, url: location.href})"
+-> [254 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"{\"title\":\"All products | Books to Scrape - Sandbox\",\"books\":20,\"next\":\"https://books.toscrape.com/catalogue/page-2.html\",\"url\":\"https://books.toscrape.com/\"}"
+
+$ cd /tmp && for i in $(seq 1 60); do url="https://books.toscrape.com/catalogue/page-$i.html"; out=$(agent-browser open "$url" >/dev/null 2>&1; agent-browser wait ".row > li" >/dev/null 2>&1; agent-browser eval "(()=>{const rows=[...document.querySelectorAll('.row > li')].map(li=>[li.querySelector('h3 a').title, li.querySelector('.price_color').textContent]);return JSON.stringify({n:rows.length,books:rows,next:!!document.querySelector('li.next a')})})()"); if [ -z "$out" ] || echo "$out" | grep -q "0,books" && ! echo "$out" | grep -qE '"n":[1-9]'; then echo "STOP at page $i: $out"; break; fi; echo "$out"; done > /tmp/books_all.jsonl 2>/tmp/books_err.txt; tail -5 /tmp/books_err.txt; wc -l /tmp/books_all.jsonl
+-> [24 chars] 60 /tmp/books_all.jsonl
+
+$ head -c 400 /tmp/books_all.jsonl; echo; tail -c 400 /tmp/books_all.jsonl; echo; awk -F'"n":' '{print NR": "$2}' /tmp/books_all.jsonl | head -5; grep -c '"next":true' /tmp/books_all.jsonl; grep -c '"next":false' /tmp/books_all.jsonl
+-> [847 chars] "{\"n\":20,\"books\":[[\"A Light in the Attic\",\"£51.77\"],[\"Tipping the Velvet\",\"£53.74\"],[\"Soumission\",\"£50.10\"],[\"Sharp Objects\",\"£47.82\"],[\"Sapiens: A Brief History of Humankind\",\"£54.23\"],[\"The Requiem Red\",\"£22.65\"],[\"The Dirty Little Secrets of Getting Your Dream Job\",\"£33.34\"],[\"The Coming Woman: A Novel Based on the Life of the Infamous Feminist, Victoria 
+"{\"n\":0,\"books\":[],\"next\":false}"
+"{\"n\":0,\"books\":[],\"next\":false}"
+"{\"n\":0,\"books\":[],\"n …\"next\":false}"
+"{\"n\":0,\"books\":[],\"next\":false}"
+"{\"n\":0,\"books\":[],\"next\":false}"
+
+1: 
+2: 
+3: 
+4: 
+5: 
+0
+0
+
+
+Command exited with code 1
+$ python3 - <<'EOF'
+import json
+books=[]
+with open('/tmp/books_all.jsonl') as f:
+    for line in f:
+        line=line.strip()
+        if not line: continue
+        d=json.loads(json.loads(line))
+        books+=d['books']
+print("total books:", len(books))
+# dedupe by title in case of duplicates? keep all
+under=[b for b in books if float(b[1][1:])<12.0]
+print("under 12.00:", len(under))
+mx=min(books, key=lambda b: float(b[1][1:]))
+print("cheapest:", mx)
+# check ties at min price
+m=min(float(b[1][1:]) for b in books)
+print("min price:", m, "count at min:", sum(1 for b in books if float(b[1][1:])==m))
+# price range sanity
+prices=sorted(float(b[1][1:]) for b in books)
+print("min/max:", prices[0], prices[-1])
+EOF
+-> [137 chars] total books: 1000
+under 12.00: 44
+cheapest: ['An Abundance of Katherines', '£10.00']
+min price: 10.0 count at min: 1
+min/max: 10.0 59.99
+
+$ python3 - <<'EOF'
+import json
+counts={}
+with open('/tmp/books_all.jsonl') as f:
+    for i,line in enumerate(f,1):
+        line=line.strip()
+        if not line: continue
+        d=json.loads(json.loads(line))
+        counts[i]=d['n']
+print({k:v for k,v in list(counts.items())[:3]}, "...", dict(list(counts.items())[48:52]))
+print("pages with books:", sum(1 for v in counts.values() if v>0), "total books:", sum(counts.values()))
+EOF
+-> [96 chars] {1: 20, 2: 20, 3: 20} ... {49: 20, 50: 20, 51: 0, 52: 0}
+pages with books: 50 total books: 1000
+
+SAY: Collected all 50 pages (1000 books total) in the live browser, then aggregated:
+
+- **Books priced below £12.00:** 44
+- **Cheapest book:** *An Abundance of Katherines* at **£10.00** (unique minimum; next prices jump above £10)
+
+Verification: pages 1–50 each returned 20 books (1000 total), pages 51+ are empty; all prices parsed cleanly in the `£x.xx` format (range £10.00–£59.99).
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00

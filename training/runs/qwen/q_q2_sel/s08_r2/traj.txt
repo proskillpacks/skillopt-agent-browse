@@ -1,0 +1,64 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r2", "correct": true, "score": 0.972, "wtok": 18574, "out_tok": 890, "turns": 6, "secs": 20, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait "article.product_pod"
+-> [80 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  total: [...document.querySelectorAll('article.product_pod')].length,
+  next: [...document.querySelectorAll('li.next a')].map(a=>a.href)
+})
+JS
+-> [81 chars] "{\"total\":20,\"next\":[\"https://books.toscrape.com/catalogue/page-2.html\"]}"
+
+$ for p in $(seq 1 50); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$p.html" > /dev/null 2>&1
+  agent-browser wait "article.product_pod" > /dev/null
+  agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('article.product_pod')].map(b => {
+  const t = b.querySelector('h3 a');
+  return {title: t.getAttribute('title'), price: b.querySelector('.price_color').textContent.trim()};
+}))
+JS
+done > /tmp/books.jsonl 2>/dev/null
+wc -l /tmp/books.jsonl
+-> [20 chars] 50 /tmp/books.jsonl
+
+$ python3 - <<'PY'
+import json
+rows=[]
+for line in open('/tmp/books.jsonl'):
+    data=json.loads(json.loads(line))
+    for b in data:
+        price=float(b['price'].replace('£','').replace(',',''))
+        rows.append((price,b['title']))
+print("total books:",len(rows))
+lt=sum(1 for p,t in rows if p<12.00)
+print("under £12.00:",lt)
+m=min(rows,key=lambda x:x[0])
+print("cheapest:",m)
+PY
+-> [82 chars] total books: 1000
+under £12.00: 44
+cheapest: (10.0, 'An Abundance of Katherines')
+
+$ python3 - <<'PY'
+import json
+rows=set()
+for line in open('/tmp/books.jsonl'):
+    for b in json.loads(json.loads(line)):
+        rows.add((b['title'], b['price']))
+print("unique books:",len(rows))
+PY
+-> [19 chars] unique books: 1000
+
+SAY: I walked all 50 catalogue pages (1000 books total, confirmed unique) in the running browser session, extracting each book's title and price via `agent-browser eval`.
+
+- Books priced below £12.00: **44**
+- Cheapest book: **"An Abundance of Katherines" — £10.00**
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of Katherines" at £10.00

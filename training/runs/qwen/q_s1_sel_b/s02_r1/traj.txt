@@ -1,0 +1,63 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r1", "correct": true, "score": 0.944, "wtok": 37514, "out_tok": 1456, "turns": 10, "secs": 36, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login/ && agent-browser fill "#username" "test" && agent-browser fill "#password" "pass" && agent-browser press Enter
+-> [194 chars] ✓ 404 Not Found
+  https://quotes.toscrape.com/login/
+✗ Element not found: #username. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser open https://quotes.toscrape.com/quotes/login/ && agent-browser fill "#username" "test" && agent-browser fill "#password" "pass" && agent-browser eval "document.querySelector('button[type=submit]') ? (document.querySelector('button[type=submit]').click(), 'clicked') : document.querySelector('form') && document.querySelector('form').submit() ; 'submitted'"
+-> [201 chars] ✓ 404 Not Found
+  https://quotes.toscrape.com/quotes/login/
+✗ Element not found: #username. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({url:location.href,title:document.title,body:document.body?document.body.innerText.slice(0,500):''})"
+-> [235 chars] "{\"url\":\"https://quotes.toscrape.com/quotes/login/\",\"title\":\"404 Not Found\",\"body\":\"Not Found\\n\\nThe requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.\"}"
+
+$ agent-browser open https://quotes.toscrape.com/ ; agent-browser eval "JSON.stringify({url:location.href,title:document.title,body:document.body.innerText.slice(0,800)})" ; agent-browser eval "Array.from(document.querySelectorAll('a')).map(a=>a.href).filter((v,i,s)=>s.indexOf(v)===i).slice(0,40).join('\n')"
+-> [2908 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+"{\"url\":\"https://quotes.toscrape.com/\",\"title\":\"Quotes to Scrape\",\"body\":\"Quotes to Scrape\\n\\nLogin\\n\\n“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”\\nby Albert Einstein (about)\\nTags: change deep-thoughts thinking world\\n“It is our choices, Harry, that show what we truly are, far more than our abilities.”\\nby J.K. Rowling (about)\\nTags: abilities choices\\n“ …s.toscrape.com/page/2/\nhttps://quotes.toscrape.com/tag/love/\nhttps://quotes.toscrape.com/tag/inspirational/\nhttps://quotes.toscrape.com/tag/life/"
+
+$ agent-browser open https://quotes.toscrape.com/login && agent-browser fill "#username" "test" && agent-browser fill "#password" "pass" && agent-browser eval "document.querySelector('button[type=submit]').click();'submitted'" && agent-browser wait "text=The world as we have created it" && agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.quote .author + a, .quote a')).slice(0,3).map(a=>a.href)+'\n---\n'+document.querySelector('.quote').innerText.slice(0,300))"
+-> [201 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'click')
+    at <anonymous>:1:46
+
+
+Command exited with code 1
+$ agent-browser snapshot -i
+-> [259 chars] - heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]: test
+- textbox [ref=e6]: ••••
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser click @e2 && agent-browser wait "text=The world as we have created it" && agent-browser eval "const d=document.querySelector('.quote'); JSON.stringify(Array.from(d.querySelectorAll('a')).map(a=>a.href)+' || '+d.innerText.slice(0,400))"
+-> [66 chars] ✓ Done
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({url:location.href,title:document.title,body:document.body.innerText.slice(0,600)})"
+-> [714 chars] "{\"url\":\"https://quotes.toscrape.com/\",\"title\":\"Quotes to Scrape\",\"body\":\"Quotes to Scrape\\n\\nLogout\\n\\n“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”\\nby Albert Einstein (about) - (Goodreads page)\\nTags: change deep-thoughts thinking world\\n“It is our choices, Harry, that show what we truly are, far more than our abilities.”\\nby J.K. Rowling (about) - (Goodreads page)\\nTags: abilities choices\\n“There are o …racle. The other is as though everything is a miracle.”\\nby Albert Einstein (about) - (Goodreads page)\\nTags: inspirational life live miracle m\"}"
+
+SAY: Logged in — the quotes now show the "(Goodreads page)" link. Now grab its URL for the first quote:
+$ agent-browser eval "const d=document.querySelector('.quote'); const a=d.querySelector('a[href*=\"goodreads\"], a[href*=\"Goodreads\"]'); a ? a.href : (d.innerText.slice(0,200)+'\nlinks: '+Array.from(d.querySelectorAll('a')).map(x=>x.href).join(', '))" && agent-browser close
+-> [73 chars] "http://goodreads.com/author/show/9810.Albert_Einstein"
+✓ Browser closed
+
+SAY: Done. After logging in, the first quote (Albert Einstein's "The world as we have created it…") shows a "(Goodreads page)" link next to the author name, which points to the author's Goodreads page:
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

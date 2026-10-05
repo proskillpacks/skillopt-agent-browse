@@ -1,0 +1,73 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r3", "correct": true, "score": 0.932, "wtok": 45440, "out_tok": 1474, "turns": 6, "secs": 12, "timed_out": false, "curl": false, "answer": "Wins: 49, GF: 269"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/ ; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill "input[name=q]" "Bruins" ; agent-browser click "button" ; agent-browser wait "table" ; agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('table tbody tr')];
+  return JSON.stringify(rows.map(r => {
+    const cells = [...r.querySelectorAll('td')].map(c => c.textContent.trim());
+    return cells;
+  }));
+})()
+JS
+-> [2240 chars] ✓ Done
+✗ Element not found: button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+"[[],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Buffalo Sabres\",\"1990\",\"31\",\"30\",\"\",\"0.388\",\"292\",\"278\",\"14\"],[\"Calgary Flames\",\"1990\",\"46\",\"26\",\"\",\"0.575\",\"344\",\"263\",\"81\"],[\"Chicago Blackhawks\",\"1990\",\"49\",\"23\",\"\",\"0.613\",\"284\",\"211\",\"73\"],[\"Detroit Red Wings\",\"1990\",\"34\",\" …,\"1991\",\"31\",\"37\",\"\",\"0.388\",\"296\",\"305\",\"-9\"],[\"Chicago Blackhawks\",\"1991\",\"36\",\"29\",\"\",\"0.45\",\"257\",\"236\",\"21\"]]"
+
+SAY: The click failed, so the search wasn't submitted. Let me inspect the form and submit it properly.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const form = document.querySelector('form');
+  const inputs = [...form.querySelectorAll('input')].map(i => ({name: i.name, type: i.type, value: i.value, id: i.id, cls: i.className}));
+  const buttons = [...form.querySelectorAll('button,input[type=submit],a')].map(b => b.tagName + ':' + (b.textContent||b.type||b.name));
+  return JSON.stringify({action: form.action, method: form.method, inputs, buttons});
+})()
+JS
+-> [317 chars] "{\"action\":\"https://www.scrapethissite.com/pages/forms/\",\"method\":\"get\",\"inputs\":[{\"name\":\"q\",\"type\":\"text\",\"value\":\"Bruins\",\"id\":\"q\",\"cls\":\"form-control\"},{\"name\":\"\",\"type\":\"submit\",\"value\":\"Search\",\"id\":\"\",\"cls\":\"btn btn-primary\"}],\"buttons\":[\"INPUT:submit\"]}"
+
+SAY: The submit button is an `<input type="submit">`, not a `<button>`. Filling worked ("Bruins" is in `q`). Submitting now:
+$ agent-browser click "input[type=submit]" ; agent-browser wait "table" ; agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('table tbody tr')].map(r => [...r.querySelectorAll('td')].map(c => c.textContent.trim()));
+  const heading = (document.querySelector('h1')||{}).textContent || '';
+  const total = document.querySelector('h4') ? document.querySelector('h4').textContent : '';
+  return JSON.stringify({heading, total, rows});
+})()
+JS
+-> [503 chars] ✓ Done
+✓ Done
+"{\"heading\":\"\\n                            Hockey Teams: Forms, Searching and Pagination\\n                            21 items\\n                        \",\"total\":\"\",\"rows\":[[],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\",\"0.607\",\"332\",\"268\",\"64\"],[\"Boston Bruins\",\"1993\",\"42\",\"29\",\"\",\"0.5\"]]}"
+
+SAY: The search found 21 items, but only 5 rows rendered. Let me check pagination and get the 2011 row.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const tables = document.querySelectorAll('table');
+  const pages = [...document.querySelectorAll('a')].filter(a => /^\d+$/.test(a.textContent.trim())).map(a => a.textContent.trim());
+  const rows = [...document.querySelectorAll('table tbody tr')].map(r => [...r.querySelectorAll('td')].map(c => c.textContent.trim()));
+  return JSON.stringify({numTables: tables.length, pages, rowCount: rows.length, rows});
+})()
+JS
+-> [1777 chars] "{\"numTables\":1,\"pages\":[],\"rowCount\":22,\"rows\":[[],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\",\"0.607\",\"332\",\"268\",\"64\"],[\"Boston Bruins\",\"1993\",\"42\",\"29\",\"\",\"0.5\",\"289\",\"252\",\"37\"],[\"Boston Bruins\",\"1994\",\"27\",\"18\",\"\",\"0.562\",\"150\",\"127\",\"23\"],[\"Boston Bruins\",\"1995\",\"40\",\"31 …,\"2010\",\"46\",\"25\",\"11\",\"0.561\",\"246\",\"195\",\"51\"],[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]}"
+
+SAY: Found it. The Boston Bruins 2011 row shows: Wins **49**, Losses 29, OT Losses 4, Win % 0.598, GF **269**, GA 202, +/- 67.
+
+ANSWER: Wins: 49, GF: 269

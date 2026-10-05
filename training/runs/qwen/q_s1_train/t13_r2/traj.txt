@@ -1,0 +1,33 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13_r2", "correct": true, "score": 0.987, "wtok": 8617, "out_tok": 501, "turns": 3, "secs": 8, "timed_out": false, "curl": false, "answer": "Albert Einstein, with 10 quotes."}
+
+$ agent-browser open "https://quotes.toscrape.com/" ; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote .author')].map(a=>a.textContent))" ; agent-browser close
+-> [258 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+"[\"Albert Einstein\",\"J.K. Rowling\",\"Albert Einstein\",\"Jane Austen\",\"Marilyn Monroe\",\"Albert Einstein\",\"André Gide\",\"Thomas A. Edison\",\"Eleanor Roosevelt\",\"Steve Martin\"]"
+✓ Browser closed
+
+$ for i in 1 2 3 4 5 6 7 8 9 10; do agent-browser open "https://quotes.toscrape.com/page/$i/" ; agent-browser eval "[...document.querySelectorAll('.quote .author')].map(a=>a.textContent).join('|')"; done; agent-browser close
+-> [2031 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/page/1/
+"Albert Einstein|J.K. Rowling|Albert Einstein|Jane Austen|Marilyn Monroe|Albert Einstein|André Gide|Thomas A. Edison|Eleanor Roosevelt|Steve Martin"
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/page/2/
+"Marilyn Monroe|J.K. Rowling|Albert Einstein|Bob Marley|Dr. Seuss|Douglas Adams|Elie Wiesel|Friedrich Nietzsche|Mark Twain|Allen Saunders"
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/page/3/
+"Pablo Neruda|Ralph Waldo Emerson|Mother  …Rowling|Jimi Hendrix|J.M. Barrie|E.E. Cummings|Khaled Hosseini|Harper Lee|Madeleine L'Engle|Mark Twain|Dr. Seuss|George R.R. Martin"
+✓ Browser closed
+
+SAY: Aggregating the author counts across all 10 pages:
+
+- Albert Einstein: 10
+- J.K. Rowling: 9
+- Marilyn Monroe: 7
+- Mark Twain: 5
+- Dr. Seuss: 5
+
+Albert Einstein has the most quotes with 10.
+
+ANSWER: Albert Einstein, with 10 quotes.

@@ -1,0 +1,234 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r3", "correct": true, "score": 0.782, "wtok": 145341, "out_tok": 3043, "turns": 18, "secs": 26, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the category has 26 books in total."}
+
+$ which agent-browser; agent-browser --help 2>&1 | head -50
+-> [2342 chars] /home/user/.nvm/versions/node/v24.21.0/bin/agent-browser
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, prote … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser skills get core 2>&1 | head -150
+-> [11696 chars] ---
+name: core
+description: Core agent-browser usage guide. Read this before running any agent-browser commands. Covers the snapshot-and-ref workflow, navigating pages, interacting with elements (click, fill, type, select), extracting text and data, taking screenshots, managing tabs, handling forms and auth, waiting for content, running multiple browser sessions in parallel, and troubleshooting common failures. Use when the user asks to interact with a website, fill a form, click something, extr … before keyboard input)
+agent-browser fill @e2 "hello"            # clear then type
+agent-browser type @e2 " world"           # type without clearing
+
+$ env | grep -i agent; echo "---"; echo "SESSION=$AGENT_BROWSER_SESSION"
+-> [781 chars] PI_CODING_AGENT=true
+AI_AGENT=pi
+PWD=/home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s03_r3
+AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_sel-s03_r3
+AGENT_BROWSER_SESSION=so-q_noskill_sel-s03_r3
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_sel-s03_r3
+PATH=<scrubbed> …al/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+AGENT_BROWSER_HEADED=1
+---
+SESSION=so-q_noskill_sel-s03_r3
+
+$ agent-browser open https://books.toscrape.com/ 2>&1; echo "EXIT=$?"
+-> [80 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+EXIT=0
+
+$ agent-browser snapshot -i -u 2>&1 | head -80
+-> [7939 chars] - link "Books to Scrape" [ref=e2, url=https://books.toscrape.com/index.html]
+- link "Home" [ref=e3, url=https://books.toscrape.com/index.html]
+- link "Books" [ref=e4, url=https://books.toscrape.com/catalogue/category/books_1/index.html]
+- link "Travel" [ref=e6, url=https://books.toscrape.com/catalogue/category/books/travel_2/index.html]
+- link "Mystery" [ref=e7, url=https://books.toscrape.com/catalogue/category/books/mystery_3/index.html]
+- link "Historical Fiction" [ref=e8, url=https://books.to …toscrape.com/catalogue/the-dirty-little-secrets-of-getting-your-dream-job_994/index.html]
+- heading "The Dirty Little Secrets ..." [level=3, ref=e62]
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" 2>&1; echo "EXIT=$?"
+-> [142 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+EXIT=0
+
+$ agent-browser read 2>&1 | head -100
+-> [405 chars] Books to Scrape We love being scraped!
+
+-
+Home
+
+-
+Books
+
+- Historical Fiction
+
+-
+
+Books
+
+-
+
+Travel
+
+-
+
+Mystery
+
+-
+
+Historical Fiction
+
+-
+
+Sequential Art
+
+-
+
+Classics
+
+-
+
+Philosophy
+
+-
+
+Romance
+
+-
+
+Womens Fiction
+
+-
+
+Fiction
+
+-
+
+Childrens
+
+-
+
+Religion
+
+-
+
+Nonfiction
+
+-
+
+Music
+
+-
+
+Default
+
+-
+
+Science Fiction
+
+-
+
+Sports and Games
+
+-
+
+Add a comment
+
+-
+
+Fantasy
+
+-
+
+New Adult
+
+-
+
+Young Adult
+
+-
+
+Science
+
+-
+
+
+$ agent-browser get count ".row > article" 2>&1; echo "---products---"; agent-browser get count "article.product_pod" 2>&1; echo "---pagination---"; agent-browser snapshot -i -u 2>&1 | grep -i "page\|next\|prev" | head -30
+-> [152 chars] 0
+---products---
+20
+---pagination---
+- link "next" [ref=e141, url=https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html]
+
+$ agent-browser snapshot -i -u 2>&1 | grep -iE "page-|pagination|li>|page" | head -30; echo "=== ul pagination via eval ==="; agent-browser eval "document.querySelector('ul.pagination') ? Array.from(document.querySelector('ul.pagination').querySelectorAll('li a,li span')).map(e=>e.textContent) : 'no pagination ul'" 2>&1
+-> [165 chars] - link "next" [ref=e141, url=https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html]
+=== ul pagination via eval ===
+"no pagination ul"
+
+$ agent-browser eval "const p=document.querySelector('.pagination, #pagination, nav'); p ? p.outerHTML : Array.from(document.querySelectorAll('li')).map(l=>l.outerHTML).filter(x=>/page/i.test(x)).join('\\n')" 2>&1 | head -40
+-> [159 chars] "<li class=\"current\">\n            \n                Page 1 of 2\n            \n            </li>\n<li class=\"next\"><a href=\"page-2.html\">next</a></li>"
+
+$ agent-browser eval "
+const arts=document.querySelectorAll('article.product_pod');
+const first=arts[0];
+const star=first.querySelector('.star-rating');
+first.outerHTML.substring(0,600);
+" 2>&1
+-> [640 chars] "<article class=\"product_pod\">\n        \n            <div class=\"image_container\">\n                \n                    \n                    <a href=\"../../../tipping-the-velvet_999/index.html\"><img src=\"../../../../media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg\" alt=\"Tipping the Velvet\" class=\"thumbnail\"></a>\n                    \n                \n            </div>\n        \n\n        \n            \n                <p class=\"star-rating One\">\n                    <i class=\"icon-star\"></i>\n                    <i class=\"icon-star\"></i>\n                    <i class=\"icon-star\"></i>\n           "
+
+$ agent-browser eval "
+const arts=document.querySelectorAll('article.product_pod');
+const oneStar=Array.from(arts).filter(a=>{
+  const s=a.querySelector('.star-rating');
+  return s && /One/.test(s.className);
+}).length;
+JSON.stringify({totalOnPage:arts.length, oneStarOnPage:oneStar});
+" 2>&1
+-> [105 chars] ✗ Evaluation error: SyntaxError: Identifier 'arts' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval "(function(){const arts=document.querySelectorAll('article.product_pod');const oneStar=Array.from(arts).filter(a=>{const s=a.querySelector('.star-rating');return s && /One/.test(s.className);}).length;return JSON.stringify({totalOnPage:arts.length, oneStarOnPage:oneStar});})()" 2>&1
+-> [43 chars] "{\"totalOnPage\":20,\"oneStarOnPage\":5}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html" 2>&1; echo "EXIT=$?"
+-> [143 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+EXIT=0
+
+$ agent-browser eval "(function(){const arts=document.querySelectorAll('article.product_pod');const oneStar=Array.from(arts).filter(a=>{const s=a.querySelector('.star-rating');return s && /One/.test(s.className);}).length;const pg=Array.from(document.querySelectorAll('li')).map(l=>l.textContent).filter(t=>/Page \d+ of \d+/.test(t));return JSON.stringify({totalOnPage:arts.length, oneStarOnPage:oneStar, pageLabel:pg});})()" 2>&1
+-> [138 chars] "{\"totalOnPage\":6,\"oneStarOnPage\":0,\"pageLabel\":[\"\\n            \\n                Page 2 of 2\\n            \\n            \"]}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" 2>&1 | tail -1
+agent-browser eval "(function(){const arts=Array.from(document.querySelectorAll('article.product_pod'));const dist={};arts.forEach(a=>{const s=a.querySelector('.star-rating');const cls=s?s.className.replace('star-rating','').trim():'none';dist[cls]=(dist[cls]||0)+1;});return JSON.stringify({page:'1', total:arts.length, dist:dist});})()" 2>&1
+-> [183 chars]   https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"page\":\"1\",\"total\":20,\"dist\":{\"One\":5,\"Three\":3,\"Five\":5,\"Four\":3,\"Two\":4}}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html" 2>&1 | tail -1
+agent-browser eval "(function(){const arts=Array.from(document.querySelectorAll('article.product_pod'));const dist={};arts.forEach(a=>{const s=a.querySelector('.star-rating');const cls=s?s.className.replace('star-rating','').trim():'none';dist[cls]=(dist[cls]||0)+1;});return JSON.stringify({page:'2', total:arts.length, dist:dist});})()" 2>&1
+-> [163 chars]   https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"page\":\"2\",\"total\":6,\"dist\":{\"Five\":3,\"Three\":2,\"Four\":1}}"
+
+SAY: I've gathered the data across both pages of the Historical Fiction category.
+
+**Findings:**
+- **Page 1** (20 books): rating distribution → One=5, Two=4, Three=3, Four=3, Five=5
+- **Page 2** (6 books): rating distribution → One=0, Three=2, Four=1, Five=3
+- Pagination confirmed "Page 1 of 2" and "Page 2 of 2", so the category has 2 pages total.
+
+**Totals:**
+- Total books in Historical Fiction: 20 + 6 = **26**
+- One-star rated books: 5 + 0 = **5**
+
+ANSWER: 5 books have a one-star rating; the catego

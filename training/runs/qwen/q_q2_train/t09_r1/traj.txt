@@ -1,0 +1,99 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09_r1", "correct": true, "score": 0.942, "wtok": 38959, "out_tok": 1568, "turns": 10, "secs": 13, "timed_out": false, "curl": false, "answer": "Quote ref NOR-2087, total \u20ac1470.00"}
+
+$ agent-browser open http://localhost:8791/shop.html; agent-browser wait "body"; agent-browser snapshot -i
+-> [453 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+✓ Done
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click @e6; agent-browser select @e2 "Nordics"; agent-browser fill @e9 "7"; agent-browser click @e8; agent-browser snapshot -i
+-> [299 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 7
+- radio "Basic" [checked=false, ref=e7]
+- radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('select, [role=combobox], .region, #region')].map(el => ({tag: el.tagName, id: el.id, cls: el.className, opts: [...(el.options||[]).map(o=>o.value||o.textContent)]})))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser click @e2; agent-browser snapshot -i
+-> [278 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 7
+- radio "Basic" [checked=false, ref=e7]
+- radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+const el = document.evaluate("string-id('e2')", document, null, XPathResult.STRING_TYPE, null).stringValue; // not reliable, fallback below
+const region = document.getElementById("region") || document.querySelector("[ref]") || document.querySelectorAll("select, div, button, input")[i for i in ...];
+JS
+echo fallback
+agent-browser eval --stdin <<'JS'
+(() => {
+  const els = [...document.querySelectorAll('select, button, [class*=region], [id*=region], [data-region]')];
+  return JSON.stringify(els.slice(0,20).map(el => ({tag: el.tagName, id: el.id, cls: String(el.className).slice(0,60), text: el.textContent.trim().slice(0,40)})));
+})()
+JS
+-> [140 chars] ✗ Evaluation error: SyntaxError: Unexpected token 'for'
+fallback
+"[{\"tag\":\"BUTTON\",\"id\":\"go\",\"cls\":\"\",\"text\":\"Get quote\"}]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const f = document.querySelector('form');
+  return f ? f.outerHTML : 'no form: ' + document.body.innerHTML.slice(0,2000);
+})()
+JS
+-> [1832 chars] "no form: \n\n<h1>Request a quote</h1>\n<p>Region</p>\n<div class=\"dd\" id=\"dd\">Choose region…</div><div class=\"opts open\" id=\"opts\"><div class=\"opt\">Benelux</div><div class=\"opt\">Nordics</div><div class=\"opt\">Iberia</div><div class=\"opt\">DACH</div><div class=\"opt\">Baltics</div></div>\n<p><label>Quantity <input id=\"qty\" type=\"number\" min=\"1\" value=\"1\"></label></p>\n<p><label><input type=\"radio\" name=\"plan\" value=\"basic\" checked=\"\"> Basic</label>\n<label><input ty …ion.length*104729+(pro?31337:0))%9973);\nout.innerHTML='<p>Quote ref: <b>'+ref+'</b></p><p>Total: €'+total.toFixed(2)+'</p>';},2500);};\n</script>\n"
+
+SAY: The region dropdown is a custom one; options render after a 400ms delay. Let me click through it:
+$ agent-browser click @e2; agent-browser wait --fn "[...document.querySelectorAll('#opts .opt')].some(o=>o.textContent==='Nordics')"; agent-browser find text "Nordics" click; agent-browser eval --stdin <<'JS'
+(() => { const go=document.getElementById('go'); return JSON.stringify({region: document.getElementById('dd').textContent, goDisabled: go.disabled}); })()
+JS
+-> [67 chars] ✓ Done
+true
+✓ Done
+"{\"region\":\"Nordics\",\"goDisabled\":false}"
+
+$ agent-browser eval "document.getElementById('qty').value + '|' + document.querySelector('input[name=plan]:checked').value"; agent-browser click #go; agent-browser wait --fn "document.getElementById('out').textContent.includes('Total')"; agent-browser eval "document.getElementById('out').textContent"
+-> [125 chars] "7|pro"
+Missing arguments for: click
+Usage: agent-browser click <selector> [--new-tab] [--human]
+
+
+Command exited with code 1
+$ agent-browser click @e3; agent-browser wait --fn "document.getElementById('out').textContent.includes('Total')"; agent-browser eval "document.getElementById('out').textContent"
+-> [49 chars] ✓ Done
+true
+"Quote ref: NOR-2087Total: €1470.00"
+
+SAY: Done. I filled in the quote form on `http://localhost:8791/shop.html`:
+
+- **Region:** Nordics (custom dropdown — clicked the option after the 400ms lazy-render)
+- **Quantity:** 7
+- **Plan:** Pro
+
+The page then calculated the quote:
+- **Quote reference:** `NOR-2087`
+- **Total price:** **€1470.00** (Nordics base €140 × 7 × 1.5 Pro multiplier ✓)
+
+ANSWER: Quote ref NOR-2087, total €1470.00

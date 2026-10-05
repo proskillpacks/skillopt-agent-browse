@@ -1,0 +1,109 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r2", "correct": true, "score": 0.964, "wtok": 24033, "out_tok": 803, "turns": 9, "secs": 8, "timed_out": false, "curl": false, "answer": "\"A day without sunshine is like, you know, night.\" \u2014 Steve Martin (tagged: humor)"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://quotes.toscrape.com/search.aspx 2>&1 | tail -5
+-> [61 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+
+$ agent-browser snapshot 2>&1 | head -40
+-> [1558 chars] - heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- paragraph
+  - link "Login" [ref=e4]
+- separator
+- form
+  - generic
+    - LabelText
+      - StaticText "Author"
+    - combobox "Author" [expanded=false, ref=e5]: ----------
+      - MenuListPopup
+        - option "----------" [selected, ref=e9]
+        - option "Albert Einstein" [ref=e10]
+        - option "J.K. Rowling" [ref=e11]
+        - option "Jane Austen" [ref=e12]
+        - option "Marilyn Monroe" [ref=e13] …tin" [ref=e34]
+        - option "C.S. Lewis" [ref=e35]
+        - option "Martin Luther King Jr." [ref=e36]
+        - option "James Baldwin" [ref=e37]
+
+$ agent-browser select '#author' 'Steve Martin' 2>&1; agent-browser select '#tag' 'humor' 2>&1
+-> [14 chars] ✓ Done
+✓ Done
+
+$ agent-browser click 'input[value="Search"]' 2>&1 || agent-browser snapshot 2>&1 | grep -i -A2 button
+-> [7 chars] ✓ Done
+
+$ agent-browser read 2>&1 | head -40
+-> [283 chars] #
+Quotes to Scrape
+
+Login
+
+Author
+
+----------
+
+Albert Einstein
+
+J.K. Rowling
+
+Jane Austen
+
+Marilyn Monroe
+
+André Gide
+
+Thomas A. Edison
+
+Eleanor Roosevelt
+
+Steve Martin
+
+Bob Marley
+
+Dr. Seuss
+
+Douglas Adams
+
+Elie Wiesel
+
+Friedrich Nietzsche
+
+Mark Twain
+
+Allen Saunders
+
+Pablo Neruda
+
+$ agent-browser eval "document.querySelector('.search_results')?.innerText || 'no .search_results'" 2>&1; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote')].map(q=>q.innerText))" 2>&1
+-> [103 chars] "no .search_results"
+"[\"“A day without sunshine is like, you know, night.” - Steve Martin (humor)\"]"
+
+$ agent-browser eval "location.href" 2>&1
+-> [42 chars] "https://quotes.toscrape.com/filter.aspx"
+
+SAY: The search navigated to the filter page and returned exactly one quote.
+
+ANSWER: "A day without sunshine is like, you know, night." — Steve Martin (tagged: humor)

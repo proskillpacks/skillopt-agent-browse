@@ -1,0 +1,99 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r5", "correct": true, "score": 0.932, "wtok": 45238, "out_tok": 1799, "turns": 11, "secs": 101, "timed_out": false, "curl": false, "answer": "After clicking Remove, the message shown is \"It's gone!\". After clicking Enable, waiting for the input to be enabled, and typing \"hello\", the message shown is \"It's enabled!\" and the input's value is \"hello\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" && break; sleep 5; done; agent-browser wait "#checkbox"
+-> [159 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✓ Done
+
+$ agent-browser snapshot -i
+-> [324 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e5; agent-browser wait "#flash" 2>/dev/null; agent-browser get text "#flash"
+-> [145 chars] ✓ Done
+✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const div = document.querySelector('#msg');
+  const flash = document.querySelector('.flash') || document.getElementById('flash');
+  return JSON.stringify({msg: div ? div.textContent : null, flash: flash ? flash.textContent : null, checkboxGone: !document.querySelector('#checkbox')});
+})()
+JS
+-> [54 chars] "{\"msg\":null,\"flash\":null,\"checkboxGone\":true}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify(document.querySelector('#content').innerHTML.slice(0, 800));
+})()
+JS
+-> [935 chars] "\"\\n        <script src=\\\"https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js\\\"></script>\\n<script>\\n  function swapInput() {\\n    disableButton(\\\"#input-example button\\\");\\n    clearMessage();\\n    showDelay(\\\"#input-example button\\\");\\n    pauseThenToggleControls(\\\"input\\\");\\n  }\\n\\n  function swapCheckbox (){\\n    disableButton(\\\"#checkbox-example button\\\");\\n    clearMessage();\\n    showDelay(\\\"#checkbox-example button\\\");\\n    pauseThenTo …showDelay(locator) {\\n    $(locator).after(\\\"<div id='loading'>Wait for it... <img src='/img/ajax-loader.gif'></div></br>\\\");\\n  };\\n\\n  f\""
+
+SAY: The flash message was removed after fading out. Let me reload and capture it quickly.
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" && agent-browser snapshot -i
+-> [402 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+- link "Fork me on GitHub" [ref=e10]
+- heading "Dynamic Controls" [level=4, ref=e11]
+- heading "Remove/add" [level=4, ref=e12]
+- checkbox [checked=false, ref=e17]
+- button "Remove" [ref=e14]
+- heading "Enable/disable" [level=4, ref=e13]
+- textbox [disabled, ref=e15]
+- button "Enable" [ref=e16]
+- link "Elemental Selenium" [ref=e18]
+
+$ agent-browser click @e14; agent-browser wait --fn "document.querySelector('#checkbox') === null"; agent-browser eval --stdin <<'JS'
+(() => {
+  const msg = document.querySelector('#msg');
+  const flash = document.querySelector('.flash') || document.getElementById('flash');
+  return JSON.stringify({msg: msg ? msg.textContent.trim() : null, flash: flash ? flash.textContent.trim() : null});
+})()
+JS
+-> [44 chars] ✓ Done
+true
+"{\"msg\":null,\"flash\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const ex = document.querySelector('#checkbox-example').closest('li') || document.querySelector('#checkbox-example').parentElement;
+  return JSON.stringify(ex ? ex.innerHTML : 'not found');
+})()
+JS
+-> [870 chars] "\"\\n  <h4>Dynamic Controls</h4>\\n  <p>This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.</p>\\n\\n  <h4 class=\\\"subheader\\\">Remove/add</h4>\\n  <br>\\n  <form id=\\\"checkbox-example\\\">\\n    \\n    <button autocomplete=\\\"off\\\" type=\\\"button\\\" onclick=\\\"swapCheckbox()\\\">Add</button><p id=\\\"message\\\">It's gone!</p><div id=\\\"loading\\\" style=\\\"display: none;\\\">Wait for it... <img src=\\\"/img/ajax-loader.gif\\\">< …n    <button autocomplete=\\\"off\\\" type=\\\"button\\\" onclick=\\\"swapInput()\\\">Enable</button>\\n  </form>\\n<div>\\n\\n      </div>\\n    \""
+
+SAY: The Remove message is "It's gone!". Now for the Enable part:
+$ agent-browser click @e16; agent-browser wait --fn "!document.querySelector('#input-example input').disabled"; agent-browser fill "#input-example input" "hello"; agent-browser eval --stdin <<'JS'
+(() => {
+  const msg = document.querySelector('#message');
+  const input = document.querySelector('#input-example input');
+  return JSON.stringify({message: msg ? msg.textContent.trim() : null, inputValue: input.value});
+})()
+JS
+-> [78 chars] ✓ Done
+true
+✓ Done
+"{\"message\":\"It's enabled!\",\"inputValue\":\"hello\"}"
+
+SAY: Done. Results:
+
+1. **Remove** — clicking Remove removed the checkbox, and the message shown was: **"It's gone!"** (in `<p id="message">`, which fades out after a few seconds).
+2. **Enable** — clicked Enable, waited until the text input was no longer disabled, typed "hello" into it. The message shown was **"It's enabled!"** and the input's value was **"hello"**.
+
+ANSWER: After clicking Remove, the message shown is "It's gone!". After clicking Enable, waiting for the input to be enabled, and typin

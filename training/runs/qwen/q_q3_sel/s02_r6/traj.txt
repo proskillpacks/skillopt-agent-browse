@@ -1,0 +1,72 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r6", "correct": true, "score": 0.955, "wtok": 29700, "out_tok": 805, "turns": 8, "secs": 6, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open "https://quotes.toscrape.com/"
+-> [50 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+
+$ agent-browser snapshot -i
+-> [1613 chars] - heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e23]
+- link "Login" [ref=e24]
+- link "(about)" [ref=e2]
+- link "change" [ref=e25]
+- link "deep-thoughts" [ref=e26]
+- link "thinking" [ref=e27]
+- link "world" [ref=e28]
+- link "(about)" [ref=e3]
+- link "abilities" [ref=e29]
+- link "choices" [ref=e30]
+- link "(about)" [ref=e4]
+- link "inspirational" [ref=e31]
+- link "life" [ref=e32]
+- link "live" [ref=e33]
+- link "miracle" [ref=e34]
+- link "miracles" [ref=e35]
+- link " …hip" [ref=e19]
+- link "friends" [ref=e20]
+- link "truth" [ref=e21]
+- link "simile" [ref=e22]
+- link "GoodReads.com" [ref=e55]
+- link "Zyte" [ref=e56]
+
+$ agent-browser click @e24; agent-browser snapshot -i
+-> [262 chars] ✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e58]
+  - link "Quotes to Scrape" [ref=e59]
+- link "Login" [ref=e60]
+- textbox "Username Password" [ref=e62]
+- textbox [ref=e63]
+- button "Login" [ref=e61]
+- link "GoodReads.com" [ref=e64]
+- link "Zyte" [ref=e65]
+
+$ agent-browser fill @e62 "testuser"; agent-browser fill @e63 "testpass"; agent-browser click @e61; agent-browser snapshot -i
+-> [296 chars] ✓ Done
+✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e58]
+  - link "Quotes to Scrape" [ref=e59]
+- link "Login" [ref=e60]
+- textbox "Username Password" [ref=e62]: testuser
+- textbox [ref=e63]: ••••••••
+- button "Login" [ref=e61]
+- link "GoodReads.com" [ref=e64]
+- link "Zyte" [ref=e65]
+
+$ agent-browser eval "document.title + ' | ' + location.href; document.querySelectorAll('a').length"
+-> [3 chars] 65
+
+$ agent-browser eval "(() => JSON.stringify({title: document.title, href: location.href, links: [...document.querySelectorAll('a')].slice(0,8).map(a=>a.textContent.trim())}))()"
+-> [206 chars] "{\"title\":\"Quotes to Scrape\",\"href\":\"https://quotes.toscrape.com/\",\"links\":[\"Quotes to Scrape\",\"Logout\",\"(about)\",\"(Goodreads page)\",\"change\",\"deep-thoughts\",\"thinking\",\"world\"]}"
+
+SAY: Logged in successfully. Now grabbing the first quote's Goodreads link:
+$ agent-browser eval "(() => { const a = [...document.querySelectorAll('a')].find(x => x.textContent.trim() === '(Goodreads page)'); return JSON.stringify(a ? a.href : null); })()"
+-> [60 chars] "\"http://goodreads.com/author/show/9810.Albert_Einstein\""
+
+SAY: The first quote on the first page (Albert Einstein's "The world as we have created it...") has its "(Goodreads page)" link pointing to:
+
+http://goodreads.com/author/show/9810.Albert_Einstein
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

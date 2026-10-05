@@ -1,0 +1,91 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r3", "correct": true, "score": 0.933, "wtok": 44857, "out_tok": 3610, "turns": 6, "secs": 56, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ agent-browser open https://books.toscrape.com/ ; agent-browser wait "ul.pager"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  totalLinks: document.querySelectorAll('ul.pager li a').length,
+  pager: [...document.querySelectorAll('ul.pager li a')].map(a=>a.href.split('/').pop()),
+  booksOnPage: document.querySelectorAll('article.product_pod').length
+})
+JS
+-> [148 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"{\"totalLinks\":1,\"pager\":[\"page-2.html\"],\"booksOnPage\":20}"
+
+$ for i in $(seq 2 50); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" > /dev/null
+  agent-browser wait "ul.pager" > /dev/null
+  agent-browser eval --stdin <<'JS'
+const pods = [...document.querySelectorAll('article.product_pod')];
+const rows = pods.map(p => {
+  const t = p.querySelector('h3 a');
+  const pr = p.querySelector('.price_color');
+  return { title: t.getAttribute('title'), price: parseFloat(pr.textContent.replace('£','')) };
+});
+const cheap = rows.filter(r => r.price < 12);
+const min = rows.reduce((a,b) => (b.price < a.price ? b : a), rows[0]);
+JSON.stringify({ cheapCount: cheap.length, min, cheap: cheap.map(r=>r.price) });
+JS
+done > /tmp/pages.jsonl; cat /tmp/pages.jsonl
+-> [5863 chars] "{\"cheapCount\":0,\"min\":{\"title\":\"In Her Wake\",\"price\":12.84},\"cheap\":[]}"
+"{\"cheapCount\":0,\"min\":{\"title\":\"Untitled Collection: Sabbath Poems 2014\",\"price\":14.27},\"cheap\":[]}"
+"{\"cheapCount\":0,\"min\":{\"title\":\"The Life-Changing Magic of Tidying Up: The Japanese Art of Decluttering and Organizing\",\"price\":16.77},\"cheap\":[]}"
+"{\"cheapCount\":1,\"min\":{\"title\":\"Patience\",\"price\":10.16},\"cheap\":[10.16]}"
+"{\"cheapCount\":0,\"min\":{\"title\":\"First and F …e\":24.89},\"cheap\":[]}"
+"{\"cheapCount\":0,\"min\":{\"title\":\"A Spy's Devotion (The Regency Spies of London #1)\",\"price\":16.97},\"cheap\":[]}"
+
+SAY: Pages 2–50 captured. Now page 1, and confirm page 50 is the last:
+$ agent-browser open "https://books.toscrape.com/" > /dev/null; agent-browser wait "ul.pager" > /dev/null; agent-browser eval --stdin <<'JS'
+const pods = [...document.querySelectorAll('article.product_pod')];
+const rows = pods.map(p => {
+  const t = p.querySelector('h3 a');
+  const pr = p.querySelector('.price_color');
+  return { title: t.getAttribute('title'), price: parseFloat(pr.textContent.replace('£','')) };
+});
+const cheap = rows.filter(r => r.price < 12);
+const min = rows.reduce((a,b) => (b.price < a.price ? b : a), rows[0]);
+JSON.stringify({ cheapCount: cheap.length, min, cheap: cheap.map(r=>r.price) });
+JS
+$ agent-browser open "https://books.toscrape.com/catalogue/page-51.html" 2>&1 | head -3
+-> [65 chars] ✗ Wait timed out after 25000ms
+"{\"cheapCount\":0,\"cheap\":[]}"
+
+-> [68 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page-51.html
+
+SAY: The parallel calls raced on the same session. Re-running page 1 sequentially:
+$ agent-browser open "https://books.toscrape.com/" > /dev/null; agent-browser eval --stdin <<'JS'
+const pods = [...document.querySelectorAll('article.product_pod')];
+const rows = pods.map(p => {
+  const t = p.querySelector('h3 a');
+  const pr = p.querySelector('.price_color');
+  return { title: t.getAttribute('title'), price: parseFloat(pr.textContent.replace('£','')) };
+});
+const cheap = rows.filter(r => r.price < 12);
+const min = rows.length ? rows.reduce((a,b) => (b.price < a.price ? b : a), rows[0]) : null;
+JSON.stringify({ n: rows.length, cheapCount: cheap.length, min, cheap: cheap.map(r=>[r.title, r.price]) });
+JS
+-> [130 chars] "{\"n\":20,\"cheapCount\":0,\"min\":{\"title\":\"Starving Hearts (Triangular Trade Trilogy, #1)\",\"price\":13.99},\"cheap\":[]}"
+
+$ python3 - <<'EOF'
+import json
+total = 0
+overall_min = None
+for line in open('/tmp/pages.jsonl'):
+    d = json.loads(json.loads(line))
+    total += d['cheapCount']
+    m = d['min']
+    if overall_min is None or m['price'] < overall_min['price']:
+        overall_min = m
+print("total cheap:", total, "min:", overall_min)
+EOF
+-> [74 chars] total cheap: 44 min: {'title': 'An Abundance of Katherines', 'price': 10}
+
+SAY: Verified programmatically. Results:
+
+- **Books under £12.00:** 44 (pages 2–50 contributed 44; page 1 had none, its cheapest being £13.99)
+- **Cheapest book overall:** *An Abundance of Katherines* at **£10.00**
+
+ANSWER: 44 books cost less than £12.00; the cheapest book is "An Abundance of Katherines" at £10.00

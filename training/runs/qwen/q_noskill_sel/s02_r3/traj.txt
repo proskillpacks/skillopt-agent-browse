@@ -1,0 +1,113 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r3", "correct": true, "score": 0.923, "wtok": 51435, "out_tok": 2158, "turns": 15, "secs": 24, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://quotes.toscrape.com/login/ && agent-browser fill '#username' 'admin' && agent-browser fill '#password' 'admin' && agent-browser click 'button[type=submit]' 2>&1 | head -20
+-> [194 chars] ✓ 404 Not Found
+  https://quotes.toscrape.com/login/
+✗ Element not found: #username. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+SAY: The login path 404'd. Let me check the homepage for the correct login link.
+$ agent-browser open https://quotes.toscrape.com/ && agent-browser eval "Array.from(document.querySelectorAll('a')).map(a=>a.href).filter(h=>h.includes('login'))"
+-> [92 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+[
+  "https://quotes.toscrape.com/login"
+]
+
+$ agent-browser open https://quotes.toscrape.com/login && agent-browser fill '#username' 'testuser' && agent-browser fill '#password' 'testpass' && agent-browser click 'button[type=submit]'
+-> [220 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+✓ Done
+✗ Element not found: button[type=submit]. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "document.querySelector('.form-signin button, form button')?.outerHTML || 'no button'; document.title"
+-> [19 chars] "Quotes to Scrape"
+
+$ agent-browser eval "location.href + ' | signedIn=' + !!document.querySelector('.top-menu a[href*=/logout]') + ' | goodreads=' + (document.querySelector('.quote .author a[href*=goodreads], .quote a[href*=goodreads]')?.href || 'none')"
+-> [188 chars] ✗ Evaluation error: SyntaxError: Failed to execute 'querySelector' on 'Document': '.top-menu a[href*=/logout]' is not a valid selector.
+    at <anonymous>:1:45
+
+
+Command exited with code 1
+$ agent-browser eval "location.href"
+-> [36 chars] "https://quotes.toscrape.com/login"
+
+$ agent-browser eval "var b=document.querySelector('button, input[type=submit]'); b ? (b.type||b.tagName) : 'none'; document.querySelector('form').action"
+-> [36 chars] "https://quotes.toscrape.com/login"
+
+$ agent-browser eval "(() => { const b = document.querySelector('button'); const f = document.querySelector('form'); return JSON.stringify({btn: b && b.outerHTML.slice(0,100), action: f.action}); })()"
+-> [66 chars] "{\"btn\":null,\"action\":\"https://quotes.toscrape.com/login\"}"
+
+$ agent-browser snapshot 2>&1 | head -40
+-> [590 chars] - heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- paragraph
+  - link "Login" [ref=e4]
+- form
+  - generic
+    - LabelText
+      - StaticText "Username"
+    - textbox "Username Password" [ref=e5]: testuser
+      - StaticText "testuser"
+  - generic
+    - LabelText
+      - StaticText "Password"
+    - textbox [ref=e6]: ••••••••
+      - StaticText "••••••••"
+  - button "Login" [ref=e2]
+- contentinfo
+  - paragraph
+    - StaticText "Quotes by: "
+    - link "GoodReads.com" [ref=e7]
+  - paragraph
+    - StaticText "Made with ❤ by "
+    - link "Zyte" [ref=e8]
+
+$ agent-browser click @e2 && agent-browser eval "location.href"
+-> [43 chars] ✓ Done
+"https://quotes.toscrape.com/login"
+
+$ agent-browser eval "(() => { const f=document.querySelector('.alert, .flash'); const m=document.querySelector('.top-menu a'); return JSON.stringify({flash: f?f.textContent.trim():null, menu:m?m.href:null, user: document.querySelector('h2, .top-menu .active')?.textContent}); })()"
+-> [59 chars] "{\"flash\":null,\"menu\":null,\"user\":\"Top Ten tags\"}"
+
+$ agent-browser click @e2 && sleep 2 && agent-browser eval "location.href"
+-> [38 chars] ✓ Done
+"https://quotes.toscrape.com/"
+
+SAY: Now logged in and on the homepage. Let me get the Goodreads link for the first quote.
+$ agent-browser eval "(() => { const q=document.querySelector('.quote'); const links=[...q.querySelectorAll('a')].map(a=>({t:a.textContent.trim(),h:a.href})); return JSON.stringify(links); })()"
+-> [498 chars] "[{\"t\":\"(about)\",\"h\":\"https://quotes.toscrape.com/author/Albert-Einstein\"},{\"t\":\"(Goodreads page)\",\"h\":\"http://goodreads.com/author/show/9810.Albert_Einstein\"},{\"t\":\"change\",\"h\":\"https://quotes.toscrape.com/tag/change/page/1/\"},{\"t\":\"deep-thoughts\",\"h\":\"https://quotes.toscrape.com/tag/deep-thoughts/page/1/\"},{\"t\":\"thinking\",\"h\":\"https://quotes.toscrape.com/tag/thinking/page/1/\"},{\"t\":\"world\",\"h\":\"https://quotes.toscrape.com/tag/world/page/1/\"}]"
+
+SAY: Done. The login succeeded (I clicked the "Login" button on the form at https://quotes.toscrape.com/login with test credentials), and on the now-authenticated homepage the first quote (Albert Einstein) shows the extra "(Goodreads page)" link.
+
+The URL that link points to is:
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

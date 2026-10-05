@@ -1,0 +1,67 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r3", "correct": true, "score": 0.956, "wtok": 29321, "out_tok": 711, "turns": 7, "secs": 31, "timed_out": false, "curl": false, "answer": "A day without sunshine is like, you know, night."}
+
+$ agent-browser open "https://quotes.toscrape.com/search.aspx"; agent-browser wait "#search_author"; agent-browser snapshot -i
+-> [2343 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+✗ Wait timed out after 25000ms
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- combobox "Author" [expanded=false, ref=e5]: ----------
+  - option "----------" [selected, ref=e9]
+  - option "Albert Einstein" [ref=e10]
+  - option "J.K. Rowling" [ref=e11]
+  - option "Jane Austen" [ref=e12]
+  - option "Marilyn Monroe" [ref=e13]
+  - option "André Gide" [ref=e14]
+  - option "Thomas …se, ref=e6]: ----------
+  - option "----------" [selected, ref=e59]
+- button "Search" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser select #search_author "Steve Martin"; agent-browser select #search_tags "humor"; agent-browser click #search_submit; agent-browser wait ".quote"; agent-browser get text ".quote .text"
+-> [108 chars] Missing arguments for: select
+Usage: agent-browser select <selector> <value...>
+
+
+Command exited with code 1
+$ agent-browser select "#search_author" "Steve Martin"; agent-browser snapshot -i
+-> [2369 chars] ✗ Element not found: #search_author. Verify the selector, role, or name is correct and the element exists in the DOM.
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- combobox "Author" [expanded=false, ref=e5]: ----------
+  - option "----------" [selected, ref=e9]
+  - option "Albert Einstein" [ref=e10]
+  - option "J.K. Rowling" [ref=e11]
+  - option "Jane Austen" [ref=e12]
+  - option "Marilyn Monroe" [ref=e13]
+  - option "André Gide" [r …se, ref=e6]: ----------
+  - option "----------" [selected, ref=e59]
+- button "Search" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser select @e5 "Steve Martin"; agent-browser select @e6 "humor"; agent-browser click @e2; agent-browser wait ".quote"; agent-browser get text ".quote .text"
+-> [172 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✗ Element not found: .quote .text. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote')].map(q => ({text: q.querySelector('.text')?.textContent, author: q.querySelector('.author')?.textContent, tags: q.querySelectorAll('.tags a').length})))"
+-> [45 chars] "[{\"author\":\"Steve Martin\",\"tags\":0}]"
+
+$ agent-browser eval "JSON.stringify(document.querySelector('.quote').innerHTML.slice(0,600))"
+-> [221 chars] "\"\\n            <span class=\\\"content\\\">“A day without sunshine is like, you know, night.”</span> - \\n            <span class=\\\"author\\\">Steve Martin</span> (<span class=\\\"tag\\\">humor</span>)\\n        \""
+
+SAY: The search returned a single quote on the search results page:
+
+**"A day without sunshine is like, you know, night."** — Steve Martin (tag: humor)
+
+ANSWER: A day without sunshine is like, you know, night.

@@ -1,0 +1,64 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": false, "score": 0.0, "wtok": 33992, "out_tok": 1901, "turns": 8, "secs": 89, "timed_out": false, "curl": false, "answer": "5 books are rated one star out of 20 books total in the Historical Fiction category."}
+
+$ agent-browser open https://books.toscrape.com/ ; agent-browser wait ".active" ; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('ul.submenu a')].filter(a=>a.textContent.trim()==='Historical Fiction').map(a=>a.href))
+JS
+-> [85 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a=>a.textContent.trim()==='Historical Fiction').map(a=>a.href))
+JS
+-> [92 chars] "[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"]"
+
+$ base="https://books.toscrape.com/catalogue/category/books/historical-fiction_4"
+total=0
+ones=0
+p=1
+while true; do
+  agent-browser open "$base/page-$p/index.html" >/dev/null
+  agent-browser wait ".product_pod"
+  read -r c o <<< "$(agent-browser eval 'JSON.stringify([document.querySelectorAll(".product_pod").length, document.querySelectorAll(".product_pod .star-rating.One").length]).slice(1,-1)')"
+  total=$((total+c)); ones=$((ones+o))
+  echo "page $p: books=$c one-star=$o"
+  hasnext=$(agent-browser eval 'document.querySelector(".pagination a.next")!==null')
+  [ "$hasnext" = "true" ] && p=$((p+1)) || break
+done
+echo "TOTAL=$total ONE_STAR=$ones"
+-> [132 chars] ✗ Wait timed out after 25000ms
+/bin/bash: line 9: "0,0": syntax error: operand expected (error token is ""0,0"")
+TOTAL=0 ONE_STAR=0
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1/index.html" ; agent-browser wait ".product_pod" ; agent-browser eval 'JSON.stringify([document.querySelectorAll(".product_pod").length, document.querySelectorAll(".product_pod .star-rating.One").length])'
+-> [148 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1/index.html
+✗ Wait timed out after 25000ms
+"[0,0]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" ; agent-browser wait ".product_pod" ; agent-browser eval 'JSON.stringify([document.querySelectorAll(".product_pod").length, document.querySelectorAll(".product_pod .star-rating.One").length])'
+-> [151 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+"[20,5]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2/index.html" ; agent-browser wait ".product_pod" ; agent-browser eval 'JSON.stringify([document.querySelectorAll(".product_pod").length, document.querySelectorAll(".product_pod .star-rating.One").length])'
+-> [148 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2/index.html
+✗ Wait timed out after 25000ms
+"[0,0]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" ; agent-browser wait ".product_pod" ; agent-browser eval 'JSON.stringify([...document.querySelectorAll(".pagination a")].map(a=>a.href))'
+-> [147 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+"[]"
+
+SAY: No pagination links exist, so the category is a single page. Verified: 20 books total, 5 with a one-star rating (`star-rating One`).
+
+Historical Fiction category (single page, no pagination): 20 books, 5 of which are rated one star.
+
+ANSWER: 5 books are rated one star out of 20 books total in the Historical Fiction category.

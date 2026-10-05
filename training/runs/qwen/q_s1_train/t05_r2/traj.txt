@@ -1,0 +1,63 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r2", "correct": true, "score": 0.967, "wtok": 22130, "out_tok": 473, "turns": 6, "secs": 5, "timed_out": false, "curl": false, "answer": "\"A day without sunshine is like, you know, night.\""}
+
+$ agent-browser open "https://quotes.toscrape.com/search.aspx"; agent-browser snapshot -i
+-> [2312 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- combobox "Author" [expanded=false, ref=e5]: ----------
+  - option "----------" [selected, ref=e9]
+  - option "Albert Einstein" [ref=e10]
+  - option "J.K. Rowling" [ref=e11]
+  - option "Jane Austen" [ref=e12]
+  - option "Marilyn Monroe" [ref=e13]
+  - option "André Gide" [ref=e14]
+  - option "Thomas A. Edison" [ref=e15]
+  - optio …se, ref=e6]: ----------
+  - option "----------" [selected, ref=e59]
+- button "Search" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser select @e5 "Steve Martin"; agent-browser snapshot -i
+-> [2322 chars] ✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e60]
+  - link "Quotes to Scrape" [ref=e61]
+- link "Login" [ref=e62]
+- combobox "Author" [expanded=false, ref=e64]: Steve Martin
+  - option "----------" [ref=e66]
+  - option "Albert Einstein" [ref=e67]
+  - option "J.K. Rowling" [ref=e68]
+  - option "Jane Austen" [ref=e69]
+  - option "Marilyn Monroe" [ref=e70]
+  - option "André Gide" [ref=e71]
+  - option "Thomas A. Edison" [ref=e72]
+  - option "Eleanor Roosevelt" [ref=e73]
+  - option "Steve Martin" …------" [selected, ref=e116]
+  - option "humor" [ref=e117]
+  - option "obvious" [ref=e118]
+  - option "simile" [ref=e119]
+- button "Search" [ref=e63]
+
+$ agent-browser select @e65 "humor"; agent-browser click @e63; agent-browser wait "[class*=quote]"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote').map(q=>q.innerText)))"
+-> [103 chars] ✓ Done
+✓ Done
+✓ Done
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote')].map(q=>q.innerText))"
+-> [82 chars] "[\"“A day without sunshine is like, you know, night.” - Steve Martin (humor)\"]"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Search completed: author "Steve Martin" + tag "humor" returned a single quote.
+
+The quote returned is: **"A day without sunshine is like, you know, night."** — Steve Martin (tag: humor)
+
+ANSWER: "A day without sunshine is like, you know, night."

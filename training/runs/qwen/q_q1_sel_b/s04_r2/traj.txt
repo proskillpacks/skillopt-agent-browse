@@ -1,0 +1,33 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r2", "correct": true, "score": 0.967, "wtok": 21882, "out_tok": 421, "turns": 4, "secs": 5, "timed_out": false, "curl": false, "answer": "2011 Boston Bruins: Wins = 49, GF = 269"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/ ; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+SAY: Page loaded. Now searching for Bruins:
+$ agent-browser fill e9 "Bruins" && agent-browser click e10 && agent-browser wait --text "2011"
+-> [19 chars] ✓ Done
+✓ Done
+2011
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('table tbody tr')].map(r=>[...r.cells].map(c=>c.textContent.trim())))"
+-> [1839 chars] "[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\",\"0.607\",\"332\",\"268\",\"64\"],[\"Boston Bruins\",\"1993\",\"42\",\"29\",\"\",\"0.5\",\"289\",\"252\",\"37\"],[\"Boston Bruins\",\"1994\",\"27\",\"18\",\"\",\"0.562\", …",\"2010\",\"46\",\"25\",\"11\",\"0.561\",\"246\",\"195\",\"51\"],[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+
+SAY: The search returned all Boston Bruins rows. For the 2011 season: **Wins = 49**, **Goals For (GF) = 269**.
+
+ANSWER: 2011 Boston Bruins: Wins = 49, GF = 269

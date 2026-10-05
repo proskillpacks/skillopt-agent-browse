@@ -1,0 +1,68 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": true, "score": 0.968, "wtok": 21182, "out_tok": 1036, "turns": 6, "secs": 10, "timed_out": false, "curl": false, "answer": "5 one-star rated books out of 26 total books in the Historical Fiction category"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction/index.html"; agent-browser snapshot -i
+-> [138 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction/index.html
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.nav a, #side-menu a, ul.nav a')).slice(0,30).map(a=>[a.textContent.trim(), a.href]))"
+-> [2966 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[[\"Books\",\"https://books.toscrape.com/catalogue/category/books_1/index.html\"],[\"Travel\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\"],[\"Mystery\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\"],[\"Historical Fiction\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"],[\"Sequential Art\",\"https://books.toscrape.com/ca …com/catalogue/category/books/adult-fiction_29/index.html\"],[\"Humor\",\"https://books.toscrape.com/catalogue/category/books/humor_30/index.html\"]]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval "
+(()=>{
+  const oneStar = document.querySelectorAll('.star-rating.One').length;
+  const total = document.querySelectorAll('li.book').length;
+  const hasNext = document.querySelector('li.next') !== null;
+  return JSON.stringify({oneStar, total, hasNext, nextHref: document.querySelector('li.next a')?.href});
+})()"
+-> [284 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"oneStar\":5,\"total\":0,\"hasNext\":true,\"nextHref\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"}"
+
+$ agent-browser eval "
+(async()=>{
+  let url = 'https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html';
+  let one = 0, total = 0, pages = 0;
+  while (url) {
+    await window.__goto(url);
+    await new Promise(r=>setTimeout(r,400));
+    const articles = document.querySelectorAll('article');
+    total += articles.length;
+    one += document.querySelectorAll('article .star-rating.One').length;
+    pages++;
+    const next = document.querySelector('li.next a');
+    url = next ? next.href : null;
+  }
+  return JSON.stringify({pages, total, oneStar: one});
+})()" 2>&1 || echo "---fallback: need different approach---"
+-> [151 chars] ✗ Evaluation error: TypeError: window.__goto is not a function
+    at <anonymous>:6:18
+    at <anonymous>:16:3
+---fallback: need different approach---
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; for p in 1 2 3 4; do if [ "$p" -gt 1 ]; then agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"; fi; agent-browser eval "JSON.stringify({page:$p, total: document.querySelectorAll('article').length, one: document.querySelectorAll('article .star-rating.One').length, next: !!document.querySelector('li.next')})"; done; agent-browser close
+-> [702 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"page\":1,\"total\":20,\"one\":5,\"next\":true}"
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"page\":2,\"total\":6,\"one\":0,\"next\":false}"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-3.html
+"{\"page\":3,\"total\" …s://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-4.html
+"{\"page\":4,\"total\":0,\"one\":0,\"next\":false}"
+✓ Browser closed
+
+SAY: Done. Using the `agent-browser` CLI, I opened the Historical Fiction category (the correct URL is under `category/books/historical-fiction_4/`) and walked its pages:
+
+- **Page 1:** 20 books, 5 with a one-star rating
+- **Page 2:** 6 books, 0 with a one-star rating
+- Pages 3+ don't exist (404), confirming only 2 pages
+
+So the category has **26 books total**, of which **5** have a one-star rating.
+
+ANSWER: 5 one-star rated books out of 26 total books in the Historical Fiction category

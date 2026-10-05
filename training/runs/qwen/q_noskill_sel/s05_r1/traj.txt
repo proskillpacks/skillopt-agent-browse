@@ -1,0 +1,162 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r1", "correct": true, "score": 0.893, "wtok": 71153, "out_tok": 1371, "turns": 13, "secs": 19, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; Receipt: #A-7028"}
+
+$ agent-browser --help 2>&1 | head -80
+-> [3508 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …        Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+  storage <local|session>    Manage web storage
+
+$ agent-browser skills get core 2>&1 | head -120
+-> [7936 chars] ---
+name: core
+description: Core agent-browser usage guide. Read this before running any agent-browser commands. Covers the snapshot-and-ref workflow, navigating pages, interacting with elements (click, fill, type, select), extracting text and data, taking screenshots, managing tabs, handling forms and auth, waiting for content, running multiple browser sessions in parallel, and troubleshooting common failures. Use when the user asks to interact with a website, fill a form, click something, extr …ord"] placeholder="Password"
+  @e5 [button type="submit"] "Continue"
+  @e6 [link] "Forgot password?"
+```
+
+For unstructured reading (no refs needed):
+
+
+$ agent-browser open http://localhost:8791/inbox.html 2>&1
+-> [43 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+
+$ agent-browser snapshot 2>&1
+-> [1197 chars] - heading "Inbox" [level=1, ref=e1]
+- paragraph
+  - StaticText "Showing 12 of 60"
+- generic
+  - StaticText "Alex A."
+  - StaticText "Invoice #100"
+  - button "Archive" [ref=e2]
+  - StaticText "Femi H."
+  - StaticText "Lunch order #113"
+  - button "Archive" [ref=e3]
+  - StaticText "Kai C."
+  - StaticText "On-call swap #126"
+  - button "Archive" [ref=e4]
+  - StaticText "Dana K."
+  - StaticText "Retro actions #139"
+  - button "Archive" [ref=e5]
+  - StaticText "Ivo E."
+  - StaticText "Release checkl …  - button "Archive" [ref=e12]
+  - StaticText "Hana F."
+  - StaticText "Lunch order #243"
+  - button "Archive" [ref=e13]
+- StaticText "Loading more…"
+
+SAY: Priya N. isn't on the first page (12 of 60). Let me scroll to load more.
+$ agent-browser scroll down 2>&1; agent-browser wait 1500 2>&1; agent-browser snapshot 2>&1
+-> [2302 chars] ✓ Done
+✓ Done
+- heading "Inbox" [level=1, ref=e1]
+- paragraph
+  - StaticText "Showing 24 of 60"
+- generic
+  - StaticText "Alex A."
+  - StaticText "Invoice #100"
+  - button "Archive" [ref=e2]
+  - StaticText "Femi H."
+  - StaticText "Lunch order #113"
+  - button "Archive" [ref=e3]
+  - StaticText "Kai C."
+  - StaticText "On-call swap #126"
+  - button "Archive" [ref=e4]
+  - StaticText "Dana K."
+  - StaticText "Retro actions #139"
+  - button "Archive" [ref=e5]
+  - StaticText "Ivo E."
+  - StaticText " …- button "Archive" [ref=e24]
+  - StaticText "Hana F."
+  - StaticText "Retro actions #399"
+  - button "Archive" [ref=e25]
+- StaticText "Loading more…"
+
+$ for i in 1 2 3; do agent-browser scroll down; agent-browser wait 1000; done; agent-browser snapshot -i 2>&1 | grep -i "priya"
+-> [70 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | grep -E "Showing|Priya" 
+-> [34 chars]   - StaticText "Showing 36 of 60"
+
+$ for i in 1 2 3 4; do agent-browser scroll down; agent-browser wait 1000; done; agent-browser snapshot 2>&1 | grep -E "Showing|Priya"
+-> [116 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+  - StaticText "Showing 48 of 60"
+  - StaticText "Priya N."
+
+$ agent-browser snapshot 2>&1 | grep -B1 -A2 "Priya N."
+-> [147 chars]   - button "Archive" [ref=e45]
+  - StaticText "Priya N."
+  - StaticText "Q3 vendor audit — rescheduled to the 19th"
+  - button "Archive" [ref=e46]
+
+SAY: Found it. Priya N.'s subject is "Q3 vendor audit — rescheduled to the 19th". Now archiving (button e46):
+$ agent-browser click @e46 2>&1; agent-browser snapshot 2>&1
+-> [320 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✗ A JavaScript confirm dialog is blocking the page: "Archive this message?". Resolve it with `dialog accept` or `dialog dismiss`, then retry `snapshot`.
+
+
+Command exited with code 1
+$ agent-browser dialog accept 2>&1; agent-browser wait 1000; agent-browser snapshot 2>&1 | grep -iE "receipt|archiv|priya" 
+-> [1506 chars] ✓ Done
+✓ Done
+  - button "Archive" [ref=e2]
+  - button "Archive" [ref=e3]
+  - button "Archive" [ref=e4]
+  - button "Archive" [ref=e5]
+  - button "Archive" [ref=e6]
+  - button "Archive" [ref=e7]
+  - button "Archive" [ref=e8]
+  - button "Archive" [ref=e9]
+  - button "Archive" [ref=e10]
+  - button "Archive" [ref=e11]
+  - button "Archive" [ref=e12]
+  - button "Archive" [ref=e13]
+  - button "Archive" [ref=e14]
+  - button "Archive" [ref=e15]
+  - button "Archive" [ref=e16]
+  - button "Archive" [ref=e17 …ve" [ref=e45]
+  - button "Archive" [ref=e47]
+  - button "Archive" [ref=e48]
+  - button "Archive" [ref=e49]
+  - StaticText "Archived. Receipt #A-7028"
+
+$ agent-browser snapshot 2>&1 | grep -iE "Archived|Receipt"
+-> [43 chars]   - StaticText "Archived. Receipt #A-7028"
+
+SAY: Done. Summary of what happened in the browser:
+
+1. **Opened** http://localhost:8791/inbox.html — inbox shows 12 of 60 messages, lazy-loading more on scroll.
+2. **Found Priya N.'s message** after scrolling to load ~48 messages. Its subject: **"Q3 vendor audit — rescheduled to the 19th"**
+3. **Archived it** — clicked its Archive button, a JavaScript confirm dialog "Archive this message?" appeared, and I accepted it.
+4. **Receipt shown afterwards:** "Archived. Receipt #A-7028"
+
+ANSWER: Subject: "Q3

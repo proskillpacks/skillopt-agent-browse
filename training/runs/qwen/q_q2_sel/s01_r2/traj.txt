@@ -1,0 +1,38 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r2", "correct": true, "score": 0.967, "wtok": 22241, "out_tok": 904, "turns": 7, "secs": 56, "timed_out": false, "curl": false, "answer": "Name shown: \"name: user3\"; View profile link href: /users/3 (https://the-internet.herokuapp.com/users/3)"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait "#hovers .hover-state"; agent-browser snapshot -i
+-> [200 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#hovers > .hover-state')].map(f=>f.outerHTML.slice(0,300)))"
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+const figs=[...document.querySelectorAll('figure')];
+JSON.stringify({count:figs.length, first:figs[0]?figs[0].outerHTML.slice(0,400):null, body:document.querySelector('#hovers')?document.querySelector('#hovers').outerHTML.slice(0,500):'no #hovers'})
+JS
+-> [55 chars] "{\"count\":0,\"first\":null,\"body\":\"no #hovers\"}"
+
+$ agent-browser eval "document.body.innerHTML.slice(0,2000)"
+-> [1718 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <style>\n.figure {\n  float: left; …ign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+
+$ agent-browser hover ".example > div.figure:nth-of-type(3) > img"; agent-browser eval "JSON.stringify((()=>{const f=document.querySelectorAll('.example > div.figure')[2]; const cap=f.querySelector('.figcaption'); const cs=getComputedStyle(cap); return {visible: cs.display, name: cap.querySelector('h5').textContent, href: cap.querySelector('a').getAttribute('href'), abs: cap.querySelector('a').href};})())"
+-> [135 chars] ✓ Done
+"{\"visible\":\"block\",\"name\":\"name: user3\",\"href\":\"/users/3\",\"abs\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+SAY: Done. I hovered over the third avatar (`.example > div.figure:nth-of-type(3) > img`) using the `agent-browser` CLI. The `.figcaption` tooltip becomes visible (display switches to `block`) on hover, showing:
+
+- **Name:** `name: user3`
+- **View profile link:** `href="/users/3"` → absolute URL `https://the-internet.herokuapp.com/users/3`
+
+ANSWER: Name shown: "name: user3"; View profile link href: /users/3 (https://the-internet.herokuapp.com/users/3)

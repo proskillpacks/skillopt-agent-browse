@@ -1,0 +1,56 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r2", "correct": true, "score": 0.981, "wtok": 12868, "out_tok": 434, "turns": 4, "secs": 30, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/; agent-browser wait "form"; agent-browser snapshot -i
+-> [1694 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✗ Wait timed out after 25000ms
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e23]
+- link "Login" [ref=e24]
+- link "(about)" [ref=e2]
+- link "change" [ref=e25]
+- link "deep-thoughts" [ref=e26]
+- link "thinking" [ref=e27]
+- link "world" [ref=e28]
+- link "(about)" [ref=e3]
+- link "abilities" [ref=e29]
+- link "choices" [ref=e30]
+- link "(about)" [ref=e4]
+- link "inspirational" [ref=e31]
+- link "life" [ref=e32]
+- link …hip" [ref=e19]
+- link "friends" [ref=e20]
+- link "truth" [ref=e21]
+- link "simile" [ref=e22]
+- link "GoodReads.com" [ref=e55]
+- link "Zyte" [ref=e56]
+
+$ agent-browser click @e24; agent-browser wait "form"; agent-browser snapshot -i
+-> [269 chars] ✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e58]
+  - link "Quotes to Scrape" [ref=e59]
+- link "Login" [ref=e60]
+- textbox "Username Password" [ref=e62]
+- textbox [ref=e63]
+- button "Login" [ref=e61]
+- link "GoodReads.com" [ref=e64]
+- link "Zyte" [ref=e65]
+
+$ agent-browser fill @e62 "user"; agent-browser fill @e63 "pass"; agent-browser click @e61; agent-browser wait --fn "document.querySelectorAll('.quote').length>0"; agent-browser eval --stdin <<'JS'
+const q = document.querySelector('.quote');
+JSON.stringify([...q.querySelectorAll('a')].map(a=>[a.textContent.trim(), a.href]))
+JS
+-> [452 chars] ✓ Done
+✓ Done
+✓ Done
+true
+"[[\"(about)\",\"https://quotes.toscrape.com/author/Albert-Einstein\"],[\"(Goodreads page)\",\"http://goodreads.com/author/show/9810.Albert_Einstein\"],[\"change\",\"https://quotes.toscrape.com/tag/change/page/1/\"],[\"deep-thoughts\",\"https://quotes.toscrape.com/tag/deep-thoughts/page/1/\"],[\"thinking\",\"https://quotes.toscrape.com/tag/thinking/page/1/\"],[\"world\",\"https://quotes.toscrape.com/tag/world/page/1/\"]]"
+
+SAY: Logged in successfully. The first quote on page 1 (Einstein's "The world as we have created it...") shows a `(Goodreads page)` link next to the author name, pointing to:
+
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

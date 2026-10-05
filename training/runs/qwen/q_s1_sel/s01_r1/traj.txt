@@ -1,0 +1,67 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": true, "score": 0.932, "wtok": 45338, "out_tok": 2461, "turns": 11, "secs": 201, "timed_out": false, "curl": false, "answer": "name: user3, View profile href: https://the-internet.herokuapp.com/users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser mouse move 150 225; agent-browser eval "JSON.stringify(document.querySelectorAll('.profile')[2])" 2>/dev/null; agent-browser read
+-> [52 chars] ✗ CDP command timed out: Page.navigate
+✓ Done
+null
+
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('li')).map(li=>li.innerText))"
+-> [44 chars] ✗ CDP command timed out: Page.navigate
+"[]"
+
+$ agent-browser wait ".large" --timeout 15000; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.large')).map(li=>li.innerHTML))"
+-> [36 chars] ✗ Wait timed out after 15000ms
+"[]"
+
+$ agent-browser eval "JSON.stringify({url: location.href, title: document.title, bodyLen: document.body?document.body.innerHTML.length:0})"
+-> [105 chars] "{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"title\":\"Application Error\",\"bodyLen\":93}"
+
+SAY: The page showed "Application Error". Retrying:
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait ".large" --timeout 20000; agent-browser eval "JSON.stringify({url: location.href, title: document.title, n: document.querySelectorAll('.large').length})"
+-> [207 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 20000ms
+"{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"title\":\"The Internet\",\"n\":0}"
+
+$ agent-browser eval "document.body.innerText"; agent-browser eval "document.body.innerHTML.slice(0,2000)"
+-> [1811 chars] "Hovers\n\nHover over the image for additional information\n\nPowered by Elemental Selenium"
+"\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n     …ign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+
+SAY: The page loaded. Now perform the actual hover over the third avatar and read the revealed info:
+$ agent-browser get box ".figure:nth-child(3) img" ; agent-browser eval "JSON.stringify((()=>{const f=document.querySelectorAll('.figure')[2]; const cap=f.querySelector('.figcaption'); return {name: cap.querySelector('h5').textContent.trim(), href: cap.querySelector('a').href}})())"
+-> [144 chars] x:      15
+y:      135.046875
+width:  99.296875
+height: 16
+"{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+$ agent-browser mouse move 65 143; agent-browser eval "JSON.stringify((()=>{const f=document.querySelectorAll('.figure')[2]; const cap=f.querySelector('.figcaption'); return {visible: getComputedStyle(cap).display, name: cap.querySelector('h5').textContent.trim(), text: cap.innerText, href: cap.querySelector('a').href}})())"; agent-browser close
+-> [192 chars] ✓ Done
+"{\"visible\":\"none\",\"name\":\"name: user3\",\"text\":\"\\n      name: user3\\n      View profile\\n    \",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+✓ Browser closed
+
+SAY: Let me re-verify with a correct hover position on the third figure (the earlier box query accidentally matched the first figure):
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait ".figure" --timeout 20000; agent-browser get box ".example .figure:nth-of-type(3)"; agent-browser close
+-> [161 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+x:      375
+y:      134.28125
+width:  180
+height: 160
+✓ Browser closed
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait ".example .figure:nth-of-type(3)" --timeout 20000; agent-browser mouse move 465 214; agent-browser eval "JSON.stringify((()=>{const f=document.querySelectorAll('.example .figure')[2]; const cap=f.querySelector('.figcaption'); const cs=getComputedStyle(cap); return {display: cs.display, visibility: cs.visibility, name: cap.querySelector('h5').textContent.trim(), href: cap.querySelector('a').href, text: cap.innerText.replace(/\s+/g,' ').trim()}})())"; agent-browser close
+-> [286 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+"{\"display\":\"block\",\"visibility\":\"visible\",\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"text\":\"name: user3 View profile\"}"
+✓ Browser closed
+
+SAY: Hover confirmed: with the mouse over the third avatar, its figcaption becomes visible (display: block) showing "name: user3" and the "View profile" link pointing to `/users/3`.
+
+- **Name shown:** user3
+- **'View profile' href:** https://the-internet.herokuapp.com/users/3
+
+ANSWER: name: user3, View profile href: https://the-internet.herokuapp.com/users/3

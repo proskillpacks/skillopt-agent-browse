@@ -1,0 +1,70 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r3", "correct": true, "score": 0.964, "wtok": 24031, "out_tok": 1204, "turns": 7, "secs": 34, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating out of 26 total books in the Historical Fiction category."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/history/historical-fiction_18/index.html" ; agent-browser get text "h1"
+-> [119 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/history/historical-fiction_18/index.html
+404 Not Found
+
+$ agent-browser open "https://books.toscrape.com/" ; agent-browser wait "ul.catmenu"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a=>/historical fiction/i.test(a.textContent)).map(a=>a.getAttribute('href')))
+JS
+-> [169 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+"[\"catalogue/category/books/historical-fiction_4/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval --stdin <<'JS'
+(() => {
+  const items = document.querySelectorAll('.bookwrapper, li.article');
+  const one = [...document.querySelectorAll('p.star-rating')].length; // not reliable
+  const stars = [...document.querySelectorAll('article p.star-rating, li.article p.star-rating')].map(e=>e.className.match(/Star-rating-(\w+)/)).filter(Boolean).map(m=>m[1]);
+  const total = document.body.innerText.match(/results?/i);
+  return JSON.stringify({books: items.length, starCounts: stars, totalText: total && total[0]});
+})()
+JS
+-> [195 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"books\":0,\"starCounts\":[],\"totalText\":\"results\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = document.querySelectorAll('article');
+  const one = [...document.querySelectorAll('article p[class*="One"]')].length;
+  const totalM = document.body.innerText.match(/(\d+)\s+results/);
+  const next = document.querySelector('li.next a, a.next');
+  return JSON.stringify({articles: arts.length, oneStar: one, total: totalM && totalM[1], nextHref: next && next.getAttribute('href')});
+})()
+JS
+-> [80 chars] "{\"articles\":20,\"oneStar\":5,\"total\":\"26\",\"nextHref\":\"page-2.html\"}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index/page-2.html"; agent-browser eval --stdin <<'JS'
+(() => {
+  const one = [...document.querySelectorAll('article p[class*="One"]')].length;
+  const next = document.querySelector('li.next a, a.next');
+  return JSON.stringify({articles: document.querySelectorAll('article').length, oneStar: one, hasNext: !!next});
+})()
+JS
+-> [160 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index/page-2.html
+"{\"articles\":0,\"oneStar\":0,\"hasNext\":false}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"; agent-browser eval --stdin <<'JS'
+(() => {
+  const one = [...document.querySelectorAll('article p[class*="One"]')].length;
+  const totalM = document.body.innerText.match(/(\d+)\s+results/);
+  return JSON.stringify({articles: document.querySelectorAll('article').length, oneStar: one, total: totalM && totalM[1]});
+})()
+JS
+-> [186 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"articles\":6,\"oneStar\":0,\"total\":\"26\"}"
+
+SAY: Page 2 has no more "next" links and 6 books, confirming the category spans exactly 2 pages.
+
+**Results:**
+- **Total books in Historical Fiction: 26** (20 on page 1, 6 on page 2 — matches the "26 results" text)
+- **One-star ratings: 5** (all on page 1; page 2 has 0)
+
+ANSWER: 5 books have a one-star rating out of 26 total books in the Historical Fiction category.

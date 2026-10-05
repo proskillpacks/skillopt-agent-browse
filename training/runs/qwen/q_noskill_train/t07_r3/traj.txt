@@ -1,0 +1,103 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07_r3", "correct": true, "score": 0.967, "wtok": 21806, "out_tok": 781, "turns": 7, "secs": 7, "timed_out": false, "curl": false, "answer": "The most expensive book in the Travel category is \"A Year in Provence (Provence #1)\" at \u00a356.88"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open "https://books.toscrape.com/catalogue/travel_2/" && agent-browser read
+-> [95 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/travel_2/
+# 404 Not Found
+
+nginx/1.21.6
+
+$ agent-browser open "https://books.toscrape.com/" && agent-browser snapshot | head -60
+-> [1931 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- generic
+  - banner
+    - generic
+      - link "Books to Scrape" [ref=e2]
+      - StaticText " We love being scraped!"
+  - list
+    - listitem [level=1]
+      - link "Home" [ref=e3]
+    - listitem [level=1]
+      - StaticText "/ "
+      - StaticText "All products"
+  - complementary
+    - list
+      - listitem [level=1]
+        - link "Books" [ref=e4]
+        - list
+          - listitem [level=2]
+            - ListMarker "◦ … listitem [level=2]
+            - ListMarker "◦ "
+            - link "Default" [ref=e19]
+          - listitem [level=2]
+            - ListMarker "◦ "
+
+$ agent-browser click @e6 && agent-browser snapshot | head -80
+-> [2555 chars] ✓ Done
+- generic
+  - banner
+    - generic
+      - link "Books to Scrape" [ref=e137]
+      - StaticText " We love being scraped!"
+  - list
+    - listitem [level=1]
+      - link "Home" [ref=e138]
+    - listitem [level=1]
+      - StaticText "/ "
+      - link "Books" [ref=e139]
+    - listitem [level=1]
+      - StaticText "/ "
+      - StaticText "Travel"
+  - complementary
+    - list
+      - listitem [level=1]
+        - link "Books" [ref=e140]
+        - list
+          - listitem [level=2]
+             …stitem [level=2]
+            - ListMarker "◦ "
+            - link "New Adult" [ref=e159]
+          - listitem [level=2]
+            - ListMarker "◦ "
+
+$ agent-browser eval "document.querySelectorAll('article').length" && agent-browser eval "JSON.stringify([...document.querySelectorAll('article')].map(a=>({t:a.querySelector('h3 a').title||a.querySelector('h3').innerText,p:a.querySelector('.price_color').innerText})))" && agent-browser eval "JSON.stringify([...document.querySelectorAll('ul.pagination a')].map(a=>a.innerText))"
+-> [828 chars] 11
+"[{\"t\":\"It's Only the Himalayas\",\"p\":\"£45.17\"},{\"t\":\"Full Moon over Noah’s Ark: An Odyssey to Mount Ararat and Beyond\",\"p\":\"£49.43\"},{\"t\":\"See America: A Celebration of Our National Parks & Treasured Sites\",\"p\":\"£48.87\"},{\"t\":\"Vagabonding: An Uncommon Guide to the Art of Long-Term World Travel\",\"p\":\"£36.94\"},{\"t\":\"Under the Tuscan Sun\",\"p\":\"£37.33\"},{\"t\":\"A Summer In Europe\",\"p\":\"£44.34\"},{\"t\":\"The Great Railway Bazaar\",\"p\":\"£30.54\"},{\" …3.21\"},{\"t\":\"Neither Here nor There: Travels in Europe\",\"p\":\"£38.95\"},{\"t\":\"1,000 Places to See Before You Die\",\"p\":\"£26.08\"}]"
+"[]"
+
+$ agent-browser eval "location.href" && agent-browser eval "document.querySelector('ul.pagination') ? document.querySelector('ul.pagination').innerHTML : 'none'"
+-> [81 chars] "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
+"none"
+
+SAY: The Travel category page (no pagination, all 11 books on one page) was loaded in the browser. Comparing prices, the highest is:
+
+- **Title:** A Year in Provence (Provence #1)
+- **Price:** £56.88
+
+Next highest were "It's Only the Himalayas" (£45.17) and "A Summer In Europe" (£44.34), well below £56.88.
+
+ANSWER: The most expensive book in the Travel category is "A Year in Provence (Provence #1)" at £56.88

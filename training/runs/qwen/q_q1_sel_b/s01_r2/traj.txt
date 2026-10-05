@@ -1,0 +1,41 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r2", "correct": true, "score": 0.966, "wtok": 22908, "out_tok": 734, "turns": 8, "secs": 80, "timed_out": false, "curl": false, "answer": "name: user3; href: /users/3 (https://the-internet.herokuapp.com/users/3)"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover @e12; agent-browser snapshot -i
+-> [128 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Unknown ref: e12
+(no interactive elements)
+
+$ agent-browser snapshot -i; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('.hover-card')].map((c,i)=>i))
+JS
+-> [31 chars] (no interactive elements)
+"[]"
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait ".hover-card" ; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('.hover-card')].length)
+JS
+-> [118 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+"0"
+
+$ agent-browser eval "JSON.stringify({url: location.href, ready: document.readyState, len: document.body ? document.body.innerHTML.length : null})"
+-> [94 chars] "{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"ready\":\"complete\",\"len\":1581}"
+
+$ agent-browser eval "JSON.stringify(document.body.innerText.slice(0,500))"
+-> [101 chars] "\"Hovers\\n\\nHover over the image for additional information\\n\\nPowered by Elemental Selenium\""
+
+$ agent-browser eval "JSON.stringify(document.querySelector('#content').innerHTML)"
+-> [1069 chars] "\"\\n        <style>\\n.figure {\\n  float: left;\\n  padding-right: 20px;\\n}\\n\\n.figcaption {\\n  display: none;\\n}\\n\\n.figure:hover .figcaption {\\n  display: block;\\n}\\n</style>\\n\\n<div class=\\\"example\\\">\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user1</h5>\\n      <a href=\\\"/users …\"figcaption\\\">\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n</div>\\n\\n      \""
+
+$ agent-browser hover "#content .figure:nth-of-type(3) img"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.figure .figcaption')].map(f=>({name:f.querySelector('h5').textContent, href:f.querySelector('a').href, display:getComputedStyle(f).display})))"
+-> [324 chars] ✓ Done
+"[{\"name\":\"name: user1\",\"href\":\"https://the-internet.herokuapp.com/users/1\",\"display\":\"none\"},{\"name\":\"name: user2\",\"href\":\"https://the-internet.herokuapp.com/users/2\",\"display\":\"none\"},{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"display\":\"block\"}]"
+
+SAY: Hovering over the third avatar image (`.figure:nth-of-type(3)`) revealed its hidden figcaption, now displayed.
+
+- **Name shown:** `name: user3`
+- **'View profile' href:** `/users/3` (resolves to `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: name: user3; href: /users/3 (https://the-internet.herokuapp.com/users/3)

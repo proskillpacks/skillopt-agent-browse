@@ -1,0 +1,66 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13_r2", "correct": true, "score": 0.97, "wtok": 20230, "out_tok": 1148, "turns": 7, "secs": 10, "timed_out": false, "curl": false, "answer": "Albert Einstein with 10 quotes"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://quotes.toscrape.com/ 2>&1; agent-browser eval "location.href" 2>&1
+-> [81 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+"https://quotes.toscrape.com/"
+
+$ agent-browser eval "Array.from(document.querySelectorAll('ul.pagination li span')).map(e=>e.textContent).join(' | ')" 2>&1
+-> [3 chars] ""
+
+$ agent-browser eval "document.querySelector('ul.pagination') ? document.querySelector('ul.pagination').textContent : 'none'" 2>&1
+-> [7 chars] "none"
+
+$ agent-browser eval "document.body.innerText.slice(0,2000)" 2>&1
+-> [1720 chars] "Quotes to Scrape\n\nLogin\n\n“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”\nby Albert Einstein (about)\nTags: change deep-thoughts thinking world\n“It is our choices, Harry, that show what we truly are, far more than our abilities.”\nby J.K. Rowling (about)\nTags: abilities choices\n“There are only two ways to live your life. One is as though nothing is a miracle. The other is as though everything is a miracle.”\nby Albert Ei …op Ten tags\nlove\ninspirational\nlife\nhumor\nbooks\nreading\nfriendship\nfriends\ntruth\nsimile\n\nQuotes by: GoodReads.com\n\nMade with ❤ by Zyte"
+
+SAY: The site has "Next →" navigation. I'll count authors across all pages using in-browser fetch (real browser, same-origin):
+$ agent-browser eval "
+(async () => {
+  const counts = {};
+  let total = 0;
+  for (let p = 1; p <= 10; p++) {
+    const url = p === 1 ? 'https://quotes.toscrape.com/' : 'https://quotes.toscrape.com/page/' + p + '/';
+    const res = await fetch(url);
+    const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    const authors = doc.querySelectorAll('.author');
+    total += authors.length;
+    authors.forEach(a => {
+      const name = a.textContent.trim();
+      counts[name] = (counts[name] || 0) + 1;
+    });
+  }
+  const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+  return JSON.stringify({ totalQuotes: total, top5: sorted.slice(0,5), all: sorted });
+})()
+" 2>&1
+-> [1297 chars] "{\"totalQuotes\":100,\"top5\":[[\"Albert Einstein\",10],[\"J.K. Rowling\",9],[\"Marilyn Monroe\",7],[\"Dr. Seuss\",6],[\"Mark Twain\",6]],\"all\":[[\"Albert Einstein\",10],[\"J.K. Rowling\",9],[\"Marilyn Monroe\",7],[\"Dr. Seuss\",6],[\"Mark Twain\",6],[\"Jane Austen\",5],[\"C.S. Lewis\",5],[\"Bob Marley\",3],[\"Eleanor Roosevelt\",2],[\"Ralph Waldo Emerson\",2],[\"Mother Teresa\",2],[\"George R.R. Martin\",2],[\"Ernest Hemingway\",2],[\"Charles Bukowski\",2],[\"Suzanne Collins\",2],[\"André Gi …"Ayn Rand\",1],[\"Jimi Hendrix\",1],[\"J.M. Barrie\",1],[\"E.E. Cummings\",1],[\"Khaled Hosseini\",1],[\"Harper Lee\",1],[\"Madeleine L'Engle\",1]]}"
+
+SAY: Scanned all 10 pages (100 quotes total) in the browser. The distribution confirms Albert Einstein leads with 10 quotes, ahead of J.K. Rowling (9) and Marilyn Monroe (7).
+
+**Albert Einstein has the most quotes with 10.**
+
+ANSWER: Albert Einstein with 10 quotes

@@ -1,0 +1,95 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r3", "correct": true, "score": 0.922, "wtok": 52220, "out_tok": 3116, "turns": 10, "secs": 408, "timed_out": false, "curl": false, "answer": "After removing, the message was \"It's gone!\". After enabling and typing, the message was \"It's enabled!\" and the input's value was \"hello\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser click "#remove-button"; agent-browser eval "JSON.stringify({checkboxVisible: !!document.querySelector('#cheesecake_check_box'), message: document.querySelector('#html_aria_message')?.textContent})"; agent-browser close
+-> [248 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: #remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"checkboxVisible\":false}"
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "button:has-text('Remove')"; agent-browser click "button:has-text('Remove')"; agent-browser eval "JSON.stringify({checkbox: !!document.querySelector('#cheesecake_check_box'), message: document.querySelector('#html_aria_message')?.textContent})"; agent-browser close
+-> [283 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: button:has-text('Remove'). Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"checkbox\":false}"
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser eval "JSON.stringify({title: document.title, url: location.href, bodyStart: document.body ? document.body.innerHTML.slice(0, 800) : null, buttons: Array.from(document.querySelectorAll('button')).map(b => ({id: b.id, text: b.textContent, disabled: b.disabled}))})"; agent-browser close
+-> [295 chars] ✗ CDP command timed out: Page.navigate
+"{\"title\":\"Application Error\",\"url\":\"https://the-internet.herokuapp.com/dynamic_controls\",\"bodyStart\":\"\\n    <iframe src=\\\"https://www.herokucdn.com/error-pages/application-error.html\\\"></iframe>\\n  \\n\",\"buttons\":[]}"
+✓ Browser closed
+
+SAY: The page is serving a Heroku "Application Error" right now. Let me retry a few times:
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" 2>/dev/null; title=$(agent-browser eval "document.title" 2>/dev/null); echo "attempt $i: title=$title"; [ "$title" = "\"Application Error\"" ] || [ "$title" = "Application Error" ] || break; sleep 10; done; agent-browser eval "document.title + ' | ' + document.body.innerHTML.slice(0,200)"; agent-browser close
+-> [231 chars] attempt 1: title="Application Error"
+attempt 2: title="Application Error"
+attempt 3: title="The Internet"
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:40
+✓ Browser closed
+
+SAY: Page is back up now. Running the full flow:
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" 2>/dev/null; agent-browser wait "#remove-button"; agent-browser click "#remove-button"; agent-browser wait --fn "(document.querySelector('#cheesecake_check_box')===null && (document.querySelector('#html_aria_message')||{}).textContent)"; MSG=$(agent-browser eval "document.querySelector('#html_aria_message').textContent"); echo "REMOVE_MSG=$MSG"; agent-browser click "#enable-button"; agent-browser wait --fn "document.querySelector('#cheesecake_input') && !document.querySelector('#cheesecake_input').disabled"; agent-browser fill "#cheesecake_input" "hello"; RES=$(agent-browser eval "JSON.stringify({msg: document.querySelector('#html_aria_message').textContent, inputVal: document.querySelector('#cheesecake_input').value})"); echo "ENABLE_RES=$RES"; agent-browser close
+-> [711 chars] ✗ Wait timed out after 25000ms
+✗ Element not found: #remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:45
+REMOVE_MSG=
+✗ Element not found: #enable-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: #cheesecake_input. Verify th …n the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:66
+ENABLE_RES=
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" 2>/dev/null; agent-browser wait --fn "document.querySelector('#remove-button') !== null" --timeout 30000; agent-browser click "#remove-button"; agent-browser wait --fn "document.querySelector('#cheesecake_check_box')===null && document.querySelector('#html_aria_message').textContent.length>0" --timeout 15000; echo "REMOVE_MSG=$(agent-browser eval "document.querySelector('#html_aria_message').textContent")"; agent-browser click "#enable-button"; agent-browser wait --fn "!document.querySelector('#cheesecake_input').disabled" --timeout 15000; agent-browser fill "#cheesecake_input" "hello"; echo "ENABLE=$(agent-browser eval "JSON.stringify({msg: document.querySelector('#html_aria_message').textContent, val: document.querySelector('#cheesecake_input').value})")"; agent-browser close
+-> [776 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✗ Wait timed out after 30000ms
+✗ Element not found: #remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 15000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:45
+REMOVE_MSG=
+✗ Element not found: #enable-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait time …ts in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:66
+ENABLE=
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" 2>/dev/null; agent-browser eval "JSON.stringify({title: document.title, body: document.body && document.body.innerHTML.slice(0,1200)})"; agent-browser close
+-> [1538 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+"{\"title\":\"The Internet\",\"body\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_g …n  function showDelay(locator) {\\n    $(locator).after(\\\"<div id='loading'>Wait for it... <img src='/img/ajax-loader.gif'></d\"}"
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" 2>/dev/null; agent-browser eval "JSON.stringify({html: document.querySelector('#content').innerHTML.replace(/<script>[\s\S]*?<\/script>/g,'').slice(0, 900), buttons: Array.from(document.querySelectorAll('#content button')).map(b=>({id:b.id, cls:b.className, txt:b.textContent.trim()}))})"; agent-browser close
+-> [1296 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+"{\"html\":\"\\n        <script src=\\\"https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js\\\"></script>\\n\\n<div class=\\\"example\\\">\\n  <h4>Dynamic Controls</h4>\\n  <p>This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.</p>\\n\\n  <h4 class=\\\"subheader\\\">Remove/add</h4>\\n  <br>\\n  <form id=\\\"checkbox-example\\\">\\n    <div id=\\\"checkbox\\\"><in …        <hr>\\n       \",\"buttons\":[{\"id\":\"\",\"cls\":\"\",\"txt\":\"Remove\"},{\"id\":\"\",\"cls\":\"\",\"txt\":\"Enable\"}]}"
+✓ Browser closed
+
+SAY: Now I have the real DOM. Running the full flow:
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" 2>/dev/null; agent-browser wait "#checkbox-example button"; agent-browser click "#checkbox-example button"; agent-browser wait --fn "!document.querySelector('#checkbox-example input[type=checkbox]') && document.querySelector('#message')"; echo "REMOVE_MSG=$(agent-browser eval "document.querySelector('#message').textContent")"; agent-browser click "#input-example button"; agent-browser wait --fn "!document.querySelector('#input-example input').disabled"; agent-browser fill "#input-example input" "hello"; echo "ENABLE=$(agent-browser eval "JSON.stringify({msg: document.querySelector('#message').textContent, val: document.querySelector('#input-example input').value})")"; agent-browser close
+-> [201 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✓ Done
+✓ Done
+{}
+REMOVE_MSG="It's gone!"
+✓ Done
+true
+✓ Done
+ENABLE="{\"msg\":\"It's enabled!\",\"val\":\"hello\"}"
+✓ Browser closed
+
+SAY: Done. The site had flaky responses at first (Heroku error page), but the flow completed on a clean load:
+
+- **Remove**: clicked the Remove button in `#checkbox-example`, the checkbox disappeared, and the message shown was **"It's gone!"**
+- **Enable**: clicked the Enable button in `#input-example`, waited until the text input was no longer disabled, typed `hello` — the message shown was **"It's enabled!"** and the input's value was **`hello`**
+
+ANSWER: After removing, the message was "It's gone!

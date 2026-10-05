@@ -1,0 +1,72 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r2", "correct": true, "score": 0.941, "wtok": 39096, "out_tok": 1445, "turns": 11, "secs": 115, "timed_out": false, "curl": false, "answer": "Remove \u2192 message \"It's gone!\"; Enable + type hello \u2192 message \"It's enabled!\", input value \"hello\""}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" && agent-browser snapshot -i
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "#checkbox"; agent-browser snapshot -i
+-> [414 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e5; agent-browser wait "#banner"
+-> [66 chars] ✓ Done
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify(document.getElementById('content').innerText)"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#content p')].map(p=>p.innerText))"
+-> [382 chars] "\"Dynamic Controls\\n\\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\\n\\nRemove/add\\n\\n\\nAdd\\n\\nIt's gone!\\n\\n\\n\\n\\n\\nEnable/disable\\n\\n\\nEnable\\nPowered by Elemental Selenium\""
+"[\"This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\",\"It's gone!\"]"
+
+$ agent-browser click #button-container input[type=submit]; agent-browser wait --fn "document.getElementById('inputs').disabled === false"; agent-browser fill "#inputs" "hello"; agent-browser wait --text "It's enabled!"
+-> [117 chars] Missing arguments for: click
+Usage: agent-browser click <selector> [--new-tab] [--human]
+
+
+Command exited with code 1
+$ agent-browser snapshot -i
+-> [286 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e7; agent-browser wait --fn "document.getElementById('inputs').disabled === false"; agent-browser fill @e6 "hello"; agent-browser wait --text "It's enabled!"
+-> [59 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✓ Done
+It's enabled!
+
+$ agent-browser eval "JSON.stringify({value: document.getElementById('inputs').value, disabled: document.getElementById('inputs').disabled, msg: document.getElementById('content').innerText})"
+-> [132 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'value')
+    at <anonymous>:1:57
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('input')].map(i=>({id:i.id,tag:i.tagName,type:i.type,value:i.value,disabled:i.disabled})))"
+-> [93 chars] "[{\"id\":\"\",\"tag\":\"INPUT\",\"type\":\"text\",\"value\":\"hello\",\"disabled\":false}]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('p')].map(p=>p.innerText).filter(t=>t.trim()))"
+-> [130 chars] "[\"This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\",\"It's enabled!\"]"
+
+SAY: Done. Here's what happened in the browser:
+
+1. **Remove** — after clicking, the checkbox disappeared and the message shown under "Remove/add" was: **"It's gone!"** (and the button became "Add").
+2. **Enable** — clicked, waited for the input to become enabled, typed `hello`. The message shown was: **"It's enabled!"** and the text input's value was **"hello"**.
+
+ANSWER: Remove → message "It's gone!"; Enable + type hello → message "It's enabled!", input value "hello"

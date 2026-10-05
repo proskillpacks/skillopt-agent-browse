@@ -1,0 +1,36 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r6", "correct": true, "score": 0.979, "wtok": 13897, "out_tok": 553, "turns": 5, "secs": 29, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" ; agent-browser wait "#column-a"; agent-browser snapshot -i
+-> [190 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser get text "#column-a" ; agent-browser get text "#column-b"
+-> [11 chars] ✓ Done
+B
+A
+
+$ agent-browser get box "#column-a"; agent-browser get box "#column-b"
+-> [103 chars] x:      15
+y:      88.6875
+width:  150
+height: 150
+x:      230
+y:      88.6875
+width:  150
+height: 150
+
+SAY: The drag succeeded. After dropping, box `#column-a` (the left box, x=15) shows header **B**, and `#column-b` (the right box, x=230) shows header **A** — the headers swapped, which is the expected effect of this demo.
+
+Left to right: B, A.
+
+ANSWER: B, A

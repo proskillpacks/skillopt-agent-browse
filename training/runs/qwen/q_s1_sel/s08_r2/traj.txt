@@ -1,0 +1,224 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r2", "correct": true, "score": 0.7, "wtok": 216318, "out_tok": 9319, "turns": 23, "secs": 199, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait "article.book_product"; agent-browser eval 'JSON.stringify({pages: [...document.querySelectorAll(".pagination ul li")].filter(li=>li.querySelector("a")).map(li=>li.querySelector("a")?.getAttribute("href")||"current").filter(x=>x.includes("page")||x==="current"), sample: document.querySelector("article.book_product .price_color").textContent})'
+-> [243 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:287
+
+
+Command exited with code 1
+$ agent-browser eval 'JSON.stringify({url: location.href, body: document.body?document.body.innerHTML.length:0, articles: document.querySelectorAll("article").length, h1: document.querySelector("h1")?.textContent})'
+-> [99 chars] "{\"url\":\"https://books.toscrape.com/\",\"body\":49830,\"articles\":20,\"h1\":\"All products\"}"
+
+SAY: Page did load. Let me check the selectors and pagination.
+$ agent-browser eval 'JSON.stringify({price: document.querySelector("article.book_product .price_color")?.textContent, total: document.querySelectorAll("article.book_product").length, lastPage: (function(){var a=[...document.querySelectorAll("li a")].map(x=>x.href).filter(h=>h.includes("page_"));return a.length?a[a.length-1]:null})()})'
+-> [34 chars] "{\"total\":0,\"lastPage\":null}"
+
+$ agent-browser eval 'JSON.stringify({cls: document.querySelector("article")?.className, price: document.querySelector("article .price_color")?.textContent, liTexts: [...document.querySelectorAll("li")].slice(0,30).map(x=>x.textContent.trim()).filter(Boolean)})'
+-> [13460 chars] "{\"cls\":\"product_pod\",\"price\":\"£51.77\",\"liTexts\":[\"Home\",\"All products\",\"Books\\n                            \\n                        \\n\\n                        \\n                        \\n                \\n                    \\n                        \\n                            \\n                                Travel\\n                            \\n                        \\n\\n                        \\n                        \\n                \\n               …a comment\",\"Fantasy\",\"New Adult\",\"Young Adult\",\"Science\",\"Poetry\",\"Paranormal\",\"Art\",\"Psychology\",\"Autobiography\",\"Parenting\"]}"
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("ul.pagination li a")].map(a=>a.textContent.trim()))'
+-> [5 chars] "[]"
+
+$ agent-browser eval 'JSON.stringify({li: [...document.querySelectorAll("ul.pagination li")].map(x=>x.textContent.trim()), next: !!document.querySelector("li.next a")})'
+-> [28 chars] "{\"li\":[],\"next\":true}"
+
+SAY: No `ul.pagination li` — but `li.next` works. I'll just loop page_1..N until a page yields no books. Saving per-page JSON to files:
+$ cd /tmp && rm -f bk_*.json; for i in $(seq 1 60); do agent-browser open "https://books.toscrape.com/catalogue/page_${i}.html" >/dev/null 2>&1; sleep 2; agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(b=>({t:b.querySelector("h3 a").title,p:parseFloat(b.querySelector(".price_color").textContent)})))' > /tmp/bk_$i.json 2>/dev/null; n=$(grep -o '"t":' /tmp/bk_$i.json | wc -l); if [ "$n" -eq 0 ]; then echo "STOP at page $i"; break; fi; echo "page $i: $n books"; done
+-> [15 chars] STOP at page 1
+
+$ cat /tmp/bk_1.json; echo; agent-browser eval 'JSON.stringify({url:location.href, n:document.querySelectorAll("article.product_pod").length})'
+-> [79 chars] "[]"
+
+"{\"url\":\"https://books.toscrape.com/catalogue/page_1.html\",\"n\":0}"
+
+$ agent-browser eval 'JSON.stringify({title:document.title, h1:document.querySelector("h1")?.textContent, bodyLen:document.body.innerHTML.length, status:document.body.textContent.slice(0,100)})'
+-> [146 chars] "{\"title\":\"404 Not Found\",\"h1\":\"404 Not Found\",\"bodyLen\":83,\"status\":\"\\n404 Not Found\\nnginx/1.21.6\\n\\n\\n\\n\\n\\n\\n\\n\\n\"}"
+
+SAY: `page_1.html` 404s — the index is page 1. Let me check pagination info from the index page, then loop page_2 onward.
+$ agent-browser open "https://books.toscrape.com/" >/dev/null 2>&1; sleep 2; agent-browser eval 'JSON.stringify({pag: document.querySelector(".pagination")?.textContent.replace(/\s+/g," ").trim(), hasNext: !!document.querySelector("li.next a")})'
+-> [21 chars] "{\"hasNext\":true}"
+
+$ agent-browser eval 'JSON.stringify({nextHref: document.querySelector("li.next a")?.href, nextParent: document.querySelector("li.next")?.parentElement?.outerHTML.slice(0,300)})'
+-> [390 chars] "{\"nextHref\":\"https://books.toscrape.com/catalogue/page-2.html\",\"nextParent\":\"<ul class=\\\"pager\\\">\\n            \\n            <li class=\\\"current\\\">\\n            \\n                Page 1 of 50\\n            \\n            </li>\\n            \\n                <li class=\\\"next\\\"><a href=\\\"catalogue/page-2.html\\\">next</a></li>\\n            \\n        </ul>\"}"
+
+SAY: URLs use hyphens: `page-2.html` … `page-50.html` (50 pages total). Looping now:
+$ cd /tmp && rm -f bk_*.json; agent-browser open "https://books.toscrape.com/" >/dev/null 2>&1; sleep 2; agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(b=>({t:b.querySelector("h3 a").title,p:parseFloat(b.querySelector(".price_color").textContent)})))' > /tmp/bk_1.json 2>/dev/null; echo "page 1: $(grep -oc '"t":' /tmp/bk_1.json | head -1) / $(grep -o '"t":' /tmp/bk_1.json | wc -l)"; for i in $(seq 2 50); do agent-browser open "https://books.toscrape.com/catalogue/page-${i}.html" >/dev/null 2>&1; sleep 2; agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(b=>({t:b.querySelector("h3 a").title,p:parseFloat(b.querySelector(".price_color").textContent)})))' > /tmp/bk_$i.json 2>/dev/null; n=$(grep -o '"t":' /tmp/bk_$i.json | wc -l); echo "page $i: $n"; if [ "$n" -eq 0 ]; then echo "STOP"; break; fi; done
+-> [29 chars] page 1: 0 / 0
+page 2: 0
+STOP
+
+$ agent-browser eval 'JSON.stringify({url:location.href,title:document.title,n:document.querySelectorAll("article.product_pod").length})'; agent-browser open "https://books.toscrape.com/catalogue/page-2.html"; sleep 3; agent-browser eval 'JSON.stringify({url:location.href,title:document.title,n:document.querySelectorAll("article.product_pod").length})'
+-> [352 chars] "{\"url\":\"https://books.toscrape.com/catalogue/page-2.html\",\"title\":\"All products | Books to Scrape - Sandbox\",\"n\":20}"
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-2.html
+"{\"url\":\"https://books.toscrape.com/catalogue/page-2.html\",\"title\":\"All products | Books to Scrape - Sandbox\",\"n\":20}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/page-3.html" 2>&1; sleep 2; agent-browser eval 'JSON.stringify(document.querySelectorAll("article.product_pod").length)' 2>&1; agent-browser eval 'JSON.stringify(document.title)'
+-> [146 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-3.html
+"20"
+"\"All products | Books to Scrape - Sandbox\""
+
+SAY: Works interactively — earlier failures were timing. Adding retry logic:
+$ cd /tmp && rm -f bk_*.json; for i in $(seq 1 51); do
+  if [ $i -eq 1 ]; then url="https://books.toscrape.com/"; else url="https://books.toscrape.com/catalogue/page-${i}.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1; sleep 1
+  ok=0
+  for try in 1 2 3 4; do
+    agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(b=>({t:b.querySelector("h3 a").title,p:parseFloat(b.querySelector(".price_color").textContent)})))' > /tmp/bk_$i.json 2>/dev/null
+    n=$(grep -o '"t":' /tmp/bk_$i.json | wc -l)
+    if [ "$n" -gt 0 ]; then ok=1; break; fi
+    # check if it's a real 404
+    t=$(agent-browser eval 'document.title' 2>/dev/null)
+    case "$t" in *404*) break;; esac
+    sleep 2
+  done
+  echo "page $i: $n"
+  if [ $i -gt 1 ] && [ "$n" -eq 0 ]; then echo "STOP after page $((i-1))"; break; fi
+done; agent-browser close >/dev/null 2>&1; echo DONE
+-> [43 chars] page 1: 0
+page 2: 0
+STOP after page 1
+DONE
+
+$ head -c 300 /tmp/bk_1.json; echo; head -c 300 /tmp/bk_2.json; echo; agent-browser eval 'JSON.stringify({url:location.href,title:document.title,n:document.querySelectorAll("article.product_pod").length})'
+-> [653 chars] "[{\"t\":\"A Light in the Attic\",\"p\":null},{\"t\":\"Tipping the Velvet\",\"p\":null},{\"t\":\"Soumission\",\"p\":null},{\"t\":\"Sharp Objects\",\"p\":null},{\"t\":\"Sapiens: A Brief History of Humankind\",\"p\":null},{\"t\":\"The Requiem Red\",\"p\":null},{\"t\":\"The Dirty Little Secrets of Gett
+"[{\"t\":\"In Her Wake\",\"p\":null},{\"t\":\"How Music Works\",\"p\":null},{\"t\":\"Foolproof Preserving: A Guide to Small Batch Jams, Jellies, Pickles, Condiments, and More: A Foolproof Guide to Making Small Batch Jams, Jellies, Pickles, Condiments, and More\",\"p\":null},{\"t\":\"Chase Me (Paris 
+"{\"url\":\"about:blank\",\"title\":\"\",\"n\":0}"
+
+SAY: Files have data but prices are null — the `.price_color` class must differ in this variant. Checking the DOM:
+$ agent-browser open "https://books.toscrape.com/" 2>&1 | tail -1; sleep 2; agent-browser eval 'JSON.stringify((function(){var b=document.querySelector("article.product_pod");return {html:b.outerHTML.slice(0,1200)}})())'
+-> [1479 chars]   https://books.toscrape.com/
+"{\"html\":\"<article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"catalogue/a-light-in-the-attic_1000/index.html\\\"><img src=\\\"media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\\\" alt=\\\"A Light in the Attic\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n          …\n\\n                \\n                    \\n\\n\\n\\n\\n\\n\\n    \\n    <form>\\n        <button type=\\\"submit\\\" class=\\\"btn btn-primar\"}"
+
+SAY: `.price_color` exists fine. Testing the exact eval expression:
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].slice(0,3).map(b=>({t:b.querySelector("h3 a").title,p:parseFloat(b.querySelector(".price_color").textContent)})))'
+-> [124 chars] "[{\"t\":\"A Light in the Attic\",\"p\":null},{\"t\":\"Tipping the Velvet\",\"p\":null},{\"t\":\"Soumission\",\"p\":null}]"
+
+SAY: `parseFloat("£51.77")` → NaN (the £ sign). Stripping non-numerics:
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].slice(0,3).map(b=>({t:b.querySelector("h3 a").title,p:parseFloat(b.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))'
+-> [126 chars] "[{\"t\":\"A Light in the Attic\",\"p\":51.77},{\"t\":\"Tipping the Velvet\",\"p\":53.74},{\"t\":\"Soumission\",\"p\":50.1}]"
+
+SAY: Now re-running the full collection with the fixed expression and a reliable count check:
+$ cd /tmp && rm -f bk_*.json; ok=0
+for i in $(seq 1 51); do
+  if [ $i -eq 1 ]; then url="https://books.toscrape.com/"; else url="https://books.toscrape.com/catalogue/page-${i}.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1; sleep 1
+  n=0
+  for try in 1 2 3 4 5; do
+    n=$(agent-browser eval 'document.querySelectorAll("article.product_pod").length' 2>/dev/null | tr -d ' "')
+    if [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null; then break; fi
+    t=$(agent-browser eval 'document.title' 2>/dev/null)
+    case "$t" in *404*|*Error*) n="404"; break;; esac
+    sleep 2
+  done
+  if [ "$n" = "404" ] || [ "$n" -eq 0 ] 2>/dev/null; then echo "page $i: EMPTY (404)"; break; fi
+  agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(b=>({t:b.querySelector("h3 a").title,p:parseFloat(b.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' > /tmp/bk
+-> [637 chars] page 1: 20
+page 2: 20
+page 3: 20
+page 4: 20
+page 5: 20
+page 6: 20
+page 7: 20
+page 8: 20
+page 9: 20
+page 10: 20
+page 11: 20
+page 12: 20
+page 13: 20
+page 14: 20
+page 15: 20
+page 16: 20
+page 17: 20
+page 18: 20
+page 19: 20
+page 20: 20
+page 21: 20
+page 22: 20
+page 23: 20
+page 24: 20
+page 25: 20
+page 26: 20
+page 27: 20
+page 28: 20
+page 29: 20
+page 30: 20
+page 31: 20
+page 32: 20
+page 33: 20
+page 34: 20
+page 35: 20
+page 36: 20
+page 37: 20
+page 38: 20
+page 39: 20
+page 40: 20
+page 41: 20
+page 42: 20
+page 43: 20
+page 44: 20
+page 45: 20
+page 46: 20
+page 47: 20
+page 48: 20
+page 49: 20
+page 50: 20
+page 51: EMPTY (404)
+collected pages: 50
+DONE
+
+SAY: All 50 pages collected (1000 books). Computing results:
+$ node -e '
+const fs=require("fs");
+const files=fs.readdirSync("/tmp").filter(f=>/^bk_\d+\.json$/.test(f)).sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)));
+let all=[];
+for(const f of files){
+  let s=fs.readFileSync("/tmp/"+f,"utf8").trim();
+  if(s.startsWith("\"")) s=JSON.parse(s); // unwrap JSON-encoded string
+  const arr=JSON.parse(s);
+  if(!Array.isArray(arr)||arr.length===0) throw new Error("bad "+f);
+  all=all.concat(arr);
+}
+console.log("total books:",all.length);
+const lt12=all.filter(b=>b.p<12);
+console.log("books < £12.00:",lt12.length);
+const sorted=[...all].sort((a,b)=>a.p-b.p);
+console.log("cheapest:",JSON.stringify(sorted[0]));
+console.log("second:",JSON.stringify(sorted[1]),"| ties at min:",all.filter(b=>b.p===sorted[0].p).map(b=>b.t).join(" | "));
+'
+-> [179 chars] total books: 1000
+books < £12.00: 44
+cheapest: {"t":"An Abundance of Katherines","p":10}
+second: {"t":"The Origin of Species","p":10.01} | ties at min: An Abundance of Katherines
+
+$ cat /tmp/bk_*.json | node -e '
+let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{
+  let all=[];
+  // files concatenated; each line may be a JSON string — parse line by line
+  for(const line of d.trim().split("\n")){
+    let s=line.trim(); if(!s) continue;
+    if(s.startsWith("\"")) s=JSON.parse(s);
+    all=all.concat(JSON.parse(s));
+  }
+  console.log("total:",all.length);
+  console.log("<12:",all.filter(b=>b.p<12).length);
+  const u=[...new Set(all.map(b=>b.p))].sort((a,b)=>a-b);
+  console.log("lowest prices:",u.slice(0,5).join(", "));
+  console.log("min books:",all.filter(b=>b.p===u[0]).map(b=>b.t+" £"+b.p.toFixed(2)).join(" | "));
+});'
+-> [111 chars] total: 1000
+<12: 44
+lowest prices: 10, 10.01, 10.02, 10.16, 10.23
+min books: An Abundance of Katherines £10.00
+
+SAY: Done. Summary of the run:
+
+- Crawled all **50 pages** of the catalogue (20 books each, 1000 books total) in the `agent-browser` session, extracting each book's title and price from `article.product_pod` → `h3 a[title]` and `p.price_color` (had to strip the `£` before parsing, and page URLs are `page-2.html`…`page-50.html` — `page_1`/underscore URLs 404).
+- **Books priced under £12.00: 44** (out of 1000).
+- **Cheapest book: "An Abundance of Katherines" at £10.00** — it is the unique minimum (next

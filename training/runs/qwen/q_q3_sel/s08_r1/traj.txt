@@ -1,0 +1,191 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": true, "score": 0.921, "wtok": 52663, "out_tok": 2818, "turns": 9, "secs": 31, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ agent-browser open "https://books.toscrape.com/" && agent-browser eval --stdin <<'JS'
+(() => {
+  const articles = [...document.querySelectorAll('article.product_pod')];
+  const pages = [...document.querySelectorAll('ul.pager li a')].map(a => a.href);
+  return JSON.stringify({count: articles.length, sample: articles[0].innerHTML, pages});
+})()
+JS
+-> [1719 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"{\"count\":20,\"sample\":\"\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"catalogue/a-light-in-the-attic_1000/index.html\\\"><img src=\\\"media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\\\" alt=\\\"A Light in the Attic\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n …n>\\n    </form>\\n\\n\\n                \\n            </div>\\n        \\n    \",\"pages\":[\"https://books.toscrape.com/catalogue/page-2.html\"]}"
+
+$ cd /tmp && rm -f btscrape.jsonl
+url="https://books.toscrape.com/"
+for i in $(seq 1 20); do
+  agent-browser open "$url" >/dev/null || { sleep 5; agent-browser open "$url"; }
+  agent-browser wait "article.product_pod"
+  agent-browser eval --stdin <<'JS' >> /tmp/btscrape.jsonl
+(() => {
+  const books = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const title = a.querySelector('h3 a').title;
+    const price = parseFloat(a.querySelector('.price_color').textContent.replace('£','').trim());
+    return {title, price};
+  });
+  const next = document.querySelector('li.next a');
+  return JSON.stringify({url: location.href, next: next ? next.href : null, books});
+})()
+JS
+  [ $i -eq 1 ] && url="$url"
+  next=$(agent-browser eval "document.querySelector('li.next a') ? document.querySelector('li.next a').href : ''" | tail -1 | tr -d '"')
+  if [ -z "$next" ]; then break; fi
+  url="$
+-> [163 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+20 /tmp/btscrape.jsonl
+
+$ cd /tmp && head -c 400 btscrape.jsonl; echo; echo ---; python3 -c "
+import json
+urls=[]; total=0
+for line in open('btscrape.jsonl'):
+    d=json.loads(line)
+    urls.append(d['url']); total+=len(d['books'])
+print(total, len(urls))
+print(urls[:3]); print(urls[-3:])
+"
+-> [561 chars] "{\"url\":\"https://books.toscrape.com/\",\"next\":\"https://books.toscrape.com/catalogue/page-2.html\",\"books\":[{\"title\":\"A Light in the Attic\",\"price\":51.77},{\"title\":\"Tipping the Velvet\",\"price\":53.74},{\"title\":\"Soumission\",\"price\":50.1},{\"title\":\"Sharp Objects\",\"price\":47.82},{\"title\":\"Sapiens: A Brief History of Humankind\",\"price\":54.23},{\"title\":\"The Requie
+---
+Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+$ cd /tmp && python3 -c "
+import json
+total=0; pages=[]
+for line in open('btscrape.jsonl'):
+    d=json.loads(json.loads(line)) if line.strip().startswith('\"') else json.loads(line)
+    pages.append(d['url']); total+=len(d['books'])
+print(total, len(pages))
+print(pages[:3]); print(pages[-3:])
+"
+-> [303 chars] 400 20
+['https://books.toscrape.com/', 'https://books.toscrape.com/catalogue/page-2.html', 'https://books.toscrape.com/catalogue/page-3.html']
+['https://books.toscrape.com/catalogue/page-18.html', 'https://books.toscrape.com/catalogue/page-19.html', 'https://books.toscrape.com/catalogue/page-20.html']
+
+$ cd /tmp && tail -1 btscrape.jsonl | python3 -c "
+import json,sys
+d=json.loads(json.loads(sys.stdin.read()))
+print(d['url'], d['next'], len(d['books']))
+"
+-> [103 chars] https://books.toscrape.com/catalogue/page-20.html https://books.toscrape.com/catalogue/page-21.html 20
+
+SAY: The loop hit its 20-iteration cap; continuing from page-21:
+$ cd /tmp && url="https://books.toscrape.com/catalogue/page-21.html"
+for i in $(seq 1 100); do
+  agent-browser open "$url" >/dev/null || { sleep 5; agent-browser open "$url" >/dev/null; }
+  agent-browser wait "article.product_pod"
+  agent-browser eval --stdin <<'JS' >> /tmp/btscrape.jsonl
+(() => {
+  const books = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const title = a.querySelector('h3 a').title;
+    const price = parseFloat(a.querySelector('.price_color').textContent.replace('£','').trim());
+    return {title, price};
+  });
+  const next = document.querySelector('li.next a');
+  return JSON.stringify({url: location.href, next: next ? next.href : null, books});
+})()
+JS
+  [ $i -eq 1 ] || url="$(agent-browser eval "document.querySelector('li.next a') ? document.querySelector('li.next a').href : ''" | tail -1 | tr -d '"')"
+  [ -z "$url" ] && break
+done
+wc -l /tmp/bt
+-> [240 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+51 /tmp/btscrape.jsonl
+
+$ cd /tmp && python3 -c "
+import json
+pages=[]
+seen=set()
+for line in open('btscrape.jsonl'):
+    line=line.strip()
+    if not line: continue
+    d=json.loads(json.loads(line)) if line.startswith('\"') else json.loads(line)
+    if d['url'] in seen: continue
+    seen.add(d['url']); pages.append(d)
+books=[]
+for p in pages: books.extend(p['books'])
+print('pages:', len(pages), 'books:', len(books))
+under=[b for b in books if b['price']<12.0]
+print('under £12:', len(under))
+m=min(books, key=lambda b: b['price'])
+print('cheapest:', m)
+"
+-> [99 chars] pages: 50 books: 1000
+under £12: 44
+cheapest: {'title': 'An Abundance of Katherines', 'price': 10}
+
+$ cd /tmp && python3 -c "
+import json
+pages=[]; seen=set()
+for line in open('btscrape.jsonl'):
+    line=line.strip()
+    if not line: continue
+    d=json.loads(json.loads(line)) if line.startswith('\"') else json.loads(line)
+    if d['url'] in seen: continue
+    seen.add(d['url']); pages.append(d)
+books=[b for p in pages for b in p['books']]
+print([b for b in books if b['price']<11.0])
+print(len(books), 'books total')
+"
+-> [1651 chars] [{'title': 'Patience', 'price': 10.16}, {'title': 'The Project', 'price': 10.65}, {'title': 'The Long Shadow of Small Ghosts: Murder and Memory in an American City', 'price': 10.97}, {'title': 'The Argonauts', 'price': 10.93}, {'title': 'Miss Peregrine’s Home for Peculiar Children (Miss Peregrine’s Peculiar Children #1)', 'price': 10.76}, {'title': 'The Lucifer Effect: Understanding How Good People Turn Evil', 'price': 10.4}, {'title': 'Tastes Like Fear (DI Marnie Rome #3)', 'price': 10.69}, {'t …Thyme', 'price': 10.62}, {'title': 'Are We There Yet?', 'price': 10.66}, {'title': 'The Complete Maus (Maus #1-2)', 'price': 10.64}]
+1000 books total
+
+SAY: I walked the entire catalogue in the browser (50 pages, 1000 books, following the `li.next` pager until it disappeared). Results:
+
+- **Books priced under £12.00: 44**
+- **Cheapest book: "An Abundance of Katherines" at £10.00** — it's uniquely the cheapest (the next-lowest prices are £10.01 "The Origin of Species" and £10.02 "The Tipping Point").
+
+ANSWER: 44 books cost less than £12.00; the cheapest book is "An Abundance of Katherines" at £10.00

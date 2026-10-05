@@ -1,0 +1,144 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r6", "correct": true, "score": 0.825, "wtok": 116493, "out_tok": 4600, "turns": 19, "secs": 213, "timed_out": false, "curl": false, "answer": "After clicking Remove the message is \"It's gone!\"; after clicking Enable and typing into the enabled input, the message is \"It's enabled!\" and the input's value is \"hello\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" && break; sleep 5; done; agent-browser wait "h2"; agent-browser snapshot -i
+-> [507 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e5; agent-browser wait "#flash" ; agent-browser get text "#flash"; agent-browser snapshot -i
+-> [434 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser eval "document.getElementById('flash') ? document.getElementById('flash').textContent : 'no flash element'"
+-> [19 chars] "no flash element"
+
+SAY: The flash message disappears after a few seconds, so I'll redo the click and capture the message quickly.
+$ agent-browser click @e5; agent-browser wait "#checkbox"; agent-browser click @e5; sleep 0.3; agent-browser eval "JSON.stringify(document.getElementById('flash')?.textContent ?? 'no flash')"
+-> [36 chars] ✓ Done
+✓ Done
+✓ Done
+"\"no flash\""
+
+$ agent-browser eval "new Promise(r => { const i = setInterval(() => { const f = document.getElementById('flash'); if (f && f.textContent) { clearInterval(i); r(JSON.stringify(f.textContent)); } }, 300); setTimeout(() => { clearInterval(i); r(JSON.stringify(document.getElementById('flash')?.textContent ?? 'no flash')); }, 15000); })"
+-> [15 chars] "\"no flash\""
+
+$ agent-browser eval "JSON.stringify({checkbox: !!document.querySelector('#checkbox'), btn: document.querySelector('#remove-button')?.textContent, flash: document.getElementById('flash')?.outerHTML ?? 'no flash el', spinner: !!document.getElementById('dynamic_controls_loading')})"
+-> [67 chars] "{\"checkbox\":false,\"flash\":\"no flash el\",\"spinner\":false}"
+
+$ agent-browser eval "new Promise(r => { window.__flash = null; const mo = new MutationObserver(() => { const f = document.getElementById('flash'); if (f && f.textContent.trim() && !window.__flash) { window.__flash = f.textContent; } }); mo.observe(document.body, {childList: true, subtree: true, characterData: true}); setTimeout(() => { r('observer set'); }, 300); })"
+-> [15 chars] "observer set"
+
+$ agent-browser click @e5; agent-browser wait "#checkbox"; agent-browser click @e5; sleep 6; agent-browser eval "JSON.stringify(window.__flash)"
+-> [28 chars] ✓ Done
+✓ Done
+✓ Done
+"null"
+
+$ agent-browser eval "JSON.stringify({flash: document.getElementById('flash')?.textContent ?? null, checkbox: !!document.querySelector('#checkbox'), btn: document.querySelector('#remove-button, #add-button')?.textContent, obs: !!window.__flash})"
+-> [52 chars] "{\"flash\":null,\"checkbox\":false,\"obs\":false}"
+
+$ agent-browser click @e5; agent-browser wait "#checkbox"; agent-browser click @e5; agent-browser eval --stdin <<'JS'
+new Promise(r => {
+  const seen = new Set();
+  const i = setInterval(() => {
+    const f = document.getElementById('flash');
+    const t = f ? f.textContent : null;
+    if (t && t.trim()) seen.add(t.trim());
+    if (seen.size && Date.now() > 17000) { clearInterval(i); r(JSON.stringify([...seen])); }
+  }, 100);
+  setTimeout(() => { clearInterval(i); r(JSON.stringify([...seen])); }, 18000);
+})
+JS
+-> [26 chars] ✓ Done
+✓ Done
+✓ Done
+"[]"
+
+$ agent-browser eval "JSON.stringify({flash: document.getElementById('flash') ? document.getElementById('flash').outerHTML : null, bodyEnd: document.body.innerHTML.slice(-600)})"
+-> [774 chars] "{\"flash\":null,\"bodyEnd\":\"=\\\"/img/ajax-loader.gif\\\"></div><br>\\n  </form>\\n\\n  <hr>\\n\\n  <br>\\n  <h4 class=\\\"subheader\\\">Enable/disable</h4>\\n  <br>\\n  <form id=\\\"input-example\\\">\\n    <input type=\\\"text\\\" disabled=\\\"\\\" style=\\\"width: 30%;\\\">\\n    <button autocomplete=\\\"off\\\" type=\\\"button\\\" onclick=\\\"swapInput()\\\">Enable</button>\\n  </form>\\n<div>\\n\\n      </div>\\n    </div>\\n    <div id=\\\"page-footer\\\" class=\\\"row\\\">\\n      <div … target=\\\"_blank\\\" href=\\\"http://elementalselenium.com/\\\">Elemental Selenium</a></div>\\n      </div>\\n    </div>\\n  \\n\\n</div></div>\"}"
+
+$ agent-browser eval "JSON.stringify({bodyStart: document.body.innerHTML.slice(0, 800), allFlash: [...document.querySelectorAll('[id*=flash],[class*=flash]')].map(e=>e.id+'|'+e.className+'|'+e.textContent)})"
+-> [1097 chars] "{\"bodyStart\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\" clas …ssage();\\n    \",\"allFlash\":[\"flash-messages|large-12 columns|\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      \"]}"
+
+$ agent-browser click @e5; agent-browser wait "#checkbox"; agent-browser click @e5; agent-browser eval --stdin <<'JS'
+new Promise(r => {
+  const seen = new Set();
+  const start = Date.now();
+  const i = setInterval(() => {
+    const c = document.getElementById('flash-messages');
+    const t = c ? c.textContent.trim() : '';
+    if (t) { seen.add(t); if (Date.now() - start > 12000) { clearInterval(i); r(JSON.stringify([...seen])); } }
+  }, 100);
+  setTimeout(() => { clearInterval(i); r(JSON.stringify([...seen])); }, 16000);
+})
+JS
+-> [26 chars] ✓ Done
+✓ Done
+✓ Done
+"[]"
+
+$ agent-browser eval "JSON.stringify({checkbox: !!document.querySelector('#checkbox'), flashMessages: document.getElementById('flash-messages').innerHTML.trim(), btns: [...document.querySelectorAll('#checkbox-example button')].map(b=>b.textContent)})"
+-> [65 chars] "{\"checkbox\":false,\"flashMessages\":\"\",\"btns\":[\"Add\"]}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const scripts = [...document.querySelectorAll('script:not([src])')].map(s => s.textContent);
+  return JSON.stringify(scripts.join('\n---\n'));
+})()
+JS
+-> [2498 chars] "\"\\n      $(document).foundation();\\n    \\n---\\n\\n  function swapInput() {\\n    disableButton(\\\"#input-example button\\\");\\n    clearMessage();\\n    showDelay(\\\"#input-example button\\\");\\n    pauseThenToggleControls(\\\"input\\\");\\n  }\\n\\n  function swapCheckbox (){\\n    disableButton(\\\"#checkbox-example button\\\");\\n    clearMessage();\\n    showDelay(\\\"#checkbox-example button\\\");\\n    pauseThenToggleControls(\\\"checkbox\\\");\\n  };\\n\\n  function disableButto …)\\n      btn.after(\\\"<p id='message'>It's disabled!</p>\\\");\\n      btn.attr(\\\"disabled\\\", false);\\n      load.hide();\\n    }\\n  };\\n\""
+
+SAY: Found it — the message lives in `<p id="message">`, not `#flash`. Now let me redo the Remove cycle properly:
+$ agent-browser click @e5; agent-browser wait "#checkbox"; agent-browser click @e5; sleep 4; agent-browser eval "JSON.stringify({msg: document.getElementById('message')?.textContent ?? null, checkbox: !!document.querySelector('#checkbox')})"
+-> [67 chars] ✓ Done
+✓ Done
+✓ Done
+"{\"msg\":\"It's gone!\",\"checkbox\":false}"
+
+SAY: Message captured: **"It's gone!"** Now the Enable + typing part:
+$ agent-browser click @e7; agent-browser eval --stdin <<'JS'
+new Promise(r => {
+  const i = setInterval(() => {
+    const input = document.querySelector('#input-example input');
+    if (input && !input.disabled) { clearInterval(i); r('enabled'); }
+  }, 100);
+  setTimeout(() => { clearInterval(i); r('timeout'); }, 12000);
+})
+JS
+agent-browser fill "#input-example input" "hello"; agent-browser eval "JSON.stringify({msg: document.getElementById('message')?.textContent ?? null, value: document.querySelector('#input-example input').value})"
+-> [74 chars] ✓ Done
+"enabled"
+✓ Done
+"{\"msg\":\"It's enabled!\",\"value\":\"hello\"}"
+
+SAY: All steps completed in the browser:
+
+1. **Remove** → checkbox disappears after a 3s delay, and the page shows the message: **It's gone!**
+2. **Enable** → after waiting for the input to become enabled, typed `hello` into it. The page shows the message: **It's enabled!** and the input's value is **hello**.
+
+ANSWER: After clicking Remove the message is "It's gone!"; after clicking Enable and typing into the enabled input, the message is "It's enabled!" and the input's value is "hello".

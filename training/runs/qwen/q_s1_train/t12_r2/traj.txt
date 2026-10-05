@@ -1,0 +1,53 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r2", "correct": true, "score": 0.968, "wtok": 21448, "out_tok": 1426, "turns": 6, "secs": 181, "timed_out": false, "curl": false, "answer": "Heading: \"File Uploaded!\" \u2014 displayed file name: \"skillopt-note.txt\""}
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r2 && echo "hello skillopt" > skillopt-note.txt && agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "input[type=file]"; agent-browser upload "input[type=file]" "$PWD/skillopt-note.txt"; agent-browser click "#file-submit"; agent-browser wait "h3"; agent-browser get text h3; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#flash, p, pre')).map(e=>e.textContent).filter(Boolean))"
+-> [448 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+✗ Element not found: input[type=file]. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #file-submit. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: h3. Verify the selector, role, or name is correct and the element exists in the DOM.
+"[]"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r2 && agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "input[type=file]" --timeout 30000; agent-browser upload "input[type=file]" "$PWD/skillopt-note.txt"; agent-browser click "#file-submit"; agent-browser wait "h3" --timeout 30000; agent-browser get text h3; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#flash, pre')).map(e=>e.textContent))"
+-> [130 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+File Uploader
+"[]"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r2 && agent-browser eval "JSON.stringify({flash:document.querySelector('#flash')?.textContent, pre:document.querySelector('pre')?.textContent, h3:document.querySelector('h3')?.textContent})"; agent-browser close
+-> [22 chars] "{}"
+✓ Browser closed
+
+SAY: The browser closed before I could read the flash message. Re-running the full flow in one go:
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r2 && agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "input[type=file]" --timeout 30000; agent-browser upload "input[type=file]" "$PWD/skillopt-note.txt"; agent-browser click "#file-submit"; agent-browser wait --text "successfully uploaded" --timeout 30000; agent-browser eval "JSON.stringify({h3:document.querySelector('h3')?.textContent, flash:document.querySelector('#flash')?.textContent, pre:document.querySelector('pre')?.textContent})"; agent-browser close
+-> [158 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✓ Done
+✓ Done
+✓ Done
+✗ Wait timed out after 30000ms
+"{\"h3\":\"File Uploaded!\"}"
+✓ Browser closed
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r2 && agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "input[type=file]" --timeout 30000; agent-browser upload "input[type=file]" "$PWD/skillopt-note.txt"; agent-browser click "#file-submit"; agent-browser wait --text "successfully uploaded" --timeout 30000; agent-browser eval "JSON.stringify({h3:document.querySelector('h3')?.textContent, flash:document.getElementById('flash')?.innerText, pre:document.querySelector('pre')?.innerText, body:document.body.innerText.slice(0,500)})"; agent-browser close
+-> [238 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✓ Done
+✓ Done
+✓ Done
+✗ Wait timed out after 30000ms
+"{\"h3\":\"File Uploaded!\",\"body\":\"File Uploaded!\\nskillopt-note.txt\\nPowered by Elemental Selenium\"}"
+✓ Browser closed
+
+SAY: Upload completed. The page displayed:
+
+- **Heading after uploading:** `File Uploaded!` (replacing the original "File Uploader" heading)
+- **Uploaded file name shown:** `skillopt-note.txt` (listed under the heading)
+
+ANSWER: Heading: "File Uploaded!" — displayed file name: "skillopt-note.txt"

@@ -1,0 +1,181 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r3", "correct": true, "score": 0.89, "wtok": 73599, "out_tok": 1915, "turns": 20, "secs": 85, "timed_out": false, "curl": false, "answer": "Heading: \"File Uploaded!\"; uploaded file name displayed: skillopt-note.txt"}
+
+$ ls; echo ---; agent-browser --help 2>&1 | head -60
+$ env | grep -i -E 'agent|browser' | sed 's/KEY=.*/KEY=***/'
+-> [2659 chars] raw.jsonl
+stderr.txt
+---
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud …l
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+
+-> [753 chars] PI_CODING_AGENT=true
+AI_AGENT=pi
+PWD=/home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_train/t12_r3
+AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_train-t12_r3
+AGENT_BROWSER_SESSION=so-q_noskill_train-t12_r3
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_train-t12_r3
+PATH=<scrubbed> …sr/local/cuda/bin:/opt/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+AGENT_BROWSER_HEADED=1
+
+$ echo "skill-opt test note" > skillopt-note.txt; cat skillopt-note.txt
+-> [20 chars] skill-opt test note
+
+$ agent-browser open https://the-internet.herokuapp.com/upload && agent-browser snapshot
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser get title
+-> [55 chars] https://the-internet.herokuapp.com/upload
+The Internet
+
+$ agent-browser snapshot
+-> [13 chars] (empty page)
+
+$ agent-browser reload; sleep 2; agent-browser snapshot
+-> [55 chars] https://the-internet.herokuapp.com/upload
+(empty page)
+
+$ agent-browser get html 2>&1 | head -20; echo ---; agent-browser get text 2>&1 | head
+-> [150 chars] Missing arguments for: get html
+Usage: agent-browser get html <selector>
+---
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+$ agent-browser get html body; echo ---; agent-browser count '#file-upload'
+-> [163 chars] ✗ Element not found: body. Verify the selector, role, or name is correct and the element exists in the DOM.
+---
+Unknown command: count
+
+
+Command exited with code 1
+$ agent-browser reload 2>&1; agent-browser wait 3000 2>&1; agent-browser get html body 2>&1 | head -30
+-> [760 chars] https://the-internet.herokuapp.com/upload
+✓ Done
+
+    <div class="row">
+      <div id="flash-messages" class="large-12 columns">
+      
+        
+      
+        
+      
+        
+      
+      </div>
+    </div>
+    <div class="row">
+      <a href="https://github.com/tourdedave/the-internet"><img style="position: absolute; top: 0; right: 0; border: 0;" src="/img/forkme_right_green_007200.png" alt="Fork me on GitHub"></a>
+      <div id="content" class="large-12 columns">
+        <script src="/js/vend …lor: red;
+  height: 400px;
+  width: 400px;
+}
+</style>
+<script>
+$('.dz-success-mark').remove();
+</script>
+<div class="example">
+<h3>File Uploader</h3>
+
+$ agent-browser upload '#file-upload' /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_train/t12_r3/skillopt-note.txt
+-> [7 chars] ✓ Done
+
+$ agent-browser wait 3000; agent-browser get text '#content-header'; agent-browser get text '#saved-file'
+-> [269 chars] ✓ Done
+✗ Element not found: #content-header. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #saved-file. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser wait '#content-header' 2>&1; agent-browser get text '#content-header'; agent-browser get text '#saved-file'
+-> [293 chars] ✗ Wait timed out after 25000ms
+✗ Element not found: #content-header. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #saved-file. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser read 2>&1 | head -40
+-> [193 chars] https://the-internet.herokuapp.com/upload
+### File Uploader
+
+Choose a file on your system and then click upload. Or, drag and drop a file into the area below.
+
+✔
+
+Powered by Elemental Selenium
+
+$ agent-browser snapshot
+-> [517 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - generic
+    - heading "File Uploader" [level=3, ref=e2]
+    - paragraph
+      - StaticText "Choose a file on your system and then click upload. Or, drag and drop a file into the area below."
+    - form
+      - button "Choose File" [ref=e3]: skillopt-note.txt
+      - LineBreak "\n"
+      - button "Upload" [ref=e4]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e5]
+
+SAY: File selected successfully. Now clicking Upload:
+$ {}
+-> [17 chars] Tool e4 not found
+$ agent-browser click @e4 && agent-browser get text '#content-header' && agent-browser get text '#saved-file'
+-> [154 chars] ✓ Done
+✗ Element not found: #content-header. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser wait 2000; agent-browser get url; agent-browser read 2>&1 | head -20
+-> [160 chars] https://the-internet.herokuapp.com/upload
+✓ Done
+https://the-internet.herokuapp.com/upload
+### File Uploaded!
+
+skillopt-note.txt
+
+Powered by Elemental Selenium
+
+$ agent-browser get text '#content-header'; agent-browser get text '#saved-file'
+-> [262 chars] ✗ Element not found: #content-header. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #saved-file. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval 'document.querySelector("h3") ? "" : ""' 2>/dev/null; agent-browser eval 'JSON.stringify(Array.from(document.querySelectorAll("h3,#saved-file")).map(e=>e.tagName+" "+e.id+" : "+e.textContent.trim()))'
+-> [32 chars] ""
+"[\"H3  : File Uploaded!\"]"
+
+SAY: Done. I created `skillopt-note.txt`, opened the upload page in the preselected browser session, selected the file, clicked Upload, and verified the result page.
+
+- Heading shown after uploading: **File Uploaded!**
+- Uploaded file name displayed: **skillopt-note.txt**
+
+ANSWER: Heading: "File Uploaded!"; uploaded file name displayed: skillopt-note.txt

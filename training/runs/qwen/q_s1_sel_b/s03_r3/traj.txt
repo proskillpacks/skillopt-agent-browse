@@ -1,0 +1,35 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r3", "correct": true, "score": 0.975, "wtok": 16590, "out_tok": 891, "turns": 6, "secs": 8, "timed_out": false, "curl": false, "answer": "5 one-star books out of 26 total books in the Historical Fiction category."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_39/index.html"; agent-browser eval "document.querySelectorAll('ol li a, .pagination a').length"
+-> [99 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_39/index.html
+0
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('a')).filter(a=>a.textContent.trim()==='Historical Fiction').map(a=>a.href))"
+-> [165 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval "document.querySelectorAll('article').length + '|' + Array.from(document.querySelectorAll('a')).filter(a=>a.textContent.includes('Page')).map(a=>a.textContent.trim()).join(',') + '|' + (document.querySelector('li.next a, .next')?1:0)"
+-> [143 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"20||1"
+
+$ for i in 2 3; do agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-${i}.html" >/dev/null; agent-browser eval "document.querySelectorAll('article').length + '|' + document.querySelectorAll('article p.star-rating.One').length"; done; agent-browser close
+-> [29 chars] "6|0"
+"0|0"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" >/dev/null; agent-browser eval "document.querySelectorAll('article').length + '|' + document.querySelectorAll('article p.star-rating.One').length"; agent-browser close
+-> [24 chars] "20|5"
+✓ Browser closed
+
+SAY: **Method:** Opened the category (correct path is `catalogue/category/books/historical-fiction_4/`), counted `<article>` elements and `p.star-rating.One` on each page:
+
+- Page 1: 20 books, 5 with one-star rating
+- Page 2: 6 books, 0 with one-star rating
+- Page 3: 0 books (no such page)
+
+ANSWER: 5 one-star books out of 26 total books in the Historical Fiction category.

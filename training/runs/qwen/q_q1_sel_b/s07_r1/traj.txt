@@ -1,0 +1,57 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r1", "correct": true, "score": 0.954, "wtok": 30920, "out_tok": 2270, "turns": 7, "secs": 94, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" ; agent-browser snapshot -i
+-> [65 chars] ✗ CDP command timed out: Page.navigate
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" ; agent-browser wait "#dragged" ; agent-browser snapshot -i
+-> [231 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser drag "#dragged" "#dropzone" ; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  dragged: document.querySelector("#dragged .header") ? document.querySelector("#dragged .header").textContent : null,
+  dropzone: document.querySelector("#dropzone .header") ? document.querySelector("#dropzone .header").textContent : null,
+  inDrop: !!document.querySelector("#dropzone #dragged")
+})
+JS
+-> [168 chars] ✗ Element not found: #dragged. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"dragged\":null,\"dropzone\":null,\"inDrop\":false}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({url: location.href, title: document.title, body: document.body.innerHTML.slice(0, 1200)})
+JS
+-> [1524 chars] "{\"url\":\"https://the-internet.herokuapp.com/drag_and_drop\",\"title\":\"The Internet\",\"body\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007 …nsfer.effectAllowed = 'move';\\n  e.dataTransfer.setData('text/html', this.innerHTML);\\n}\\n\\nfunction handleDragOver(e) {\\n  if (e.preventDef\"}"
+
+SAY: The boxes are `#column-a` and `#column-b`. Dragging A onto B:
+$ agent-browser drag "#column-a" "#column-b" ; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  a: document.querySelector("#column-a header") ? document.querySelector("#column-a header").textContent : null,
+  b: document.querySelector("#column-b header") ? document.querySelector("#column-b header").textContent : null,
+  aInsideB: !!document.querySelector("#column-b #column-a")
+})
+JS
+-> [54 chars] ✓ Done
+"{\"a\":\"B\",\"b\":\"A\",\"aInsideB\":false}"
+
+SAY: The headers seem to have swapped; let me verify the exact DOM state:
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  aHTML: document.querySelector("#column-a").innerHTML,
+  bHTML: document.querySelector("#column-b").innerHTML,
+  aHeader: document.querySelector("#column-a header")?.textContent ?? null,
+  bHeader: document.querySelector("#column-b header")?.textContent ?? null
+})
+JS
+-> [106 chars] "{\"aHTML\":\"<header>B</header>\",\"bHTML\":\"<header>A</header>\",\"aHeader\":\"B\",\"bHeader\":\"A\"}"
+
+SAY: Drag complete and verified in the live DOM. After dropping box A onto box B, the contents were exchanged: the left box (in DOM order, `#column-a`) now shows header **B** and the right box (`#column-b`) shows header **A**.
+
+Left to right, the headers are: B, A
+
+ANSWER: B, A

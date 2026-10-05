@@ -1,0 +1,226 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r3", "correct": true, "score": 0.714, "wtok": 190620, "out_tok": 4677, "turns": 26, "secs": 183, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2 && agent-browser snapshot
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -30
+-> [13 chars] (empty page)
+
+$ agent-browser open --help 2>&1 | head -30
+-> [1325 chars] agent-browser open - Launch the browser, optionally navigate
+
+Usage: agent-browser open [url]
+
+Without a URL, launches the browser but stays on about:blank. This lets
+you stage state (network routes, cookies, init scripts) before the first
+real navigation — useful for SSR debug, auth setup, and capturing fresh
+`react suspense` / `vitals` state without noise from a prior page.
+
+With a URL, launches and navigates. If no protocol is provided, https://
+is automatically prepended. WebMCP tools are an …pen                     # Launch, no nav
+  agent-browser open example.com
+  agent-browser open https://github.com
+  agent-browser open localhost:3000
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2 2>&1
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser skills get core 2>&1 | head -120
+$ agent-browser --help 2>&1 | tail -40
+-> [7936 chars] ---
+name: core
+description: Core agent-browser usage guide. Read this before running any agent-browser commands. Covers the snapshot-and-ref workflow, navigating pages, interacting with elements (click, fill, type, select), extracting text and data, taking screenshots, managing tabs, handling forms and auth, waiting for content, running multiple browser sessions in parallel, and troubleshooting common failures. Use when the user asks to interact with a website, fill a form, click something, extr …ord"] placeholder="Password"
+  @e5 [button type="submit"] "Continue"
+  @e6 [link] "Forgot password?"
+```
+
+For unstructured reading (no refs needed):
+
+
+-> [2468 chars] Examples:
+  agent-browser open example.com
+  agent-browser snapshot -i              # Interactive elements only
+  agent-browser click @e2                # Click by ref from snapshot
+  agent-browser fill @e3 "test@example.com"
+  agent-browser find role button click --name Submit
+  agent-browser get text @e1
+  agent-browser screenshot --full
+  agent-browser screenshot --annotate    # Labeled screenshot for vision models
+  agent-browser wait 2000               # Wait for slow pages to settle
+  agen … agent-browser -p ios swipe up                            # Swipe gesture
+  agent-browser -p ios tap @e1                             # Touch element
+
+
+$ agent-browser eval 'location.href' 2>&1; agent-browser eval 'document.title' 2>&1
+-> [58 chars] "https://the-internet.herokuapp.com/dynamic_loading/2"
+""
+
+$ agent-browser eval 'document.readyState + " | body: " + document.body.innerHTML.slice(0,500)' 2>&1
+-> [136 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:51
+
+
+Command exited with code 1
+$ for i in 1 2 3 4 5 6 7 8 9 10; do st=$(agent-browser eval 'document.readyState' 2>&1); echo "$i: $st"; if [ "$st" = '"complete"' ]; then break; fi; sleep 3; done
+-> [27 chars] 1: "loading"
+2: "complete"
+
+$ agent-browser snapshot -i 2>&1
+-> [235 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+- button "Start" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+$ agent-browser click @e4 && for i in $(seq 1 20); do t=$(agent-browser eval 'var el=document.querySelector("#loaded-text"); el ? el.textContent : "(none)"' 2>&1); echo "$i: $t"; if [ "$t" != '(none)' ] && ! [ "$t" = '""' ]; then break; fi; sleep 2; done
+-> [19 chars] ✓ Done
+1: "(none)"
+
+$ agent-browser wait '#loaded-text' 2>&1; agent-browser eval 'document.querySelector("#loaded-text") ? document.querySelector("#loaded-text").textContent : "(none)"' 2>&1
+-> [40 chars] ✗ Wait timed out after 25000ms
+"(none)"
+
+$ agent-browser snapshot -i 2>&1; agent-browser eval 'document.body.innerHTML.slice(0,800)' 2>&1
+-> [1085 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+- button "Start" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+"\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\">< … $('#loading').hide();\n        $('#loading').before(\"<div id='finish' style='display:none'><h4>Hello World!</h4></div>\")\n        $('#finish').sh"
+
+$ agent-browser eval 'document.body.innerHTML.slice(800,2000)' 2>&1
+-> [591 chars] "ow();\n      } , 5000 );\n    });\n  });\n</script>\n\n<div class=\"example\">\n  <h3>Dynamically Loaded Page Elements</h3>\n  <h4>Example 2: Element rendered after the fact</h4>\n\n  <br>\n\n  <div id=\"start\">\n    <button>Start</button>\n  </div>\n\n\n  <br>\n</div>\n\n      </div>\n    </div>\n    <div id=\"page-footer\" class=\"row\">\n      <div class=\"large-4 large-centered columns\">\n        <hr>\n        <div style=\"text-align: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+
+$ agent-browser click @e4 2>&1; for i in $(seq 1 15); do r=$(agent-browser eval 'var f=document.querySelector("#finish"); var l=document.querySelector("#loading"); (f&&f.textContent||"") + "|" + (l?"loading-shown":"")' 2>/dev/null); echo "t=$((i*2))s: $r"; case "$r" in *Hello*) break;; esac; sleep 2; done
+-> [168 chars] ✓ Done
+t=2s: "|"
+t=4s: "|"
+t=6s: "|"
+t=8s: "|"
+t=10s: "|"
+t=12s: "|"
+t=14s: "|"
+t=16s: "|"
+t=18s: "|"
+t=20s: "|"
+t=22s: "|"
+t=24s: "|"
+t=26s: "|"
+t=28s: "|"
+t=30s: "|"
+
+$ agent-browser eval 'var out = {jquery: typeof jQuery !== "undefined" ? jQuery.fn.jquery : "absent", startVisible: document.getElementById("start") ? document.getElementById("start").style.display : "gone"}; JSON.stringify(out)' 2>&1
+-> [48 chars] "{\"jquery\":\"absent\",\"startVisible\":\"\"}"
+
+$ agent-browser eval 'JSON.stringify(Array.from(document.scripts).map(s=>s.src||"(inline)"))' 2>&1
+-> [382 chars] "[\"https://the-internet.herokuapp.com/js/vendor/298279967.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js\",\"https://the-internet.herokuapp.com/js/foundation/foundation.js\",\"https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js\",\"(inline)\",\"(inline)\"]"
+
+$ agent-browser --help 2>&1 | grep -iE 'console|log|network|error'
+$ agent-browser eval 'var s=document.querySelector("script[src*=\"jquery-1.11\"]"); s ? s.readyState : "no script elem"' 2>&1
+-> [1433 chars] Network:  agent-browser network <action>
+  console [--clear]          View console logs
+  errors [--clear]           View page errors
+                              --bail stops on first error (default: continue all)
+  auth login <name>          Login using saved credentials (waits for form fields)
+  auth login <name> --no-navigate
+  auth login <name> --credential-provider <plugin> [--item <ref>] [--url <url>]
+  auth login <name> --username-selector <s> --password-selector <s>
+                    …DIALOG   Disable automatic dismissal of alert/beforeunload dialogs
+  agent-browser --profile Default open gmail.com        # Reuse Chrome login state
+
+-> [5 chars] null
+
+$ agent-browser errors 2>&1 | head -20; echo ---; agent-browser console 2>&1 | head -20
+-> [10 chars] ✗ 
+✗ 
+---
+
+$ agent-browser network --help 2>&1 | head -30
+-> [1302 chars] agent-browser network - Network interception and monitoring
+
+Usage: agent-browser network <subcommand> [args]
+
+Intercept, mock, or monitor network requests.
+
+Subcommands:
+  route <url> [options]      Intercept requests matching URL pattern
+    --abort                  Abort matching requests
+    --body <json>            Respond with custom body
+  unroute [url]              Remove route (all if no URL)
+  requests [options]         List captured requests
+    --clear                  Clear request  …/api/*" --abort
+  agent-browser network route "**/data.json" --body '{"mock": true}'
+  agent-browser network unroute
+  agent-browser network requests
+
+$ agent-browser network requests --type script 2>&1 | head -30
+-> [929 chars] [786333.2] GET https://the-internet.herokuapp.com/js/vendor/298279967.js (Script)
+[786333.5] GET https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js (Script)
+[786333.6] GET https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js (Script)
+[786333.7] GET https://the-internet.herokuapp.com/js/foundation/foundation.js (Script)
+[786333.8] GET https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js (Script)
+[786333.12] GET https://the-internet.herokuapp.c …kuapp.com/js/foundation/foundation.js (Script) 503
+[786333.18] GET https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js (Script) 503
+
+SAY: The page's scripts returned 503 (the Heroku app is flaky), so jQuery never loaded and the click did nothing. Let me reload and retry:
+$ agent-browser network requests --clear >/dev/null 2>&1; agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2 2>&1; for i in $(seq 1 10); do q=$(agent-browser eval 'typeof jQuery' 2>/dev/null); echo "try $i: $q"; [ "$q" = '"function"' ] && break; agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2 >/dev/null 2>&1; sleep 3; done
+-> [120 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+try 1: "undefined"
+try 2: "function"
+
+SAY: jQuery is now loaded. Now click Start and watch for the text:
+$ agent-browser snapshot -i 2>&1
+-> [236 chars] - link "Fork me on GitHub" [ref=e6]
+- heading "Dynamically Loaded Page Elements" [level=3, ref=e7]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e8]
+- button "Start" [ref=e9]
+- link "Elemental Selenium" [ref=e10]
+
+$ agent-browser click @e9 2>&1; for i in $(seq 1 15); do r=$(agent-browser eval '(document.querySelector("#finish")?document.querySelector("#finish").textContent:"") + "|loading:" + (document.querySelector("#loading")?"1":"0")' 2>/dev/null); echo "t=$((i*2))s: $r"; case "$r" in *Hello*|*finish*|*loading:1*) ;; esac; if echo "$r" | grep -q "Hello"; then break; fi; sleep 2; done
+-> [95 chars] ✓ Done
+t=2s: "|loading:1"
+t=4s: "|loading:1"
+t=6s: "|loading:1"
+t=8s: "Hello World!|loading:1"
+
+$ agent-browser eval 'document.querySelector("#finish").textContent' 2>&1; agent-browser snapshot 2>&1 | grep -A2 -B2 -i 'hello'
+-> [186 chars] "Hello World!"
+  - heading "Example 2: Element rendered after the fact" [level=4, ref=e8]
+  - LineBreak "\n"
+  - heading "Hello World!" [level=4, ref=e11]
+  - LineBreak "\n"
+  - generic
+
+SAY: Done. Summary of what happened in the browser:
+
+1. `agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2` — first loads timed out / vendor scripts came back 503 (the Heroku app is flaky), so I reloaded until the scripts (jQuery) loaded successfully.
+2. `agent-browser snapshot -i` → found the `button "Start"` (`@e9`).
+3. `agent-browser click @e9` → the Start button was replaced by a `#loading` "Loading..." spinner, and ~5 s later a `#finish` element appeared.
+4. Verified via `e

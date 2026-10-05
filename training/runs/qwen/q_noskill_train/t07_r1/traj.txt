@@ -1,0 +1,101 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07_r1", "correct": true, "score": 0.971, "wtok": 19268, "out_tok": 863, "turns": 7, "secs": 7, "timed_out": false, "curl": false, "answer": "A Year in Provence (Provence #1), \u00a356.88"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://books.toscrape.com/catalogue/category/books/travel_5/index.html && agent-browser read | head -80
+-> [120 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/travel_5/index.html
+# 404 Not Found
+
+nginx/1.21.6
+
+$ agent-browser open https://books.toscrape.com/ && agent-browser snapshot | grep -i -A2 -B2 travel | head -30
+-> [232 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+          - listitem [level=2]
+            - ListMarker "◦ "
+            - link "Travel" [ref=e6]
+          - listitem [level=2]
+            - ListMarker "◦ "
+
+$ agent-browser click @e6 && agent-browser snapshot | head -60
+-> [1863 chars] ✓ Done
+- generic
+  - banner
+    - generic
+      - link "Books to Scrape" [ref=e137]
+      - StaticText " We love being scraped!"
+  - list
+    - listitem [level=1]
+      - link "Home" [ref=e138]
+    - listitem [level=1]
+      - StaticText "/ "
+      - link "Books" [ref=e139]
+    - listitem [level=1]
+      - StaticText "/ "
+      - StaticText "Travel"
+  - complementary
+    - list
+      - listitem [level=1]
+        - link "Books" [ref=e140]
+        - list
+          - listitem [level=2]
+             …er "◦ "
+            - link "Nonfiction" [ref=e152]
+          - listitem [level=2]
+            - ListMarker "◦ "
+            - link "Music" [ref=e153]
+
+$ agent-browser snapshot | grep -E 'price_|page|Next' | head -30; echo ---; agent-browser read | grep -iE '£|next|page' | head -30
+-> [81 chars] ---
+£45.17
+£49.43
+£48.87
+£36.94
+£37.33
+£44.34
+£30.54
+£56.88
+£23.21
+£38.95
+£26.08
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.product_pod')).map(p=>({title:p.querySelector('h3 a')?p.querySelector('h3 a').title:null, price:p.querySelector('.price_color').textContent, next:p.querySelector('h3 a').getAttribute('href')})), (document.querySelector('.pagination')?document.querySelector('.pagination').innerText:'none'))"
+-> [1794 chars] "[{\"title\":\"It's Only the Himalayas\",\"price\":\"£45.17\",\"next\":\"../../../its-only-the-himalayas_981/index.html\"},{\"title\":\"Full Moon over Noah’s Ark: An Odyssey to Mount Ararat and Beyond\",\"price\":\"£49.43\",\"next\":\"../../../full-moon-over-noahs-ark-an-odyssey-to-mount-ararat-and-beyond_811/index.html\"},{\"title\":\"See America: A Celebration of Our National Parks & Treasured Sites\",\"price\":\"£48.87\",\"next\":\"../../../see-america-a-celebration-of-our-national-parks-trea …tml\"},{\"title\":\"1,000 Places to See Before You Die\",\"price\":\"£26.08\",\"next\":\"../../../1000-places-to-see-before-you-die_1/index.html\"}]"
+
+SAY: The Travel category lists 11 books (no pagination). Comparing prices:
+
+- It's Only the Himalayas — £45.17
+- Full Moon over Noah's Ark — £49.43
+- See America — £48.87
+- Vagabonding — £36.94
+- Under the Tuscan Sun — £37.33
+- A Summer In Europe — £44.34
+- The Great Railway Bazaar — £30.54
+- **A Year in Provence (Provence #1) — £56.88** ← highest
+- The Road to Little Dribbling — £23.21
+- Neither Here nor There — £38.95
+- 1,000 Places to See Before You Die — £26.08
+
+The most expensive book in the Tra

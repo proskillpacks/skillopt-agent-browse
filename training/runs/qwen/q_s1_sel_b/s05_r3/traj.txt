@@ -1,0 +1,103 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r3", "correct": true, "score": 0.888, "wtok": 74679, "out_tok": 3308, "turns": 16, "secs": 107, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; Archived, Receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser wait "body"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('table tr, li, .message, .msg')).map(el=>el.innerText).slice(0,30))"
+-> [55 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✓ Done
+"[]"
+
+$ agent-browser snapshot -i
+-> [376 chars] - heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('button')).map((b,i)=>{let row=b.closest('tr,li,div'); return i+': '+row.innerText.replace(/\n/g,' | ').slice(0,200)}))"
+-> [1089 chars] "[\"0: Alex A. | Invoice #100 | Archive\",\"1: Femi H. | Lunch order #113 | Archive\",\"2: Kai C. | On-call swap #126 | Archive\",\"3: Dana K. | Retro actions #139 | Archive\",\"4: Ivo E. | Release checklist #152 | Archive\",\"5: Bo M. | Design review #165 | Archive\",\"6: Gus G. | Hiring loop #178 | Archive\",\"7: Lena B. | Standup notes #191 | Archive\",\"8: Elif J. | Travel booking #204 | Archive\",\"9: Jude D. | Budget draft #217 | Archive\",\"10: Chen L. | Invoice #230 | Archive\",\"11: Han …Archive\",\"21: Jude D. | Lunch order #373 | Archive\",\"22: Chen L. | On-call swap #386 | Archive\",\"23: Hana F. | Retro actions #399 | Archive\"]"
+
+$ agent-browser eval "document.body.innerText.length" ; agent-browser get text body | tail -20
+-> [226 chars] 845
+Archive
+Gus G.
+Travel booking #334
+Archive
+Lena B.
+Budget draft #347
+Archive
+Elif J.
+Invoice #360
+Archive
+Jude D.
+Lunch order #373
+Archive
+Chen L.
+On-call swap #386
+Archive
+Hana F.
+Retro actions #399
+Archive
+Loading more…
+
+$ agent-browser eval "for(let i=0;i<30;i++){window.scrollTo(0,document.body.scrollHeight); await new Promise(r=>setTimeout(r,200)); if(document.body.innerText.includes('Priya N.')) break;} document.body.innerText.includes('Priya N.')"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('button')).map((b,i)=>{let row=b.closest('tr,li,div');return i+': '+row.innerText.replace(/\n/g,' | ').slice(0,100)})).slice(-60)"; agent-browser eval "Array.from(document.querySelectorAll('button')).length"
+-> [177 chars] ✗ Evaluation error: SyntaxError: await is only valid in async functions and the top level bodies of modules
+"386 | Archive\",\"23: Hana F. | Retro actions #399 | Archive\"]"
+24
+
+$ agent-browser eval "var el=[...document.querySelectorAll('*')].find(e=>e.textContent.trim()==='Loading more…'&&!e.children.length); el?el.tagName+' '+el.className+' parent:'+el.parentElement.tagName+'.'+el.parentElement.className:'not found'"
+-> [20 chars] "DIV  parent:BODY."
+
+$ agent-browser eval "(async()=>{for(let i=0;i<50;i++){window.scrollTo(0,document.body.scrollHeight); await new Promise(r=>setTimeout(r,300)); if(document.body.innerText.includes('Priya N.')) return 'found';} return 'not found, buttons='+document.querySelectorAll('button').length;})()"
+-> [24 chars] "not found, buttons=36"
+
+$ agent-browser eval "(async()=>{for(let i=0;i<200;i++){window.scrollTo(0,document.body.scrollHeight); await new Promise(r=>setTimeout(r,200)); if(document.body.innerText.includes('Priya N.')) return 'found'; if(!document.body.innerText.includes('Loading more')) return 'no loader, buttons='+document.querySelectorAll('button').length;} return 'still not found, buttons='+document.querySelectorAll('button').length;})()"
+-> [70 chars] ✗ CDP command timed out: Runtime.evaluate
+
+
+Command exited with code 1
+$ agent-browser eval "document.querySelectorAll('button').length + ' loader:' + document.body.innerText.includes('Loading more')"
+-> [17 chars] "36 loader:true"
+
+$ agent-browser eval "(async()=>{for(let i=0;i<15;i++){window.scrollTo(0,document.body.scrollHeight); await new Promise(r=>setTimeout(r,600)); if(document.body.innerText.includes('Priya N.')) return 'found at iter '+i; if(!document.body.innerText.includes('Loading more')) return 'no loader at '+i+' buttons='+document.querySelectorAll('button').length;} return 'still not, buttons='+document.querySelectorAll('button').length;})()"
+-> [24 chars] "still not, buttons=36"
+
+$ agent-browser eval "document.querySelector('script')?document.querySelector('script').textContent.length + ' scripts:'+document.scripts.length:'no script'" ; agent-browser eval "Array.from(document.scripts).map(s=>s.src).join('|')"
+-> [20 chars] "1361 scripts:1"
+""
+
+$ agent-browser eval "document.scripts[0].textContent"
+-> [1435 chars] "\nconst first=[\"Alex\",\"Bo\",\"Chen\",\"Dana\",\"Elif\",\"Femi\",\"Gus\",\"Hana\",\"Ivo\",\"Jude\",\"Kai\",\"Lena\"],last=\"ABCDEFGHJKLM\";\nconst topics=[\"Invoice\",\"Standup notes\",\"Release checklist\",\"Lunch order\",\"Travel booking\",\"Design review\",\"On-call swap\",\"Budget draft\",\"Hiring loop\",\"Retro actions\"];\nconst msgs=[];for(let i=0;i<60;i++){msgs.push({from:first[(i*5)%12]+\" \"+last[(i*7)%12]+\".\",subj:topics[(i*3)%10]+\" #\"+(100+i*13)});}\nmsgs[44]={from:\"Priya N.\ …'End of inbox';}\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\n"
+
+SAY: I found the page logic. Priya N. is at index 44 of 60 messages, loading in batches of 12. Let me load the right batch and confirm.
+$ agent-browser eval "more();'now '+document.querySelectorAll('button').length"; agent-browser eval "more(); 'now '+document.querySelectorAll('button').length"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.row')).filter(r=>r.innerText.includes('Priya N.')).map(r=>r.innerText))"
+-> [89 chars] "now 48"
+"now 60"
+"[\"Priya N.\\nQ3 vendor audit — rescheduled to the 19th\\nArchive\"]"
+
+SAY: Priya N.'s message: subject "Q3 vendor audit — rescheduled to the 19th". Now archiving:
+$ agent-browser eval "const rows=Array.from(document.querySelectorAll('.row'));const r=rows.find(r=>r.innerText.includes('Priya N.'));r.querySelector('button').click()"; agent-browser dialog accept; sleep 1; agent-browser eval "document.getElementById('toast').textContent"
+-> [209 chars] ✗ CDP command timed out: Runtime.evaluate
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+"Archived. Receipt #A-7028"
+
+$ agent-browser eval "Array.from(document.querySelectorAll('.row')).filter(r=>r.innerText.includes('Priya N.')).length"
+-> [2 chars] 0
+
+SAY: Done.
+
+- **Message from Priya N.** — subject: **Q3 vendor audit — rescheduled to the 19th**
+- I scrolled/infinite-loaded the inbox (messages load in batches of 12) until her row appeared, clicked **Archive**, accepted the "Archive this message?" confirmation, and the row was removed.
+- The toast receipt shown afterwards: **Receipt #A-7028**
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; Archived, Receipt #A-7028

@@ -1,0 +1,99 @@
+TASK t02: On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.
+EXPECT: ['you clicked: cancel', 'you entered: skillopt-42']
+RESULT: {"id": "t02_r2", "correct": true, "score": 0.965, "wtok": 23454, "out_tok": 828, "turns": 8, "secs": 35, "timed_out": false, "curl": false, "answer": "Confirm (Cancel) result: \"You clicked: Cancel\" \u2014 Prompt (\"skillopt-42\", OK) result: \"You entered: skillopt-42\""}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts; agent-browser snapshot
+$ agent-browser skills get core --full 2>&1 | grep -iA3 dialog
+-> [96 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(empty page)
+
+-> [2587 chars] - **Tab blocked by a dialog.** If the target tab has an open dialog (`confirm`/`prompt`, or `alert`/`beforeunload` under `--no-auto-dialog`) its renderer is paused, not discarded, so the switch leaves it untouched and reports `"dialogBlocked": true`. Resolve the dialog with `dialog accept`/`dialog dismiss` before interacting with the page.
+
+### Run multiple browsers in parallel
+
+--
+### Dialogs
+
+`alert` and `beforeunload` are auto-accepted so agents never block. For `confirm` and `prompt`:
+
+--
+ag …Ls especially, but also to local dev servers that render untrusted user-generated content (admin dashboards, comment threads, support inboxes, etc.).
+
+SAY: The open timed out (Heroku can be slow), let me check the page state:
+$ agent-browser snapshot
+-> [13 chars] (empty page)
+
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts --timeout 60000 2>&1 || agent-browser open https://the-internet.herokuapp.com/javascript_alerts 2>&1
+-> [70 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/javascript_alerts
+
+$ agent-browser snapshot 2>&1 | head -30
+-> [651 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JavaScript Alerts" [level=3, ref=e2]
+  - paragraph
+    - StaticText "Here are some examples of different JavaScript alerts which can be troublesome for automation"
+  - list
+    - listitem [level=1]
+      - button "Click for JS Alert" [ref=e4]
+    - listitem [level=1]
+      - button "Click for JS Confirm" [ref=e5]
+    - listitem [level=1]
+      - button "Click for JS Prompt" [ref=e6]
+  - heading "Result:" [level=4, ref=e3]
+  - paragraph
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e7]
+
+SAY: Page loaded. Now clicking the Confirm button and dismissing the dialog:
+$ agent-browser click e5; sleep 1; agent-browser dialog status; agent-browser dialog dismiss; agent-browser snapshot 2>&1 | grep -iA2 result
+-> [381 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "I am a JS Confirm" — use `dialog accept` or `dialog dismiss` to resolve it
+⚠ JavaScript confirm dialog is open: "I am a JS Confirm"
+  Default prompt text: ""
+  Use `dialog accept [text]` or `dialog dismiss` to resolve it
+✓ Done
+  - heading "Result:" [level=4, ref=e3]
+  - paragraph
+    - StaticText "You clicked: Cancel"
+
+SAY: Cancel result noted. Now the Prompt:
+$ agent-browser click e6; sleep 1; agent-browser dialog accept "skillopt-42"; agent-browser snapshot 2>&1 | grep -iA2 result
+-> [238 chars] ✓ Done
+⚠ A JavaScript prompt dialog is blocking the page: "I am a JS prompt" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+  - heading "Result:" [level=4, ref=e3]
+  - paragraph
+    - StaticText "You entered: skillopt-42"
+
+SAY: Both interactions complete:
+
+1. **JS Confirm → Cancel**: Result shows `You clicked: Cancel`
+2. **JS Prompt → "skillopt-42" → OK**: Result shows `You entered: skillopt-42`
+
+ANSWER: Confirm (Cancel) result: "You clicked: Cancel" — Prompt ("skillopt-42", OK) result: "You entered: skillopt-42"

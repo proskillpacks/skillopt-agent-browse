@@ -1,0 +1,183 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r3", "correct": true, "score": 0.792, "wtok": 138913, "out_tok": 6044, "turns": 21, "secs": 137, "timed_out": false, "curl": false, "answer": "After Remove, the checkbox is gone and the message shown is \"It's gone!\". After Enable, the text input is enabled with value \"hello\" and the message shown is \"It's enabled!\"."}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser snapshot -i
+-> [393 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e5; agent-browser wait --text "It's gone!" ; agent-browser get text "#flash"
+-> [156 chars] ✓ Done
+It's gone!
+✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({msg: document.querySelector("#flash")?.textContent || document.querySelector("div[class*=flash]")?.textContent, checkboxGone: !document.querySelector("#cheesebox")})
+JS
+-> [26 chars] "{\"checkboxGone\":true}"
+
+SAY: The checkbox is gone and the message "It's gone!" was shown. Now the Enable part:
+$ agent-browser click @e7; agent-browser wait --fn "!document.querySelector('#thing').disabled"; agent-browser fill @e6 "hello"; agent-browser eval --stdin <<'JS'
+JSON.stringify({msg: document.querySelector("#flash")?.textContent, value: document.querySelector("#thing").value})
+JS
+-> [178 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'value')
+    at <anonymous>:1:108
+
+
+Command exited with code 1
+$ agent-browser snapshot -i; agent-browser eval --stdin <<'JS'
+JSON.stringify({html: document.querySelector("#controls")?.outerHTML, flash: document.querySelector("#flash")?.textContent})
+JS
+-> [289 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [ref=e6]: hello
+- button "Disable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+"{}"
+
+SAY: The Enable already went through (button now reads "Disable" and input has "hello"), but the flash message expired. Let me re-trigger Enable to capture its message:
+$ agent-browser click @e7; sleep 1; agent-browser click @e7; agent-browser get text "#flash"; agent-browser eval --stdin <<'JS'
+JSON.stringify({msg: document.querySelector("#flash")?.textContent, value: document.querySelector("#thing")?.value})
+JS
+-> [129 chars] ✓ Done
+✓ Done
+✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({body: document.body.innerText, thing: document.querySelector("#thing")?.value})
+JS
+-> [293 chars] "{\"body\":\"Dynamic Controls\\n\\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\\n\\nRemove/add\\n\\n\\nAdd\\n\\n\\n\\nEnable/disable\\n\\n\\nDisable\\nWait for it... \\n\\n\\nWait for it... \\n\\n\\nPowered by Elemental Selenium\"}"
+
+SAY: The flash disappears quickly. Let me capture it in a single fast sequence:
+$ agent-browser find text "Disable" click; agent-browser find text "Enable" click; agent-browser get text "#flash"
+-> [646 chars] ✗ Element '[data-agent-browser-located='true']' is covered by <div#flash-messages> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).
+✗ Element '[data-agent-browser-located='true']' is covered by <div#flash-messages> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).
+✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get text "#flash-messages"; agent-browser eval --stdin <<'JS'
+document.querySelector("#flash-messages")?.remove(); "removed"
+JS
+-> [73 chars] 
+      
+        
+      
+        
+      
+        
+      
+      
+"removed"
+
+$ agent-browser find text "Disable" click; agent-browser eval "document.querySelector('#flash-messages')?.remove(); 'ok'"; agent-browser find text "Enable" click; agent-browser get text "#flash-messages"; agent-browser eval --stdin <<'JS'
+JSON.stringify({msg: document.querySelector("#flash-messages")?.textContent?.trim(), value: document.querySelector("#thing")?.value, disabled: document.querySelector("#thing")?.disabled})
+JS
+-> [143 chars] ✓ Done
+"ok"
+✓ Done
+✗ Element not found: #flash-messages. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({inputs:[...document.querySelectorAll("input")].map(i=>({id:i.id,value:i.value,disabled:i.disabled})), flash: document.querySelector("#flash-messages")?.textContent?.trim()})
+JS
+-> [69 chars] "{\"inputs\":[{\"id\":\"\",\"value\":\"hello\",\"disabled\":true}]}"
+
+$ agent-browser wait --fn "document.querySelector('input').disabled === true"; agent-browser find text "Enable" click; agent-browser get text "#flash-messages"; agent-browser eval --stdin <<'JS'
+JSON.stringify({msg: document.querySelector("#flash-messages")?.textContent?.trim(), value: document.querySelector("input")?.value, disabled: document.querySelector("input")?.disabled})
+JS
+-> [173 chars] true
+✓ Done
+✗ Element not found: #flash-messages. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"value\":\"hello\",\"disabled\":true}"
+
+SAY: The Enable action takes ~5 seconds before the message appears. Let me wait properly:
+$ agent-browser wait --fn "!document.querySelector('input').disabled"; agent-browser get text "#flash-messages"; agent-browser eval --stdin <<'JS'
+JSON.stringify({msg: document.querySelector("#flash-messages")?.textContent?.trim(), value: document.querySelector("input")?.value, disabled: document.querySelector("input")?.disabled})
+JS
+-> [192 chars] ✗ Wait timed out after 25000ms
+✗ Element not found: #flash-messages. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"value\":\"hello\",\"disabled\":true}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({buttons:[...document.querySelectorAll("button")].map(b=>b.textContent.trim()), input: document.querySelector("input")?.disabled, flash: document.querySelector("#flash-messages")?.textContent})
+JS
+-> [52 chars] "{\"buttons\":[\"Add\",\"Enable\"],\"input\":true}"
+
+$ agent-browser find text "Enable" click; agent-browser wait --fn "!document.querySelector('input').disabled"; agent-browser get text "#flash-messages"
+-> [185 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #flash-messages. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+SAY: The text search is likely matching the "Enable/disable" heading. Let me target the button directly:
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll("button")].map(b=>({text:b.textContent.trim(),id:b.id,outer:b.outerHTML.slice(0,120)})))
+JS
+-> [291 chars] "[{\"text\":\"Add\",\"id\":\"\",\"outer\":\"<button autocomplete=\\\"off\\\" type=\\\"button\\\" onclick=\\\"swapCheckbox()\\\">Add</button>\"},{\"text\":\"Enable\",\"id\":\"\",\"outer\":\"<button autocomplete=\\\"off\\\" type=\\\"button\\\" onclick=\\\"swapInput()\\\">Enable</button>\"}]"
+
+$ agent-browser click 'button[onclick="swapInput()"]'; agent-browser wait --fn "!document.querySelector('input').disabled"; agent-browser get text "#flash-messages"
+-> [159 chars] ✓ Done
+true
+✗ Element not found: #flash-messages. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({flash: document.querySelector("#flash-messages")?.outerHTML, input: document.querySelector("input").disabled, value: document.querySelector("input").value})
+JS
+-> [40 chars] "{\"input\":false,\"value\":\"hello\"}"
+
+SAY: Input is enabled with "hello" but I keep missing the flash. Let me instrument a MutationObserver to capture it:
+$ agent-browser eval --stdin <<'JS'
+window.__flashes = [];
+const obs = new MutationObserver(muts => { for (const m of muts) m.addedNodes.forEach(n => { if (n.nodeType===1 && /flash/i.test(n.id||"")) window.__flashes.push((n.textContent||"").trim()); }); });
+obs.observe(document.body, {childList:true, subtree:true});
+"observer installed"
+JS
+agent-browser click 'button[onclick="swapInput()"]'; sleep 7; agent-browser eval --stdin <<'JS'
+JSON.stringify({flashes: window.__flashes, input: document.querySelector("input").disabled})
+JS
+-> [62 chars] "observer installed"
+✓ Done
+"{\"flashes\":[],\"input\":true}"
+
+$ agent-browser eval --stdin <<'JS'
+window.__added = [];
+new MutationObserver(muts => { for (const m of muts) m.addedNodes.forEach(n => { if (n.nodeType===1) window.__added.push(n.outerHTML.slice(0,200)); }); }).observe(document.body, {childList:true, subtree:true});
+"ok"
+JS
+agent-browser click 'button[onclick="swapInput()"]'; sleep 7; agent-browser eval --stdin <<'JS'
+JSON.stringify({added: window.__added, input: document.querySelector("input").disabled})
+JS
+-> [185 chars] "ok"
+✓ Done
+"{\"added\":[\"<div id=\\\"loading\\\">Wait for it... <img src=\\\"/img/ajax-loader.gif\\\"></div>\",\"<br>\",\"<p id=\\\"message\\\">It's enabled!</p>\"],\"input\":false}"
+
+SAY: I've got everything confirmed. The flash message element is actually `<p id="message">`, which is why my earlier `#flash` lookups missed it.
+
+Summary of results:
+
+1. **Remove**: Clicking **Remove** makes the checkbox disappear and shows the message **"It's gone!"** (confirmed via `wait --text "It's gone!"` and that the checkbox was no longer in the DOM).
+
+2. **Enable + typing**: Clicking **Enable** (the button takes ~5s), the text input becomes enabled, I typed `hello` into it (value: **`hello`*

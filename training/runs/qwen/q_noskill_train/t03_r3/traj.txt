@@ -1,0 +1,56 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r3", "correct": true, "score": 0.973, "wtok": 17855, "out_tok": 669, "turns": 7, "secs": 32, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser navigate https://the-internet.herokuapp.com/tables 2>&1; agent-browser get text 2>&1 | head -50
+-> [156 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+$ agent-browser --help 2>&1 | head -60
+-> [2634 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …l
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+
+$ agent-browser open https://the-internet.herokuapp.com/tables 2>&1; agent-browser get url 2>&1
+-> [101 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/tables
+https://the-internet.herokuapp.com/tables
+
+$ agent-browser get html "table" 2>&1 | head -5; agent-browser eval "document.querySelectorAll('table').length" 2>&1; agent-browser eval "document.querySelectorAll('table')[1].outerHTML" 2>&1 | head -30
+-> [2277 chars] 
+    <thead>
+      <tr>
+        <th class="header"><span>Last Name</span></th>
+        <th class="header"><span>First Name</span></th>
+2
+"<table id=\"table2\" class=\"tablesorter\">\n    <thead>\n      <tr>\n        <th class=\"header\"><span class=\"last-name\">Last Name</span></th>\n        <th class=\"header\"><span class=\"first-name\">First Name</span></th>\n        <th class=\"header\"><span class=\"email\">Email</span></th>\n        <th class=\"header\"><span class=\"dues\">Due</span></th …ss=\"action\">\n          <a href=\"#edit\">edit</a>\n          <a href=\"#delete\">delete</a>\n        </td>\n      </tr>\n    </tbody>\n  </table>"
+
+$ agent-browser click "#table2 thead th:nth-child(4)" 2>&1; sleep 1; agent-browser click "#table2 thead th:nth-child(4)" 2>&1; agent-browser eval "document.querySelector('#table2 tbody tr td.email').textContent" 2>&1
+-> [33 chars] ✓ Done
+✓ Done
+"jdoe@hotmail.com"
+
+$ agent-browser eval "document.querySelector('#table2 tbody tr td.dues').textContent" 2>&1
+-> [10 chars] "$100.00"
+
+SAY: Clicked the 'Due' header of the Example 2 table (`#table2`) twice. After the second click the sort is descending (top row now shows $100.00), and the email in the first data row is jdoe@hotmail.com.
+
+ANSWER: jdoe@hotmail.com

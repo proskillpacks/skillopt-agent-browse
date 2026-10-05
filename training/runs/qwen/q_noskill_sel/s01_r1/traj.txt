@@ -1,0 +1,89 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": true, "score": 0.934, "wtok": 44063, "out_tok": 1643, "turns": 14, "secs": 41, "timed_out": false, "curl": false, "answer": "name: user3; View profile href: /users/3 (https://the-internet.herokuapp.com/users/3)"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser read 2>&1 | head -30
+-> [1 chars] 
+
+$ sleep 3; agent-browser read 2>&1 | head -30
+-> [1 chars] 
+
+$ agent-browser snapshot 2>&1 | head -40
+-> [13 chars] (empty page)
+
+$ agent-browser open --help 2>&1 | head -30
+-> [1325 chars] agent-browser open - Launch the browser, optionally navigate
+
+Usage: agent-browser open [url]
+
+Without a URL, launches the browser but stays on about:blank. This lets
+you stage state (network routes, cookies, init scripts) before the first
+real navigation — useful for SSR debug, auth setup, and capturing fresh
+`react suspense` / `vitals` state without noise from a prior page.
+
+With a URL, launches and navigates. If no protocol is provided, https://
+is automatically prepended. WebMCP tools are an …pen                     # Launch, no nav
+  agent-browser open example.com
+  agent-browser open https://github.com
+  agent-browser open localhost:3000
+
+$ agent-browser eval 'document.readyState + " " + location.href' 2>&1
+-> [53 chars] "complete https://the-internet.herokuapp.com/hovers"
+
+$ agent-browser hover 'ul#hovers_list li:nth-child(3)' 2>&1; echo ---; agent-browser eval 'document.title' 2>&1
+-> [153 chars] ✗ Element not found: ul#hovers_list li:nth-child(3). Verify the selector, role, or name is correct and the element exists in the DOM.
+---
+"The Internet"
+
+$ agent-browser eval 'document.querySelector(".example ul") ? document.querySelector(".example ul").outerHTML.slice(0,500) : "no ul"' 2>&1
+-> [8 chars] "no ul"
+
+$ agent-browser eval 'document.body.innerHTML.slice(0,2000)' 2>&1
+-> [1718 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <style>\n.figure {\n  float: left; …ign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+
+$ agent-browser hover '.figure:nth-child(3)' 2>&1; agent-browser eval 'const f=document.querySelector(".figure:nth-child(3) .figcaption"); const s=getComputedStyle(f).display; const a=f.querySelector("a"); s + " | " + f.querySelector("h5").textContent + " | " + a.href'
+-> [74 chars] ✓ Done
+"block | name: user1 | https://the-internet.herokuapp.com/users/1"
+
+SAY: My selector matched the first figure (the h3/p counted in nth-child). Let me hover the actual third avatar:
+$ agent-browser hover '.example > .figure:nth-of-type(3)' 2>&1; agent-browser eval 'const f=document.querySelectorAll(".figure")[2].querySelector(".figcaption"); const s=getComputedStyle(f).display; s + " | " + f.querySelector("h5").textContent + " | " + f.querySelector("a").href'
+-> [109 chars] ✓ Done
+✗ Evaluation error: SyntaxError: Identifier 'f' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval '(function(){const f=document.querySelectorAll(".figure")[2].querySelector(".figcaption"); return getComputedStyle(f).display+" | "+f.querySelector("h5").textContent+" | "+f.querySelector("a").href;})()'
+-> [67 chars] "block | name: user3 | https://the-internet.herokuapp.com/users/3"
+
+SAY: Hovering over the third avatar reveals its caption (`.figure:hover .figcaption { display: block }`), confirmed via computed style.
+
+- **Name shown:** `name: user3`
+- **'View profile' link href:** `/users/3` (full URL: `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: name: user3; View profile href: /users/3 (https://the-internet.herokuapp.com/users/3)

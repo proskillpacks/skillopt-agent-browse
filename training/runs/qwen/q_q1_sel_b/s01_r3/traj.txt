@@ -1,0 +1,29 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r3", "correct": false, "score": 0.0, "wtok": 14485, "out_tok": 496, "turns": 5, "secs": 79, "timed_out": false, "curl": false, "answer": "Hov"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover "#avatars > ul > li:nth-child(3) img"; agent-browser eval "JSON.stringify({name: document.querySelector('#tooltip h4').textContent, href: document.querySelector('#tooltip a').href})"
+-> [360 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: #avatars > ul > li:nth-child(3) img. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:60
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "#avatars"; agent-browser hover "#avatars > ul > li:nth-child(3) img"; agent-browser eval "JSON.stringify({name: document.querySelector('#tooltip h4').textContent, href: document.querySelector('#tooltip a').href})"
+-> [391 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #avatars > ul > li:nth-child(3) img. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:60
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({url: location.href, body: document.body ? document.body.innerHTML.slice(0,800) : 'no body'})"
+-> [1036 chars] "{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"body\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on Git …iv class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>n\"}"
+
+$ agent-browser hover ".figure:nth-child(3) img"; agent-browser eval "JSON.stringify({name: document.querySelectorAll('.figcaption h5')[2].textContent, href: document.querySelectorAll('.figcaption a')[2].href})"
+-> [92 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+SAY: Hov

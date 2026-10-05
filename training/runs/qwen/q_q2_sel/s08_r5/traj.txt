@@ -1,0 +1,119 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r5", "correct": true, "score": 0.931, "wtok": 46010, "out_tok": 3033, "turns": 8, "secs": 32, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ rm -f /tmp/books.tsv; agent-browser open "https://books.toscrape.com/catalogue/page-1.html" >/dev/null; agent-browser snapshot -i | head -30
+-> [876 chars] - link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfiction" [ref=e17]
+- link "Music" [ref=e18]
+- link "Default" [ref=e19]
+- link "Scien …e27]
+- link "Paranormal" [ref=e28]
+- link "Art" [ref=e29]
+- link "Psychology" [ref=e30]
+- link "Autobiography" [ref=e31]
+- link "Parenting" [ref=e32]
+
+SAY: Page loaded. Let me check the pagination range and verify my extraction selector on page 1.
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  count: document.querySelectorAll("article.product_pod").length,
+  sample: [...document.querySelectorAll("article.product_pod")].slice(0,3).map(a => a.querySelector("h3 a").title + " | " + a.querySelector(".price_color").textContent.trim()),
+  lastPage: [...document.querySelectorAll("ul.pager li a, ul.pager li span")].map(x=>x.textContent.trim())
+})
+JS
+-> [144 chars] "{\"count\":20,\"sample\":[\"A Light in the Attic | £51.77\",\"Tipping the Velvet | £53.74\",\"Soumission | £50.10\"],\"lastPage\":[\"next\"]}"
+
+SAY: 20 books per page, selector works. Now loop through all pages (catalogue is 50 pages), extracting title+price into a TSV.
+$ rm -f /tmp/books.tsv
+for i in $(seq 1 50); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null
+  agent-browser eval --stdin >> /tmp/books.tsv <<'JS'
+[...document.querySelectorAll("article.product_pod")].map(a => {
+  const t = a.querySelector("h3 a").getAttribute("title").trim();
+  const p = a.querySelector(".price_color").textContent.trim();
+  return t + "\t" + p;
+}).join("\n")
+JS
+done
+wc -l /tmp/books.tsv
+-> [18 chars] 50 /tmp/books.tsv
+
+SAY: Only 50 lines — the multi-line string likely got collapsed. Let me inspect.
+$ head -c 600 /tmp/books.tsv; echo; echo ---; sed -n '2p' /tmp/books.tsv | head -c 300
+-> [887 chars] "A Light in the Attic\t£51.77\nTipping the Velvet\t£53.74\nSoumission\t£50.10\nSharp Objects\t£47.82\nSapiens: A Brief History of Humankind\t£54.23\nThe Requiem Red\t£22.65\nThe Dirty Little Secrets of Getting Your Dream Job\t£33.34\nThe Coming Woman: A Novel Based on the Life of the Infamous Feminist, Victoria Woodhull\t£17.93\nThe Boys in the Boat: Nine Americans and Their Epic Quest for Gold at the 1936 Berlin Olympics\t£22.60\nThe Black Maria\t£52.15\nStarving Hearts (Triangular Trade Trilog …roof Guide to Making Small Batch Jams, Jellies, Pickles, Condiments, and More\t£30.52\nChase Me (Paris Nights #2)\t£25.27\nBlack Dust\t£34.53\nBirdson
+SAY: Each page returned one JSON-encoded line. Unescape and compute.
+$ jq -r . /tmp/books.tsv > /tmp/books_clean.tsv 2>/dev/null || sed 's/^"//; s/"$//' /tmp/books.tsv | sed 's/\\t/\t/g; s/\\n/\n/g' > /tmp/books_clean.tsv
+wc -l /tmp/books_clean.tsv
+head -3 /tmp/books_clean.tsv
+# count prices < 12.00 and find minimum
+awk -F'\t' '{
+  p=$2; gsub(/^£/,"",p); gsub(/[[:space:]]/,"",p);
+  if (p+0 < 12.00) cnt++;
+  if (min=="" || p+0 < min+0) { min=p+0; mintitle=$1 };
+  if (p+0 == min+0) tie++;
+  total++
+}
+END {
+  printf "total_books=%d  under12=%d  min_price=%.2f  cheapest=%s  ties_at_min=%d\n", total, cnt, min, mintitle, tie
+}' /tmp/books_clean.tsv
+-> [197 chars] 1000 /tmp/books_clean.tsv
+A Light in the Attic	£51.77
+Tipping the Velvet	£53.74
+Soumission	£50.10
+total_books=1000  under12=44  min_price=10.00  cheapest=An Abundance of Katherines  ties_at_min=10
+
+SAY: All 1000 books collected. 44 under £12.00, min £10.00 — but 10 books tie at £10.00. Let me list them.
+$ grep -P '\t£10\.00$' /tmp/books_clean.tsv
+echo ---
+# also show the list of the 44 under-12 books prices histogram-ish: show all under-12 sorted by price
+awk -F'\t' '{p=$2; gsub(/^£/,"",p)} p+0<12 {print p"\t"$1}' /tmp/books_clean.tsv | sort | head -15
+echo ---
+# verify counts: how many strictly under 12
+awk -F'\t' '{p=$2; gsub(/^£/,"",p)} p+0<12' /tmp/books_clean.tsv | wc -l
+-> [657 chars] An Abundance of Katherines	£10.00
+---
+10.00	An Abundance of Katherines
+10.01	The Origin of Species
+10.02	The Tipping Point: How Little Things Can Make a Big Difference
+10.16	Patience
+10.23	Greek Mythic History
+10.27	The Fellowship of the Ring (The Lord of the Rings #1)
+10.29	History of Beauty
+10.40	The Lucifer Effect: Understanding How Good People Turn Evil
+10.41	NaNo What Now? Finding your editing process, revising your NaNoWriMo book and building a writing career through publishing and beyond
+10.56	Pet Sematary
+10.60	I Am Pilgrim (Pilgrim #1)
+10.62	Counting Thyme
+10.64	The Complete Maus (Maus #1-2)
+10.65	The Project
+10.66	Are We There Yet?
+---
+44
+
+SAY: The tie count from awk seems off vs grep. Verify:
+$ awk -F'\t' '{p=$2; gsub(/^£/,"",p); if (p+0==10.0) c++} END{print c}' /tmp/books_clean.tsv
+grep -c '£10\.00' /tmp/books_clean.tsv
+-> [4 chars] 1
+1
+
+SAY: Exactly one book at the minimum. Everything checks out:
+
+- Total books across all 50 catalogue pages: **1000** (20 per page)
+- Books priced **less than £12.00**: **44**
+- Cheapest book: **"An Abundance of Katherines" at £10.00** (uniquely the minimum; next cheapest is "The Origin of Species" at £10.01)
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of Katherines" at £10.00.

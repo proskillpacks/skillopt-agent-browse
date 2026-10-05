@@ -1,0 +1,122 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": false, "score": 0.0, "wtok": 46090, "out_tok": 2429, "turns": 10, "secs": 40, "timed_out": false, "curl": false, "answer": "5 one-star books out of 20 total books in the Historical Fiction category."}
+
+$ for i in 1 2 3; do agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_18/index.html" && break; sleep 3; done; agent-browser wait "#col_left"; agent-browser get text "h1"; agent-browser eval "document.querySelector('#col_left ul.pagination').innerHTML"
+-> [278 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_18/index.html
+✗ Wait timed out after 25000ms
+404 Not Found
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:50
+
+
+Command exited with code 1
+$ for i in 1 2 3; do agent-browser open "https://books.toscrape.com/" && break; sleep 3; done; agent-browser wait "body"; agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('h3 ul li a')].map(a => a.getAttribute('href'));
+  return JSON.stringify(links);
+})()
+JS
+-> [85 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const a = [...document.querySelectorAll('a')].filter(x => /Historical/i.test(x.textContent)).map(x => x.href);
+  return JSON.stringify(a);
+})()
+JS
+-> [173 chars] "[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical_42/index.html\"]"
+
+$ for i in 1 2 3; do agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" && break; sleep 3; done; agent-browser wait "article.product_pod"; agent-browser eval "document.querySelector('h1').textContent"
+-> [163 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+"Historical Fiction"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = [...document.querySelectorAll('article.product_pod')];
+  const pg = document.querySelector('ul.pagination');
+  const next = pg ? [...pg.querySelectorAll('a')].find(a => /next/i.test(a.textContent)) : null;
+  return JSON.stringify({count: arts.length, stars: arts.map(a => a.querySelector('p.stars').className.replace('stars ','')), next: next ? next.href : null, total: (document.querySelector('.active') ? document.querySelector('.active').textContent.trim() : null)});
+})()
+JS
+-> [214 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'className')
+    at <anonymous>:5:93
+    at Array.map (<anonymous>)
+    at <anonymous>:5:58
+    at <anonymous>:6:3
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const a = document.querySelector('article.product_pod');
+  return JSON.stringify(a ? a.innerHTML.slice(0,600) : 'no article');
+})()
+JS
+-> [701 chars] "\"\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"../../../tipping-the-velvet_999/index.html\\\"><img src=\\\"../../../../media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg\\\" alt=\\\"Tipping the Velvet\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n                <p class=\\\"star-rating One\\\">\\n            …            <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"\""
+
+$ url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; total=0; one=0; n=1
+while :; do
+  for i in 1 2 3; do agent-browser open "$url" && break; sleep 3; done
+  agent-browser wait "article.product_pod"
+  out=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = [...document.querySelectorAll('article.product_pod')];
+  const stars = arts.map(a => a.querySelector('p.star-rating').className.replace('star-rating','').trim());
+  const pg = document.querySelector('ul.pagination');
+  const next = pg ? [...pg.querySelectorAll('a')].find(a => /next/i.test(a.textContent)) : null;
+  return JSON.stringify({n: arts.length, one: stars.filter(s => s==='One').length, stars: stars.join(','), next: next ? next.href : null, active: pg ? pg.querySelector('li.active').textContent.trim() : null});
+})()
+JS
+)
+  echo "page $n: $out"
+  cnt=$(echo "$out" | sed 's/.*"n":\([0-
+-> [737 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+page 1: "{\"n\":20,\"one\":5,\"stars\":\"One,Three,Five,One,Five,Four,Three,Two,Four,Two,Three,One,Four,Five,One,Five,Five,Two,One,Two\",\"next\":null,\"active\":null}"
+/bin/bash: line 18: "{\"n\":20,\"one\":5,\"stars\":\"One,Three,Five,One,Five,Four,Three,Two,Four,Two,Three,One,Four,Five,One,Five,Five,Two,One,Two\",\"next\":null,\"active\":null}": syntax  …e,One,Five,Four,Three,Two,Four,Two,Three,One,Four,Five,One,Five,Five,Two,One,Two\",\"next\":null,\"active\":null}"")
+TOTAL books=0 one-star=0 pages=1
+
+SAY: The JSON extraction broke in shell arithmetic. Let me check pagination directly first:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const pg = document.querySelector('ul.pagination') || document.querySelector('.pagination');
+  return JSON.stringify(pg ? pg.outerHTML : 'NO PAGINATION');
+})()
+JS
+agent-browser get text "h1"
+-> [39 chars] "\"NO PAGINATION\""
+Historical Fiction
+
+SAY: No pagination on this category — a single page holds everything. Let me verify cleanly:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = [...document.querySelectorAll('article.product_pod')];
+  const stars = arts.map(a => a.querySelector('p.star-rating').className.replace('star-rating','').trim());
+  return JSON.stringify({total: arts.length, oneStar: stars.filter(s => s === 'One').length, dist: stars.reduce((m,s)=>{m[s]=(m[s]||0)+1;return m;},{})});
+})()
+JS
+-> [96 chars] "{\"total\":20,\"oneStar\":5,\"dist\":{\"One\":5,\"Three\":3,\"Five\":5,\"Four\":3,\"Two\":4}}"
+
+SAY: **Result:**
+
+I opened the **Historical Fiction** category (`/catalogue/category/books/historical-fiction_4/`). The category has **no pagination** — all 20 books fit on a single page (the `ul.pagination` element is absent, so "all pages" = 1 page).
+
+Rating distribution across the 20 books:
+- **One star: 5**
+- Two stars: 4
+- Three stars: 3
+- Four stars: 3
+- Five stars: 5
+
+**Total books in the category: 20**
+**One-star books: 5**
+
+ANSWER: 5 one-star books out of 20 total books in the Historical Fic

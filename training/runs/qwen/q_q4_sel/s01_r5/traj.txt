@@ -1,0 +1,52 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r5", "correct": true, "score": 0.935, "wtok": 43280, "out_tok": 2066, "turns": 10, "secs": 115, "timed_out": false, "curl": false, "answer": "name: user3; href: https://the-internet.herokuapp.com/users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "#container img"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#container img')].map(img=>{const c=img.parentElement; return {src:img.src, html:c.outerHTML.slice(0,600)}}))"
+-> [119 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "#container img"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#container img')].map((img,i)=>{const c=img.parentElement; return {i, cls:c.className, html:c.innerHTML.slice(0,400)}}))"
+-> [119 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser get url; agent-browser eval "document.body ? document.body.innerText.slice(0,500) : 'no body'"
+-> [135 chars] https://the-internet.herokuapp.com/hovers
+"Hovers\n\nHover over the image for additional information\n\nPowered by Elemental Selenium"
+
+$ agent-browser eval "JSON.stringify(document.querySelector('#container') ? [...document.querySelectorAll('#container > div')].map(d=>d.innerHTML.slice(0,300)) : document.body.innerHTML.slice(0,1500))"
+-> [1826 chars] "\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\" class=\\\"large-12  …4 large-centered columns\\\">\\n        <hr>\\n        <div style=\\\"text-align: center;\\\">Powered by <a target=\\\"_blank\\\" href=\\\"http://\""
+
+SAY: Now let me actually perform the hover on the third avatar and verify the figcaption becomes visible:
+$ agent-browser hover ".example .figure:nth-child(3) img"; agent-browser wait ".example .figure:nth-child(3) .figcaption"; agent-browser eval "(() => {const f=document.querySelectorAll('.example .figure')[2]; const st=getComputedStyle(f.querySelector('.figcaption')); return JSON.stringify({name: f.querySelector('h5').textContent, href: f.querySelector('a').getAttribute('href'), hrefFull: f.querySelector('a').href, visible: st.display})})()"
+-> [146 chars] ✓ Done
+✓ Done
+"{\"name\":\"name: user3\",\"href\":\"/users/3\",\"hrefFull\":\"https://the-internet.herokuapp.com/users/3\",\"visible\":\"none\"}"
+
+SAY: The figcaption still reports display:none — let me verify the hover actually triggered by checking the `:hover` state:
+$ agent-browser eval "(() => {const fs=document.querySelectorAll('.example .figure'); return JSON.stringify({third: fs[2].matches(':hover'), second: fs[1].matches(':hover'), capDisp: getComputedStyle(fs[2].querySelector('.figcaption')).display})})()"
+-> [58 chars] "{\"third\":false,\"second\":false,\"capDisp\":\"none\"}"
+
+$ agent-browser get box ".example .figure:nth-child(3) img"; agent-browser hover ".example .figure:nth-child(3) img"; agent-browser eval "(() => {const fs=document.querySelectorAll('.example .figure'); const cap=fs[2].querySelector('.figcaption'); return JSON.stringify({hover:fs[2].matches(':hover'), disp:getComputedStyle(cap).display, name:cap.querySelector('h5').textContent, link:cap.querySelector('a').href})})()"
+-> [179 chars] x:      15
+y:      134.28125
+width:  160
+height: 160
+✓ Done
+"{\"hover\":false,\"disp\":\"none\",\"name\":\"name: user3\",\"link\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+$ agent-browser mouse move 95 214; agent-browser eval "(() => {const fs=document.querySelectorAll('.example .figure'); const cap=fs[2].querySelector('.figcaption'); return JSON.stringify({hover:fs[2].matches(':hover'), disp:getComputedStyle(cap).display, name:cap.querySelector('h5').textContent, href:cap.querySelector('a').href})})()"
+-> [126 chars] ✓ Done
+"{\"hover\":false,\"disp\":\"none\",\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+SAY: The DOM content is clear even though `:hover` isn't registering from synthetic events. Let me do one combined attempt to visually confirm:
+$ agent-browser hover ".example .figure:nth-child(3) img"; agent-browser screenshot /tmp/hovers.png; agent-browser eval "document.querySelectorAll('.example .figure')[2].matches(':hover')"
+-> [51 chars] ✓ Done
+✓ Screenshot saved to /tmp/hovers.png
+false
+
+SAY: The hover interactions in this headless environment don't persist the CSS `:hover` state from synthetic mouse events (checked with `:hover` matches after both `hover` and `mouse move`), but the DOM fully defines what the hover reveals. On the hovers page, each `.figure` hides a `.figcaption` (display:none) that the CSS rule `.figure:hover .figcaption { display: block }` reveals when hovered. I located and hovered the third `.figure` (img at box x:15 y:134 160×160) and read its figcaption:
+
+- **N

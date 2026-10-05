@@ -1,0 +1,187 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r3", "correct": true, "score": 0.839, "wtok": 107239, "out_tok": 5711, "turns": 15, "secs": 102, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open https://books.toscrape.com/; agent-browser snapshot -i | head -50
+-> [1537 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfiction" [r …ref=e47]
+- link "Suspense" [ref=e48]
+- link "Short Stories" [ref=e49]
+- link "Novels" [ref=e50]
+- link "Health" [ref=e51]
+- link "Politics" [ref=e52]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  booksOnPage: document.querySelectorAll('.product_pod').length,
+  navLinks: [...document.querySelectorAll('ul.pagination a')].map(a=>a.textContent.trim())
+})
+JS
+-> [39 chars] "{\"booksOnPage\":20,\"navLinks\":[]}"
+
+$ agent-browser eval --stdin <<'JS'
+const nav = document.querySelector('nav') || document.querySelector('ul.pagination');
+JSON.stringify(nav ? nav.innerHTML.slice(0,800) : 'no nav')
+JS
+-> [13 chars] "\"no nav\""
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a=>/catalogue\/page/.test(a.href)).map(a=>a.href))
+JS
+-> [57 chars] "[\"https://books.toscrape.com/catalogue/page-2.html\"]"
+
+$ cd /tmp && agent-browser eval --stdin > p1.json <<'JS'
+JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{
+  const a=p.querySelector('h3 a');
+  return {title:a? (a.textContent.trim()||a.getAttribute('title')):'', price:p.querySelector('.price_color').textContent.trim()};
+}))
+JS
+wc -c p1.json
+-> [13 chars] 1199 p1.json
+
+$ cd /tmp && rm -f page_*.json
+agent-browser open "https://books.toscrape.com/catalogue/" >/dev/null
+agent-browser wait '.product_pod'
+agent-browser eval --stdin > page_1.json <<'JS'
+JSON.stringify({books:[...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {t:(a.textContent.trim()||a.getAttribute('title')),p:p.querySelector('.price_color').textContent.trim()}}),hasNext:!![...document.querySelectorAll('a')].some(a=>a.textContent.trim()==='Next')})
+JS
+for i in $(seq 2 60); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1
+  agent-browser wait '.product_pod' 2>/dev/null
+  agent-browser eval --stdin > page_$i.json <<'JS'
+JSON.stringify({books:[...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {t:(a.textContent.trim()||a.getAttribute('title')),p:p.querySelector('.price_
+-> [83 chars] ✗ Wait timed out after 25000ms
+✓ Done
+stopped after page 2
+page_1.json
+page_2.json
+
+$ cd /tmp && head -c 600 page_1.json; echo; echo ---; cat page_2.json
+-> [1120 chars] "{\"books\":[],\"hasNext\":false}"
+
+---
+"{\"books\":[{\"t\":\"In Her Wake\",\"p\":\"£12.84\"},{\"t\":\"How Music Works\",\"p\":\"£37.32\"},{\"t\":\"Foolproof Preserving: A Guide ...\",\"p\":\"£30.52\"},{\"t\":\"Chase Me (Paris Nights ...\",\"p\":\"£25.27\"},{\"t\":\"Black Dust\",\"p\":\"£34.53\"},{\"t\":\"Birdsong: A Story in ...\",\"p\":\"£54.64\"},{\"t\":\"America's Cradle of Quarterbacks: ...\",\"p\":\"£22.50\"},{\"t\":\"Aladdin and His Wonderful ...\",\"p\":\"£53.13\"},{\"t\":\"Worlds Elsewh …rk ...\",\"p\":\"£19.63\"},{\"t\":\"Behind Closed Doors\",\"p\":\"£52.22\"},{\"t\":\"You can't bury them ...\",\"p\":\"£33.63\"}],\"hasNext\":false}"
+
+$ cd /tmp && agent-browser eval --stdin <<'JS'
+const links=[...document.querySelectorAll('a')].filter(a=>/catalogue\/page-/.test(a.href)).map(a=>({txt:a.textContent.trim(),href:a.href}));
+JSON.stringify(links)
+JS
+-> [170 chars] "[{\"txt\":\"previous\",\"href\":\"https://books.toscrape.com/catalogue/page-1.html\"},{\"txt\":\"next\",\"href\":\"https://books.toscrape.com/catalogue/page-3.html\"}]"
+
+SAY: The link text is lowercase "next" — my check was wrong, and page 1 came back empty due to a slow load. Re-extracting:
+$ cd /tmp && rm -f page_*.json
+agent-browser open "https://books.toscrape.com/catalogue/" ; agent-browser wait '.product_pod'
+agent-browser eval --stdin > page_1.json <<'JS'
+JSON.stringify({books:[...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {t:(a.textContent.trim()||a.getAttribute('title')),p:p.querySelector('.price_color').textContent.trim()}}),hasNext:!![...document.querySelectorAll('a')].some(a=>a.textContent.trim().toLowerCase()==='next')})
+JS
+for i in $(seq 2 60); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1
+  agent-browser wait '.product_pod' 2>/dev/null
+  agent-browser eval --stdin > page_$i.json <<'JS'
+JSON.stringify({books:[...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {t:(a.textContent.trim()||a.getAttribute('title')),p:p.querySelector('.p
+-> [139 chars] ✓ 403 Forbidden
+  https://books.toscrape.com/catalogue/
+✗ Wait timed out after 25000ms
+✓ Done
+stopped after page 2
+page_1.json
+page_2.json
+
+$ cd /tmp && head -c 300 page_1.json; echo; head -c 300 page_2.json
+-> [331 chars] "{\"books\":[],\"hasNext\":false}"
+
+"{\"books\":[{\"t\":\"In Her Wake\",\"p\":\"£12.84\"},{\"t\":\"How Music Works\",\"p\":\"£37.32\"},{\"t\":\"Foolproof Preserving: A Guide ...\",\"p\":\"£30.52\"},{\"t\":\"Chase Me (Paris Nights ...\",\"p\":\"£25.27\"},{\"t\":\"Black Dust\",\"p\":\"£34.53\"},{\"t\":\"Birdsong: A Story in ...\",\
+$ cd /tmp && tail -c 200 page_2.json
+-> [196 chars]  ...\",\"p\":\"£18.02\"},{\"t\":\"In a Dark, Dark ...\",\"p\":\"£19.63\"},{\"t\":\"Behind Closed Doors\",\"p\":\"£52.22\"},{\"t\":\"You can't bury them ...\",\"p\":\"£33.63\"}],\"hasNext\":true}"
+
+SAY: Found two issues: the outer JSON escaping is breaking the grep pattern, and the 403s require retry logic. I'll rewrite this with a more robust fetcher.
+$ cd /tmp && rm -f page_*.json
+cat > fetch.sh <<'SH'
+#!/bin/bash
+fetch_page() {
+  local i=$1
+  for attempt in 1 2 3 4 5; do
+    agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1
+    agent-browser wait '.product_pod' >/dev/null 2>&1
+    agent-browser eval --stdin > page_$i.json <<'JS'
+JSON.stringify({books:[...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {t:(a.textContent.trim()||a.getAttribute('title')),p:p.querySelector('.price_color').textContent.trim()}}),hasNext:!![...document.querySelectorAll('a')].some(a=>a.textContent.trim().toLowerCase()==='next')})
+JS
+    if grep -q 'books\\":\[' page_$i.json; then return 0; fi
+    sleep 3
+  done
+  return 1
+}
+for i in $(seq 1 60); do
+  fetch_page $i || { echo "FAILED page $i"; exit 1; }
+  grep -q 'hasNext\\":true' page_$i.json || { echo "stopped after page $i"; break
+-> [22 chars] stopped after page 50
+
+SAY: All 50 pages captured (20 books each, last page has no "next"). Now computing:
+$ cd /tmp && python3 - <<'EOF'
+import json, glob
+all_books=[]
+for f in sorted(glob.glob('page_*.json'), key=lambda x:int(x.split('_')[1].split('.')[0])):
+    data=json.loads(json.load(open(f)))  # outer quotes -> json string -> object
+    all_books.extend(data['books'])
+    assert len(data['books'])==20 or f=='page_1.json', (f, len(data['books']))
+print("total books:", len(all_books))
+def price(b): return float(b['p'].replace('£','').strip())
+cheap=[b for b in all_books if price(b) < 12.00]
+print("under 12.00:", len(cheap))
+cheapest=min(all_books, key=price)
+print("cheapest:", cheapest['t'], cheapest['p'])
+# sanity: check for dupes between pages
+print("unique titles:", len(set(b['t'] for b in all_books)))
+EOF
+-> [97 chars] total books: 1000
+under 12.00: 44
+cheapest: An Abundance of Katherines £10.00
+unique titles: 992
+
+$ cd /tmp && python3 - <<'EOF'
+import json, glob
+all_books=[]
+for f in sorted(glob.glob('page_*.json'), key=lambda x:int(x.split('_')[1].split('.')[0])):
+    d=json.loads(json.load(open(f)))
+    all_books.extend(d['books'])
+def price(b): return float(b['p'].replace('£','').strip())
+cheap=sorted([b for b in all_books if price(b)<12.00], key=price)
+for b in cheap[:10]: print(b['t'], b['p'])
+print("count under 12:", len(cheap))
+print("cheapest:", cheap[0]['t'], cheap[0]['p'])
+EOF
+-> [361 chars] An Abundance of Katherines £10.00
+The Origin of Species £10.01
+The Tipping Point: How ... £10.02
+Patience £10.16
+Greek Mythic History £10.23
+The Fellowship of the ... £10.27
+History of Beauty £10.29
+The Lucifer Effect: Understanding ... £10.40
+NaNo What Now? Finding ... £10.41
+Pet Sematary £10.56
+count under 12: 44
+cheapest: An Abundance of Katherines £10.00
+
+SAY: Done. I scraped the full catalogue in the live browser: 50 pages × 20 books = 1,000 books (stopped at page 50 where the "next" link disappears).
+
+**Results:**
+- Books costing less than £12.00: **44** (range £10.00–£11.99)
+- Cheapest book: **_An Abundance of Katherines_ — £10.00** (runner-up: The Origin of Species at £10.01)
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of Katherines" at £10.00.

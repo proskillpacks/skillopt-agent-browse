@@ -1,0 +1,55 @@
+TASK t08: On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?
+EXPECT: ['gravity', '\\b7\\b', '12 years a slave']
+RESULT: {"id": "t08_r1", "correct": true, "score": 0.978, "wtok": 14818, "out_tok": 911, "turns": 4, "secs": 7, "timed_out": false, "curl": false, "answer": "Gravity won the most awards in 2013 (7), and 12 Years a Slave is marked as Best Picture."}
+
+$ agent-browser open https://www.scrapethissite.com/pages/ajax-javascript/ ; agent-browser snapshot -i
+-> [660 chars] ✓ Oscar Winning Films: AJAX and Javascript | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/ajax-javascript/
+- link "Sandbox" [ref=e9]
+- link "Lessons" [ref=e10]
+- link "FAQ" [ref=e11]
+- link "Login" [ref=e12]
+- heading "Oscar Winning Films: AJAX and Javascript 87 items" [level=1, ref=e1]
+- link "3 video lessons" [ref=e13]
+- link "https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films" [ref=e14]
+- heading "Choose a Year to View Films" [level=3, ref=e2]
+- link "2015" [ref=e3]
+- link "2014" [ref=e4]
+- link "2013" [ref=e5]
+- link "2012" [ref=e6]
+- link "2011" [ref=e7]
+- link "2010" [ref=e8]
+
+$ agent-browser click e5 ; agent-browser wait tr; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tr')].map(r => {
+  const c = [...r.querySelectorAll('td')].map(td => td.textContent.trim());
+  return c;
+}))
+JS
+-> [480 chars] ✓ Done
+✓ Done
+"[[],[\"12 Years a Slave\",\"9\",\"3\",\"\"],[\"Gravity\",\"10\",\"7\",\"\"],[\"Dallas Buyers Club\",\"6\",\"3\",\"\"],[\"Frozen\",\"2\",\"2\",\"\"],[\"The Great Gatsby\",\"2\",\"2\",\"\"],[\"Her\",\"5\",\"1\",\"\"],[\"Blue Jasmine\",\"3\",\"1\",\"\"],[\"Mr Hublot\",\"1\",\"1\",\"\"],[\"The Lady in Number 6: Music Saved My Life\",\"1\",\"1\",\"\"],[\"Helium\",\"1\",\"1\",\"\"],[\"The Great Beauty\",\"1\",\"1\",\"\"],[\"20 Feet from Stardom\",\"1\",\"1\",\"\"]]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  head: [...document.querySelectorAll('thead th')].map(t=>t.textContent.trim()),
+  last: [...document.querySelectorAll('tbody tr')].map(r=>[...r.children].map(td=>({txt:td.textContent.trim(), html:td.innerHTML.slice(0,80)})))
+})
+JS
+-> [1932 chars] "{\"head\":[\"Title\",\"Nominations\",\"Awards\",\"Best Picture\"],\"last\":[[{\"txt\":\"12 Years a Slave\",\"html\":\"12 Years a Slave\"},{\"txt\":\"9\",\"html\":\"9\"},{\"txt\":\"3\",\"html\":\"3\"},{\"txt\":\"\",\"html\":\"<i class=\\\"glyphicon glyphicon-flag\\\"></i>\"}],[{\"txt\":\"Gravity\",\"html\":\"Gravity\"},{\"txt\":\"10\",\"html\":\"10\"},{\"txt\":\"7\",\"html\":\"7\"},{\"txt\":\"\",\"html\":\"\"}],[{\"txt\":\"Dallas Buyers Club\",\"html\":\"Dallas Buyers Club\"},{\"txt\":\"6\",\"ht …Feet from Stardom\",\"html\":\"20 Feet from Stardom\"},{\"txt\":\"1\",\"html\":\"1\"},{\"txt\":\"1\",\"html\":\"1\"},{\"txt\":\"\",\"html\":\"\"}]]}"
+
+SAY: I opened the site, clicked the **2013** year filter, and read the resulting table (columns: Title, Nominations, Awards, Best Picture).
+
+**2013 films shown:**
+
+| Film | Nominations | Awards | Best Picture |
+|---|---|---|---|
+| 12 Years a Slave | 9 | 3 | ⚑ (flag icon) |
+| Gravity | 10 | 7 | |
+| Dallas Buyers Club | 6 | 3 | |
+| Frozen | 2 | 2 | |
+| The Great Gatsby | 2 | 2 | |
+| Her | 5 | 1 | |
+| Blue Jasmine | 3 | 1 | |
+| Mr Hublot | 1 | 1 | |
+| The Lady in Number 6: Music Saved My Life | 1 | 1 | 

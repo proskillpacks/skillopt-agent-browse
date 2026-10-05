@@ -1,0 +1,64 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r3", "correct": true, "score": 0.948, "wtok": 34704, "out_tok": 1153, "turns": 10, "secs": 109, "timed_out": false, "curl": false, "answer": "After removing the checkbox the message is \"It's gone!\". After enabling, the message is \"It's enabled!\" and the input's value is \"hello\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser snapshot -i; agent-browser eval "document.querySelector('#msg').textContent"
+-> [164 chars] (no interactive elements)
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:31
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "#remove-button"
+-> [128 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser eval "document.body.innerHTML.slice(0,1500)"
+-> [1605 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <script src=\"https://ajax.googlea …     } else if (target === \"input\") {\n        toggleInputControls();\n      }\n    }, 3000 );\n  };\n\n  function toggleCheckboxControls() {\n   "
+
+$ agent-browser snapshot -i; agent-browser eval "document.getElementById('checkbox-example').textContent"
+-> [360 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+"\n     A checkbox\n    Remove\n  "
+
+$ agent-browser click @e5; agent-browser wait "#msg"; agent-browser eval "JSON.stringify({msg: document.getElementById('msg').textContent, hasCheckbox: !!document.querySelector('#checkbox-example input')})"
+-> [176 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:52
+
+
+Command exited with code 1
+$ agent-browser eval "document.body.innerHTML.length + ' ' + document.getElementById('checkbox-example').textContent"
+-> [52 chars] "3640 \n    \n    AddIt's gone!Wait for it... \n  "
+
+$ agent-browser eval "JSON.stringify({msg: (document.querySelector('#message')||{}).textContent, flash: document.getElementById('flash-messages').textContent})"
+-> [120 chars] "{\"msg\":\"It's gone!\",\"flash\":\"\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      \"}"
+
+SAY: The checkbox is gone and the message is "It's gone!". Now the Enable part:
+$ agent-browser click @e7; agent-browser wait "not #input-example input:disabled"; agent-browser fill "#input-example input" "hello"; agent-browser eval "JSON.stringify({msg: document.getElementById('message').textContent, value: document.getElementById('input-example').querySelector('input').value})"
+-> [95 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✓ Done
+"{\"msg\":\"It's enabled!\",\"value\":\"hello\"}"
+
+SAY: All steps completed successfully:
+
+1. **Remove (checkbox):** After the delay, the checkbox disappeared and the message shown was **"It's gone!"**
+2. **Enable (text input):** After the delay, the text input became enabled; I typed `hello` into it, and the message shown was **"It's enabled!"** with the input's value being **`hello`**
+
+ANSWER: After removing the checkbox the message is "It's gone!". After enabling, the message is "It's enabled!" and the input's value is "hello".

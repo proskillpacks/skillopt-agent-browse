@@ -1,0 +1,79 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": true, "score": 0.882, "wtok": 78635, "out_tok": 3791, "turns": 15, "secs": 54, "timed_out": false, "curl": false, "answer": "The third avatar's overlay shows the name \"user3\" and its 'View profile' link has href https://the-internet.herokuapp.com/users/3"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait "img" ; agent-browser hover "img:nth-child(3)" ; agent-browser snapshot -i
+-> [320 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✗ Element not found: img:nth-child(3). Verify the selector, role, or name is correct and the element exists in the DOM.
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval "JSON.stringify([...'...'])" 2>/dev/null; agent-browser eval "(() => { const imgs=[...document.querySelectorAll('#hovers img')]; return JSON.stringify(imgs.map(i=>i.alt)); })()"
+-> [27 chars] "[\".\",\".\",\".\"]"
+"[]"
+
+$ agent-browser hover "img:nth-of-type(3)"; agent-browser eval "(() => { const d=[...document.querySelectorAll('div.overlay')].pop(); return JSON.stringify(d?{text:d.textContent, href:d.querySelector('a').href, name:d.querySelector('span,h5')?.textContent}:null); })()"
+-> [129 chars] ✗ Element not found: img:nth-of-type(3). Verify the selector, role, or name is correct and the element exists in the DOM.
+"null"
+
+$ agent-browser eval "(() => { const imgs=[...document.querySelectorAll('img')]; return JSON.stringify(imgs.map(i=>({sel:i.parentElement?i.parentElement.tagName+'#'+i.parentElement.id:'', alt:i.alt}))); })()"; agent-browser eval "(() => { const imgs=[...document.querySelectorAll('img')]; const i3=imgs[2]; const ov=i3.parentElement.querySelector('div'); return JSON.stringify({name:ov.querySelector('span,h5')?.textContent, href:ov.querySelector('a')?.href}); })()"
+-> [265 chars] "[{\"sel\":\"A#\",\"alt\":\"Fork me on GitHub\"},{\"sel\":\"DIV#\",\"alt\":\"User Avatar\"},{\"sel\":\"DIV#\",\"alt\":\"User Avatar\"},{\"sel\":\"DIV#\",\"alt\":\"User Avatar\"}]"
+"{\"name\":\"name: user2\",\"href\":\"https://the-internet.herokuapp.com/users/2\"}"
+
+SAY: The "Fork me on GitHub" image was in the list, so the third avatar is `img[3]`. Let me hover properly:
+$ agent-browser hover 'div:nth-child(3) img'; agent-browser eval "(() => { const d=document.querySelector('div:nth-child(3) .hoverlink'); return JSON.stringify({text:d.textContent, href:d.querySelector('a').href}); })()"
+-> [171 chars] ✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:103
+    at <anonymous>:1:152
+
+
+Command exited with code 1
+$ agent-browser eval "(() => { const d=[...document.querySelectorAll('.hoverlink')].pop(); return JSON.stringify({text:d.textContent, href:d.querySelector('a').href}); })()"
+-> [169 chars] ✗ Evaluation error: TypeError: Cannot read properties of undefined (reading 'textContent')
+    at <anonymous>:1:100
+    at <anonymous>:1:149
+
+
+Command exited with code 1
+$ agent-browser eval "(() => { const divs=[...document.querySelectorAll('div')].filter(d=>d.offsetWidth>0 && d.style.position); return JSON.stringify(divs.map(d=>({cls:d.className, text:d.textContent.trim().slice(0,60), html:d.innerHTML.slice(0,200)}))); })()"
+-> [5 chars] "[]"
+
+$ agent-browser eval "(() => { const imgs=[...document.querySelectorAll('img')]; const i=imgs[3]; const p=i.parentElement; return JSON.stringify(p.innerHTML); })()"
+-> [211 chars] "\"\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  \""
+
+$ agent-browser hover 'div:nth-child(3) img'; agent-browser eval "(() => { const a=[...document.querySelectorAll('a')].find(x=>x.textContent==='View profile' && x.offsetParent); const p=a.closest('div').querySelector('h5'); return JSON.stringify({name:p.textContent, href:a.href}); })()"
+-> [92 chars] ✓ Done
+"{\"name\":\"name: user1\",\"href\":\"https://the-internet.herokuapp.com/users/1\"}"
+
+$ agent-browser get box "img[alt='User Avatar']"
+-> [53 chars] x:      15
+y:      134.28125
+width:  160
+height: 160
+
+$ agent-browser eval "(() => { const imgs=[...document.querySelectorAll('img[alt=\"User Avatar\"]')]; return JSON.stringify(imgs.map(i=>{const r=i.getBoundingClientRect(); return [Math.round(r.x+r.width/2), Math.round(r.y+r.height/2)];})); })()"
+-> [33 chars] "[[95,214],[275,214],[455,214]]"
+
+$ agent-browser mouse move 455 214; agent-browser eval "(() => { const vis=[...document.querySelectorAll('div')].filter(d=>d.querySelector('a[href*=\"/users/\"]') && d.offsetWidth>0); return JSON.stringify(vis.map(d=>({name:d.querySelector('h5').textContent, href:d.querySelector('a').href, cls:d.className}))); })()"
+-> [737 chars] ✓ Done
+"[{\"name\":\"name: user1\",\"href\":\"https://github.com/tourdedave/the-internet\",\"cls\":\"row\"},{\"name\":\"name: user1\",\"href\":\"https://the-internet.herokuapp.com/users/1\",\"cls\":\"large-12 columns\"},{\"name\":\"name: user1\",\"href\":\"https://the-internet.herokuapp.com/users/1\",\"cls\":\"example\"},{\"name\":\"name: user1\",\"href\":\"https://the-internet.herokuapp.com/users/1\",\"cls\":\"figure\"},{\"name\":\"name: user2\",\"href\":\"https://the-internet.herokuapp.com/use …rokuapp.com/users/3\",\"cls\":\"figure\"},{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"cls\":\"figcaption\"}]"
+
+$ agent-browser eval "(() => { const f=[...document.querySelectorAll('figcaption')].pop(); const cs=getComputedStyle(f); const a=f.querySelector('a'); return JSON.stringify({name:f.querySelector('h5').textContent, href:a.href, linkText:a.textContent, visible:cs.display!=='none'&&f.offsetWidth>0}); })()"
+-> [196 chars] ✗ Evaluation error: TypeError: Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'.
+    at <anonymous>:1:79
+    at <anonymous>:1:280
+
+
+Command exited with code 1
+$ agent-browser eval "(() => { const f=[...document.querySelectorAll('.figcaption')].pop(); const cs=getComputedStyle(f); return JSON.stringify({name:f.querySelector('h5').textContent, href:f.querySelector('a').href, linkText:f.querySelector('a').textContent, display:cs.display, opacity:cs.opacity}); })()"
+-> [155 chars] "{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"linkText\":\"View profile\",\"display\":\"block\",\"opacity\":\"1\"}"
+
+SAY: Hovering over the third avatar shows its overlay (display: block, opacity: 1) with:
+
+- **Name shown:** `user3` (the overlay's heading reads "name: user3")
+- **'View profile' link href:** `https://the-internet.herokuapp.com/users/3`
+
+ANSWER: The third avatar's overlay shows the name "user3" and its 'View profile' link has href https://the-internet.herokuapp.com/users/3

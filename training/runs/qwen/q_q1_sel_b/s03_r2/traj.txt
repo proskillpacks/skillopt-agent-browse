@@ -1,0 +1,95 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": true, "score": 0.948, "wtok": 34455, "out_tok": 991, "turns": 7, "secs": 9, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the category has 26 books in total."}
+
+$ agent-browser open "https://books.toscrape.com/category_26/historical-fiction_3/index.html"; agent-browser snapshot -i
+-> [133 chars] ✓ 404 Not Found
+  https://books.toscrape.com/category_26/historical-fiction_3/index.html
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser snapshot -i
+-> [5438 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e3]
+- link "Home" [ref=e4]
+- link "Books" [ref=e5]
+- link "Travel" [ref=e7]
+- link "Mystery" [ref=e8]
+- link "Historical Fiction" [ref=e9]
+- link "Sequential Art" [ref=e10]
+- link "Classics" [ref=e11]
+- link "Philosophy" [ref=e12]
+- link "Romance" [ref=e13]
+- link "Womens Fiction" [ref=e14]
+- link "Fiction" [ref=e15]
+- link "Childrens" [ref=e16]
+- link "Religion" [ref=e17]
+- link "Nonfiction" [ …"It's Only the Himalayas" [level=3, ref=e76]
+  - link "It's Only the Himalayas" [ref=e116]
+- button "Add to basket" [ref=e136]
+- link "next" [ref=e6]
+
+$ agent-browser click @e9; agent-browser snapshot -i | head -40
+-> [1222 chars] ✓ Done
+- link "Books to Scrape" [ref=e138]
+- link "Home" [ref=e139]
+- link "Books" [ref=e140]
+- link "Books" [ref=e141]
+- link "Travel" [ref=e143]
+- link "Mystery" [ref=e144]
+- link "Historical Fiction" [ref=e145]
+- link "Sequential Art" [ref=e146]
+- link "Classics" [ref=e147]
+- link "Philosophy" [ref=e148]
+- link "Romance" [ref=e149]
+- link "Womens Fiction" [ref=e150]
+- link "Fiction" [ref=e151]
+- link "Childrens" [ref=e152]
+- link "Religion" [ref=e153]
+- link "Nonfiction" [ref=e154]
+- link "Mu …d and Drink" [ref=e174]
+- link "Christian Fiction" [ref=e175]
+- link "Business" [ref=e176]
+- link "Biography" [ref=e177]
+- link "Thriller" [ref=e178]
+
+$ agent-browser eval "location.pathname"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  books: document.querySelectorAll('article.product_pod').length,
+  sample: document.querySelector('article.product_pod .star-rating')?.outerHTML,
+  pagination: Array.from(document.querySelectorAll('ul.pagination li a')).map(a=>a.textContent),
+  totalText: document.querySelector('form .form-control')?.value || null
+})
+JS
+-> [456 chars] "/catalogue/category/books/historical-fiction_4/index.html"
+"{\"books\":20,\"sample\":\"<p class=\\\"star-rating One\\\">\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                </p>\",\"pagination\":[],\"totalText\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  oneStar: document.querySelectorAll('article.product_pod .star-rating.One').length,
+  next: document.querySelector('.next a')?.getAttribute('href') || null,
+  hasNext: !!document.querySelector('.next'),
+  total: document.querySelectorAll('article.product_pod').length
+})
+JS
+-> [73 chars] "{\"oneStar\":5,\"next\":\"page-2.html\",\"hasNext\":true,\"total\":20}"
+
+$ agent-browser eval "location.href = document.querySelector('.next a').href"; agent-browser wait "article.product_pod"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  books: document.querySelectorAll('article.product_pod').length,
+  oneStar: document.querySelectorAll('article.product_pod .star-rating.One').length,
+  next: document.querySelector('.next a')?.getAttribute('href') || null
+})
+JS
+-> [138 chars] "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"
+✓ Done
+"{\"books\":6,\"oneStar\":0,\"next\":null}"
+
+SAY: Done. The Historical Fiction category spans 2 pages:
+
+- **Page 1:** 20 books, 5 with a one-star rating (class `star-rating One`)
+- **Page 2:** 6 books, 0 with a one-star rating
+
+Totals: **26 books** in the category, **5 books** with a one-star rating.
+
+ANSWER: 5 books have a one-star rating; the category has 26 books in total.

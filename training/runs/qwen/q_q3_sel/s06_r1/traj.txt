@@ -1,0 +1,64 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r1", "correct": true, "score": 0.957, "wtok": 28923, "out_tok": 1185, "turns": 8, "secs": 420, "timed_out": false, "curl": false, "answer": "Remove showed \"It's gone!\"; Enable showed \"It's enabled!\" and the input value was \"hello\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser snapshot -i
+-> [57 chars] ✗ CDP command timed out: Page.navigate
+- Iframe [ref=e1]
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" && break; sleep 5; done; agent-browser snapshot -i
+-> [231 chars] ✗ CDP command timed out: Page.navigate
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser eval "document.title + ' | ' + document.readyState"; agent-browser snapshot -i
+-> [351 chars] "The Internet | complete"
+- link "Fork me on GitHub" [ref=e2]
+- heading "Dynamic Controls" [level=4, ref=e3]
+- heading "Remove/add" [level=4, ref=e4]
+- checkbox [checked=false, ref=e9]
+- button "Remove" [ref=e6]
+- heading "Enable/disable" [level=4, ref=e5]
+- textbox [disabled, ref=e7]
+- button "Enable" [ref=e8]
+- link "Elemental Selenium" [ref=e10]
+
+$ agent-browser click @e6; for i in 1 2 3 4 5 6 7 8 9 10; do agent-browser wait --fn "document.querySelector('#checkbox').style.display === 'none'" 2>/dev/null && break; sleep 1; done; agent-browser snapshot -i; agent-browser eval "document.querySelector('#flash').textContent"
+-> [432 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e2]
+- heading "Dynamic Controls" [level=4, ref=e3]
+- heading "Remove/add" [level=4, ref=e4]
+- button "Add" [ref=e6]
+- heading "Enable/disable" [level=4, ref=e5]
+- textbox [disabled, ref=e7]
+- button "Enable" [ref=e8]
+- link "Elemental Selenium" [ref=e10]
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:33
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({flash: document.getElementById('flash') ? document.getElementById('flash').textContent : null, body: document.body.innerText})"
+-> [281 chars] "{\"flash\":null,\"body\":\"Dynamic Controls\\n\\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\\n\\nRemove/add\\n\\n\\nAdd\\n\\nIt's gone!\\n\\n\\n\\n\\n\\nEnable/disable\\n\\n\\nEnable\\nPowered by Elemental Selenium\"}"
+
+SAY: The checkbox is gone and the flash message is "It's gone!". Now the enable part:
+$ agent-browser click @e8; agent-browser wait --fn "document.querySelector('#input').disabled === false" 2>&1; agent-browser fill @e7 "hello"; agent-browser eval "JSON.stringify({msg: document.querySelector('.flash') ? document.querySelector('.flash').textContent : null, value: document.querySelector('#input').value})"
+-> [178 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'value')
+    at <anonymous>:1:149
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('input, textarea')].map(e => ({id: e.id, tag: e.tagName, disabled: e.disabled, value: e.value})))"; agent-browser eval "document.body.innerText"
+-> [330 chars] "[{\"id\":\"\",\"tag\":\"INPUT\",\"disabled\":false,\"value\":\"hello\"}]"
+"Dynamic Controls\n\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\n\nRemove/add\n\n\nAdd\n\n\n\nEnable/disable\n\n\nDisable\n\nIt's enabled!\n\nWait for it... \n\n\nPowered by Elemental Selenium"
+
+SAY: Done. Results from the dynamic_controls page:
+
+1. **Remove click** — the checkbox disappeared, the button toggled to "Add", and the flash message shown was: **"It's gone!"**
+2. **Enable click** — after waiting for the input to become enabled and typing `hello`, the flash message shown was **"It's enabled!"** (button toggled to "Disable"), and the input's value was **"hello"** (confirmed enabled via `disabled: false`).
+
+ANSWER: Remove showed "It's gone!"; Enable showed "It's enabled!" and the inp

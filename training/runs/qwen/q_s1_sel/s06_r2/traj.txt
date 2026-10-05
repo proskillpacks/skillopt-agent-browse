@@ -1,0 +1,82 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r2", "correct": true, "score": 0.941, "wtok": 39174, "out_tok": 1603, "turns": 11, "secs": 37, "timed_out": false, "curl": false, "answer": "Remove \u2192 \"It's gone!\"; Enable + typed \"hello\" \u2192 message \"It's enabled!\", input value \"hello\""}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser snapshot -i
+-> [393 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e5; agent-browser wait ".fb-text"; agent-browser get text ".fb-text"
+-> [178 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: .fb-text. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({msg: document.querySelector('.fb-text')?.textContent, visible: document.querySelector('.fb-text')?.offsetParent !== null, cb: !!document.querySelector('#checkbox'), tb: document.querySelector('#textbox'), disabled: document.querySelector('#textbox')?.disabled})"
+-> [46 chars] "{\"visible\":true,\"cb\":false,\"tb\":null}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('p,div,span')].filter(e=>e.textContent.trim()&&e.children.length===0).map(e=>({tag:e.tagName,cls:e.className,id:e.id,txt:e.textContent.trim()})).filter(x=>/done|enabled|added|removed/i.test(x.txt)))"
+-> [5 chars] "[]"
+
+$ agent-browser eval "document.body.innerText"; agent-browser snapshot
+-> [1012 chars] "Dynamic Controls\n\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\n\nRemove/add\n\n\nAdd\n\nIt's gone!\n\n\n\n\n\nEnable/disable\n\n\nEnable\nPowered by Elemental Selenium"
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - generic
+    - heading "Dynamic Controls" [level=4, ref=e2]
+    - paragraph
+      - StaticText "This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed a …ton "Enable" [ref=e7]
+    - generic
+      - separator
+      - generic
+        - StaticText "Powered by "
+        - link "Elemental Selenium" [ref=e9]
+
+SAY: The checkbox is gone and the message is **"It's gone!"**. Now clicking Enable:
+$ agent-browser click @e7; agent-browser wait --fn "[].concat(document.querySelectorAll('#textbox')).some(e=>!e.disabled)"; agent-browser fill "#textbox" "hello"; agent-browser eval "JSON.stringify({value: document.querySelector('#textbox').value, msg: [...document.querySelectorAll('p,div')].map(e=>e.textContent.trim()).filter(t=>t&&/it's|enabled/i.test(t))})"
+-> [256 chars] ✓ Done
+true
+✗ Element not found: #textbox. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'value')
+    at <anonymous>:1:58
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({inputs:[...document.querySelectorAll('input')].map(i=>({id:i.id,name:i.name,cls:i.className,disabled:i.disabled}),), body: document.querySelector('.content').innerText})"
+-> [137 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:174
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({inputs:[...document.querySelectorAll('input')].map(i=>({id:i.id,name:i.name,cls:i.className,disabled:i.disabled})), txt: document.body.innerText})"
+-> [339 chars] "{\"inputs\":[{\"id\":\"\",\"name\":\"\",\"cls\":\"\",\"disabled\":true}],\"txt\":\"Dynamic Controls\\n\\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\\n\\nRemove/add\\n\\n\\nAdd\\n\\n\\n\\nEnable/disable\\n\\n\\nEnable\\nWait for it... \\n\\n\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser wait --fn "!document.querySelector('input').disabled"; agent-browser fill "input" "hello"; agent-browser eval "JSON.stringify({value: document.querySelector('input').value, disabled: document.querySelector('input').disabled, body: document.body.innerText.split('Enable/disable')[1].trim()})"
+-> [154 chars] true
+✓ Done
+"{\"value\":\"hello\",\"disabled\":false,\"body\":\"Disable\\n\\nIt's enabled!\\n\\nWait for it... \\n\\n\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Done. Results from the live browser session on `https://the-internet.herokuapp.com/dynamic_controls`:
+
+**Remove flow:**
+- Clicked **Remove**; after the async delay the checkbox disappeared.
+- Message shown: **"It's gone!"** (button switched to "Add").
+
+**Enable flow:**
+- Clicked **Enable** (a transient "Wait for it..." notice appeared), waited until the text input became enabled, then typed `hello`.
+- Message shown: **"It's enabled!"** (button switched to "Disable").
+- Text input's value: **`hel

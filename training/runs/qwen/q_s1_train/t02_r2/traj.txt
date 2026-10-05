@@ -1,0 +1,83 @@
+TASK t02: On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.
+EXPECT: ['you clicked: cancel', 'you entered: skillopt-42']
+RESULT: {"id": "t02_r2", "correct": true, "score": 0.958, "wtok": 28002, "out_tok": 1342, "turns": 8, "secs": 122, "timed_out": false, "curl": false, "answer": "Confirm (Cancel) \u2192 \"You clicked: Cancel\"; Prompt (skillopt-42, OK) \u2192 \"You entered: skillopt-42\""}
+
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts && agent-browser dialog accept "skillopt-42" && agent-browser click "button[id=confirm]" ; agent-browser dialog dismiss ; agent-browser eval "document.querySelector('#result').textContent" ; agent-browser click "button[id=prompt]" ; agent-browser dialog accept "skillopt-42" ; agent-browser eval "document.querySelector('#result').textContent" ; agent-browser close
+-> [569 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:34
+✗ Element not found: button[id=prompt]. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:34
+✓ Browser closed
+
+SAY: The first run misfired. Restarting with proper ordering:
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts ; agent-browser wait "#result" ; agent-browser click "button#confirm" ; agent-browser dialog dismiss ; agent-browser eval "document.querySelector('#result').textContent" ; agent-browser click "button#prompt" ; agent-browser dialog accept "skillopt-42" ; agent-browser eval "document.querySelector('#result').textContent" ; agent-browser close
+-> [487 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/javascript_alerts
+✗ Wait timed out after 25000ms
+✗ Element not found: button#confirm. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+""
+✗ Element not found: button#prompt. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+""
+✓ Browser closed
+
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts ; agent-browser wait --fn "!!document.querySelector('button')" ; agent-browser eval "JSON.stringify([...document.querySelectorAll('button')].map(b=>b.id||b.textContent))" ; agent-browser eval "!!document.getElementById('result')"
+-> [156 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/javascript_alerts
+true
+"[\"Click for JS Alert\",\"Click for JS Confirm\",\"Click for JS Prompt\"]"
+true
+
+$ agent-browser click "text=Click for JS Confirm" ; agent-browser dialog dismiss ; agent-browser eval "document.getElementById('result').textContent" ; agent-browser click "text=Click for JS Prompt" ; agent-browser dialog accept "skillopt-42" ; agent-browser eval "document.getElementById('result').textContent" ; agent-browser close
+-> [408 chars] ✗ Element not found: text=Click for JS Confirm. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+""
+✗ Element not found: text=Click for JS Prompt. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+""
+✓ Browser closed
+
+$ agent-browser open https://the-internet.herokuapp.com/javascript_alerts ; agent-browser wait --fn "!!document.querySelector('button')" ; agent-browser snapshot -i
+-> [154 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+- Iframe [ref=e1]
+  - link "check your logs for details" [ref=e2]
+  - link [ref=e3]
+
+$ sleep 5 ; agent-browser open https://the-internet.herokuapp.com/javascript_alerts ; agent-browser wait --fn "document.querySelectorAll('button').length===3 && document.title.length>0" ; agent-browser snapshot -i
+-> [355 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/javascript_alerts
+true
+- link "Fork me on GitHub" [ref=e4]
+- heading "JavaScript Alerts" [level=3, ref=e5]
+- button "Click for JS Alert" [ref=e7]
+- button "Click for JS Confirm" [ref=e8]
+- button "Click for JS Prompt" [ref=e9]
+- heading "Result:" [level=4, ref=e6]
+- link "Elemental Selenium" [ref=e10]
+
+$ agent-browser click @e8 ; agent-browser dialog dismiss ; agent-browser eval "document.getElementById('result').textContent" ; agent-browser click @e9 ; agent-browser dialog accept "skillopt-42" ; agent-browser eval "document.getElementById('result').textContent" ; agent-browser close
+-> [348 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "I am a JS Confirm" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+"You clicked: Cancel"
+✓ Done
+⚠ A JavaScript prompt dialog is blocking the page: "I am a JS prompt" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+"You entered: skillopt-42"
+✓ Browser closed
+
+SAY: Done. Both interactions were completed in the live browser session:
+
+1. **JS Confirm** — clicked "Click for JS Confirm" and dismissed the dialog (Cancel):
+   - Result text: `You clicked: Cancel`
+
+2. **JS Prompt** — clicked "Click for JS Prompt", entered `skillopt-42` and confirmed:
+   - Result text: `You entered: skillopt-42`
+
+ANSWER: Confirm (Cancel) → "You clicked: Cancel"; Prompt (skillopt-42, OK) → "You entered: skillopt-42"

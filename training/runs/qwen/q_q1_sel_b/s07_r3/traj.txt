@@ -1,0 +1,36 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r3", "correct": true, "score": 0.98, "wtok": 13506, "out_tok": 508, "turns": 5, "secs": 34, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "#column-a"; agent-browser snapshot -i
+-> [207 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({a: document.querySelector('#column-a') ? document.querySelector('#column-a h4').textContent : null, b: document.querySelector('#column-b') ? document.querySelector('#column-b h4').textContent : null})
+JS
+-> [138 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:96
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({a: document.querySelector('#column-a')?.outerHTML.slice(0,200), b: document.querySelector('#column-b')?.outerHTML.slice(0,200), hdr: document.querySelector('#column-a h3')?.textContent, hdr2: document.querySelector('#column-b h3')?.textContent})
+JS
+-> [212 chars] "{\"a\":\"<div class=\\\"column\\\" id=\\\"column-a\\\" draggable=\\\"true\\\"><header>A</header></div>\",\"b\":\"<div class=\\\"column\\\" id=\\\"column-b\\\" draggable=\\\"true\\\"><header>B</header></div>\"}"
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval --stdin <<'JS'
+JSON.stringify([document.querySelector('#column-a header').textContent, document.querySelector('#column-b header').textContent])
+JS
+-> [23 chars] ✓ Done
+"[\"B\",\"A\"]"
+
+SAY: The drag succeeded. After dropping box A onto box B, the two boxes swap their header labels:
+
+- Left box (`#column-a`): header **B**
+- Right box (`#column-b`): header **A**
+
+ANSWER: B, A

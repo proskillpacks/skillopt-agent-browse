@@ -1,0 +1,154 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13_r3", "correct": true, "score": 0.908, "wtok": 61429, "out_tok": 2872, "turns": 11, "secs": 17, "timed_out": false, "curl": false, "answer": "Albert Einstein, with 10 quotes"}
+
+$ agent-browser open https://quotes.toscrape.com/ 2>&1 | head -20
+$ agent-browser --help 2>&1 | head -40
+-> [50 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+
+-> [1854 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …     Download file by clicking element
+  scroll <dir> [px]          Scroll (up/down/left/right)
+  scrollintoview <sel>       Scroll element into view
+
+$ agent-browser skills get core --full 2>&1 | grep -iE "eval|js|script|exec" | head -20
+-> [6398 chars] description: Core agent-browser usage guide. Read this before running any agent-browser commands. Covers the snapshot-and-ref workflow, navigating pages, interacting with elements (click, fill, type, select), extracting text and data, taking screenshots, managing tabs, handling forms and auth, waiting for content, running multiple browser sessions in parallel, and troubleshooting common failures. Use when the user asks to interact with a website, fill a form, click something, extract data, take  …ab` turns it off again). See `references/session-management.md` for details.
+# HAR files embed text response bodies (JSON/HTML/JS) by default, so the
+
+$ cat <<'EOF' | agent-browser eval --stdin
+(async () => {
+  const counts = {};
+  let lastPage = 1;
+  // find total pages
+  const r0 = await fetch('https://quotes.toscrape.com/', {credentials:'same-origin'});
+  const doc = new DOMParser().parseFromString(await r0.text(), 'text/html');
+  for (const a of doc.querySelectorAll('li.page-control')) {
+    lastPage = parseInt(a.textContent);
+  }
+  for (let p = 1; p <= lastPage; p++) {
+    const url = p === 1 ? 'https://quotes.toscrape.com/' : `https://quotes.toscrape.com/page/${p}/`;
+    const r = await fetch(url, {credentials:'same-origin'});
+    const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+    const authors = doc.querySelectorAll('.quote .author');
+    authors.forEach(a => { counts[a.textContent.trim()] = (counts[a.textContent.trim()]||0)+1; });
+  }
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(
+-> [146 chars] "{\"pages\":1,\"top\":[[\"Albert Einstein\",3],[\"J.K. Rowling\",1],[\"Jane Austen\",1],[\"Marilyn Monroe\",1],[\"André Gide\",1]],\"total\":10}"
+
+SAY: The pagination selector was wrong; let me fix it:
+$ cat <<'EOF' | agent-browser eval --stdin
+(async () => {
+  const counts = {};
+  const r0 = await fetch('https://quotes.toscrape.com/', {credentials:'same-origin'});
+  const doc = new DOMParser().parseFromString(await r0.text(), 'text/html');
+  let lastPage = 1;
+  for (const a of doc.querySelectorAll('ul.pagination a')) {
+    const n = parseInt(a.textContent);
+    if (!isNaN(n)) lastPage = Math.max(lastPage, n);
+  }
+  for (let p = 1; p <= lastPage; p++) {
+    const url = p === 1 ? 'https://quotes.toscrape.com/' : `https://quotes.toscrape.com/page/${p}/`;
+    const r = await fetch(url, {credentials:'same-origin'});
+    const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+    doc.querySelectorAll('.quote .author').forEach(a => {
+      const name = a.textContent.trim();
+      counts[name] = (counts[name]||0)+1;
+    });
+  }
+  const sorted = Object.entries(counts).sort((a,b
+-> [133 chars] "{\"lastPage\":1,\"top\":[[\"Albert Einstein\",3],[\"J.K. Rowling\",1],[\"Jane Austen\",1]],\"totalQuotes\":10,\"uniqueAuthors\":8}"
+
+$ cat <<'EOF' | agent-browser eval --stdin
+(async () => {
+  const r = await fetch('https://quotes.toscrape.com/', {credentials:'same-origin'});
+  const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+  return doc.querySelector('ul.pagination')?.outerHTML || 'no pagination';
+})()
+EOF
+-> [16 chars] "no pagination"
+
+$ cat <<'EOF' | agent-browser eval --stdin
+(async () => {
+  const r = await fetch('https://quotes.toscrape.com/', {credentials:'same-origin'});
+  const html = await r.text();
+  return html.slice(-1500);
+})()
+EOF
+-> [1615 chars] "        <span class=\"tag-item\">\n            <a class=\"tag\" style=\"font-size: 24px\" href=\"/tag/humor/\">humor</a>\n            </span>\n            \n            <span class=\"tag-item\">\n            <a class=\"tag\" style=\"font-size: 22px\" href=\"/tag/books/\">books</a>\n            </span>\n            \n            <span class=\"tag-item\">\n            <a class=\"tag\" style=\"font-size: 14px\" href=\"/tag/reading/\">reading</a>\n            </span>\n            \n            <spa …n class='zyte'>❤</span> by <a class='zyte' href=\"https://www.zyte.com\">Zyte</a>\n            </p>\n        </div>\n    </footer>\n</body>\n</html>"
+
+$ cat <<'EOF' | agent-browser eval --stdin
+(async () => {
+  const r = await fetch('https://quotes.toscrape.com/', {credentials:'same-origin'});
+  const html = await r.text();
+  const i = html.indexOf('pagination');
+  const n = html.length;
+  return JSON.stringify({len:n, idx:i, snippet: i>=0 ? html.slice(i-200, i+600) : 'none', quoteCount: (html.match(/class="quote"/g)||[]).length});
+})()
+EOF
+-> [68 chars] "{\"len\":11021,\"idx\":-1,\"snippet\":\"none\",\"quoteCount\":10}"
+
+$ cat <<'EOF' | agent-browser eval --stdin
+(async () => {
+  const r = await fetch('https://quotes.toscrape.com/', {credentials:'same-origin'});
+  const html = await r.text();
+  return JSON.stringify({
+    next: html.includes('Next') ? html.slice(html.indexOf('Next')-300, html.indexOf('Next')+100) : 'no next',
+    pageLinks: (html.match(/page\/\d+/g)||[])
+  });
+})()
+EOF
+-> [855 chars] "{\"next\":\"a class=\\\"tag\\\" href=\\\"/tag/obvious/page/1/\\\">obvious</a>\\n            \\n            <a class=\\\"tag\\\" href=\\\"/tag/simile/page/1/\\\">simile</a>\\n            \\n        </div>\\n    </div>\\n\\n    <nav>\\n        <ul class=\\\"pager\\\">\\n            \\n            \\n            <li class=\\\"next\\\">\\n                <a href=\\\"/page/2/\\\">Next <span aria-hidden=\\\"true\\\">&rarr;</span></a>\\n            </li>\\n            \\n        </ul>\\n    </n\",\"pa …1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/1\",\"page/2\"]}"
+
+SAY: The pagination uses a "Next" pager instead of numbered links. Let me walk all pages via Next links:
+$ cat <<'EOF' | agent-browser eval --stdin
+(async () => {
+  const counts = {};
+  let url = 'https://quotes.toscrape.com/';
+  let pages = 0;
+  let totalQuotes = 0;
+  while (url) {
+    const r = await fetch(url, {credentials:'same-origin'});
+    if (!r.ok) break;
+    const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+    pages++;
+    doc.querySelectorAll('.quote').forEach(q => {
+      const a = q.querySelector('.author')?.textContent.trim();
+      if (a) { counts[a] = (counts[a]||0)+1; totalQuotes++; }
+    });
+    const next = doc.querySelector('nav ul.pager li.next a');
+    url = next ? new URL(next.getAttribute('href'), r.url).href : null;
+    if (pages > 50) break;
+  }
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  return JSON.stringify({pages, totalQuotes, uniqueAuthors: sorted.length, top: sorted.slice(0,3)});
+})()
+EOF
+-> [137 chars] "{\"pages\":10,\"totalQuotes\":100,\"uniqueAuthors\":50,\"top\":[[\"Albert Einstein\",10],[\"J.K. Rowling\",9],[\"Marilyn Monroe\",7]]}"
+
+$ cat <<'EOF' | agent-browser eval --stdin
+(async () => {
+  const r = await fetch('https://quotes.toscrape.com/author/Albert%20Einstein/', {credentials:'same-origin'});
+  const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+  const n = doc.querySelectorAll('.quote').length;
+  return JSON.stringify({authorPageQuotes: n, title: doc.querySelector('h2')?.textContent});
+})()
+EOF
+-> [27 chars] "{\"authorPageQuotes\":0}"
+
+SAY: Verified by walking all 10 pages (100 quotes total): **Albert Einstein** appears most frequently with **10 quotes** (ahead of J.K. Rowling with 9 and Marilyn Monroe with 7).
+
+ANSWER: Albert Einstein, with 10 quotes

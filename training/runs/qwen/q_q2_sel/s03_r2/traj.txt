@@ -1,0 +1,122 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": true, "score": 0.89, "wtok": 73268, "out_tok": 2400, "turns": 15, "secs": 91, "timed_out": false, "curl": false, "answer": "There are 5 one-star rated books out of 26 total books in the Historical Fiction category."}
+
+$ agent-browser open "https://books.toscrape.com/category/1/historical-fiction/index.html"; agent-browser wait "#book_promotions"
+-> [145 chars] ✓ 404 Not Found
+  https://books.toscrape.com/category/1/historical-fiction/index.html
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser open "https://books.toscrape.com/" && agent-browser snapshot -i | grep -i -A2 -B2 historical
+-> [369 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+--
+- link "Academic" [ref=e44]
+- link "Self Help" [ref=e45]
+- link "Historical" [ref=e46]
+- link "Christian" [ref=e47]
+- link "Suspense" [ref=e48]
+
+$ agent-browser click @e8; agent-browser wait "#book_promotions"; agent-browser eval "location.href"
+-> [124 chars] ✓ Done
+✗ Wait timed out after 25000ms
+"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"
+
+$ agent-browser wait "ul.pagination"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  url: location.href,
+  page: document.querySelector('#content_area .page') ? document.querySelector('#content_area .page').textContent.trim() : null,
+  next: (function(){const a=document.querySelector('ul.pagination li.active ~ li a, ul.pagination li[aria-disabled=false] a');return a?a.href:null})(),
+  nextLink: (function(){const a=[...document.querySelectorAll('ul.pagination a')].find(x=>/next/i.test(x.textContent));return a?a.href:null})(),
+  count: document.querySelectorAll('.book_block').length
+})
+JS
+-> [189 chars] ✗ Wait timed out after 25000ms
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"page\":null,\"next\":null,\"nextLink\":null,\"count\":0}"
+
+$ agent-browser eval "document.querySelector('#content_area') ? document.querySelector('#content_area').className : document.body.innerHTML.slice(0,500)"
+-> [543 chars] "\n        \n        \n    \n    \n    <header class=\"header container-fluid\">\n        <div class=\"page_inner\">\n            <div class=\"row\">\n                <div class=\"col-sm-8 h1\"><a href=\"../../../../index.html\">Books to Scrape</a><small> We love being scraped!</small>\n</div>\n\n                \n            </div>\n        </div>\n    </header>\n\n    \n    \n<div class=\"container-fluid page\">\n    <div class=\"page_inner\">\n        \n    <ul class=\"breadcrumb\">\n        <li>\n            <a href=\"../../../../i"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  items: document.querySelectorAll('article').length,
+  li: document.querySelectorAll('#content_area ul li').length,
+  sample: document.querySelector('#content_area ul li') ? document.querySelector('#content_area ul li').className : null,
+  html: document.querySelector('#content_area ul') ? document.querySelector('#content_area ul').outerHTML.slice(0,800) : null
+})
+JS
+-> [56 chars] "{\"items\":20,\"li\":0,\"sample\":null,\"html\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  pag: document.querySelector('.pagination, ul.pagination') ? 'yes' : 'no',
+  next: (function(){const a=[...document.querySelectorAll('a')].find(x=>x.textContent.trim()==='Next');return a?a.href:null})(),
+  star: (function(){const a=[...document.querySelectorAll('a')].find(x=>/stars?/i.test(x.textContent));return a||null})() ? [...document.querySelectorAll('a')].filter(x=>/star/i.test(x.textContent)).map(x=>x.href) : null
+})
+JS
+-> [47 chars] "{\"pag\":\"no\",\"next\":null,\"star\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  bodyHasPage: document.body.textContent.match(/Page \d+ of \d+/),
+  lastLink: [...document.querySelectorAll('#footer a')].map(a=>a.href).slice(-5),
+  totalArticles: document.querySelectorAll('article').length
+})
+JS
+-> [75 chars] "{\"bodyHasPage\":[\"Page 1 of 2\"],\"lastLink\":[],\"totalArticles\":20}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a=>/page=/.test(a.getAttribute('href')||'')).map(a=>({t:a.textContent.trim(),h:a.href})))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].map(a=>a.href).filter((v,i,arr)=>arr.indexOf(v)===i))
+JS
+-> [5913 chars] "[\"https://books.toscrape.com/index.html\",\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\",\"https://books.toscrape.com/catalogue/category/books/classics …crape.com/catalogue/girl-in-the-blue-coat_160/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('article')].map(a=>{
+  const c=a.className.replace('col-sm-6 col-md-4 col-lg-4 col-xl-3','').trim();
+  return [a.querySelector('h3 a')?a.querySelector('h3 a').getAttribute('href'):'', a.querySelector('p.starRating')?a.querySelector('p.starRating').className.replace('star-rating','').trim():null];
+}))
+JS
+-> [1284 chars] "[[\"../../../tipping-the-velvet_999/index.html\",null],[\"../../../forever-and-forever-the-courtship-of-henry-longfellow-and-fanny-appleton_894/index.html\",null],[\"../../../a-flight-of-arrows-the-pathfinders-2_876/index.html\",null],[\"../../../the-house-by-the-lake_846/index.html\",null],[\"../../../mrs-houdini_821/index.html\",null],[\"../../../the-marriage-of-opposites_759/index.html\",null],[\"../../../glory-over-everything-beyond-the-kitchen-house_696/index.html\",null],[\"../../../love- …null],[\"../../../the-guernsey-literary-and-potato-peel-pie-society_253/index.html\",null],[\"../../../girl-in-the-blue-coat_160/index.html\",null]]"
+
+$ agent-browser eval --stdin <<'JS'
+document.querySelector('article').outerHTML
+JS
+-> [1446 chars] "<article class=\"product_pod\">\n        \n            <div class=\"image_container\">\n                \n                    \n                    <a href=\"../../../tipping-the-velvet_999/index.html\"><img src=\"../../../../media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg\" alt=\"Tipping the Velvet\" class=\"thumbnail\"></a>\n                    \n                \n            </div>\n        \n\n        \n            \n                <p class=\"star-rating One\">\n                     … btn-block\" data-loading-text=\"Adding...\">Add to basket</button>\n    </form>\n\n\n                \n            </div>\n        \n    </article>"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('article p.star-rating')].map(p=>p.className.replace('star-rating','').trim()))
+JS
+-> [178 chars] "[\"One\",\"Three\",\"Five\",\"One\",\"Five\",\"Four\",\"Three\",\"Two\",\"Four\",\"Two\",\"Three\",\"One\",\"Four\",\"Five\",\"One\",\"Five\",\"Five\",\"Two\",\"One\",\"Two\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"; agent-browser wait "article"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  n: document.querySelectorAll('article').length,
+  ratings: [...document.querySelectorAll('article p.star-rating')].map(p=>p.className.replace('star-rating','').trim()),
+  oneCount: [...document.querySelectorAll('article p.star-rating')].filter(p=>p.classList.contains('One')).length
+})
+JS
+-> [240 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+✓ Done
+"{\"n\":6,\"ratings\":[\"Five\",\"Five\",\"Three\",\"Three\",\"Four\",\"Five\"],\"oneCount\":0}"
+
+SAY: Done. Here's what I found in the browser:
+
+**Process:**
+1. Opened the site and clicked the "Historical Fiction" category link → `historical-fiction_4/index.html`
+2. The category is paginated: "Page 1 of 2"
+   - **Page 1:** 20 books; ratings included five "One"-star books (Tipping the Velvet, The House by the Lake, The Constant Princess, The Last Painting of Sara de Vos, The Guernsey Literary and Potato Peel Pie Society)
+   - **Page 2:** 6 books; no one-star ratings
+3. **Total books:** 20 + 6 = *

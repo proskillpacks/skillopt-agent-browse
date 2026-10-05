@@ -1,0 +1,62 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r1", "correct": true, "score": 0.951, "wtok": 32564, "out_tok": 980, "turns": 8, "secs": 58, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/ ; agent-browser wait "form#login"
+-> [109 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser snapshot -i
+-> [1613 chars] - heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e23]
+- link "Login" [ref=e24]
+- link "(about)" [ref=e2]
+- link "change" [ref=e25]
+- link "deep-thoughts" [ref=e26]
+- link "thinking" [ref=e27]
+- link "world" [ref=e28]
+- link "(about)" [ref=e3]
+- link "abilities" [ref=e29]
+- link "choices" [ref=e30]
+- link "(about)" [ref=e4]
+- link "inspirational" [ref=e31]
+- link "life" [ref=e32]
+- link "live" [ref=e33]
+- link "miracle" [ref=e34]
+- link "miracles" [ref=e35]
+- link " …hip" [ref=e19]
+- link "friends" [ref=e20]
+- link "truth" [ref=e21]
+- link "simile" [ref=e22]
+- link "GoodReads.com" [ref=e55]
+- link "Zyte" [ref=e56]
+
+$ agent-browser click @e24; agent-browser wait input[name="csrf_token"]; agent-browser fill input[name="username"] test; agent-browser fill input[name="password"] test; agent-browser press Enter; agent-browser wait h1
+-> [66 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+
+$ agent-browser get text h1; agent-browser eval "JSON.stringify([...document.querySelectorAll('.quote')].map(q => [...q.querySelectorAll('a')].map(a => a.href)))"
+-> [2747 chars] Quotes to Scrape
+"[[\"https://quotes.toscrape.com/author/Albert-Einstein\",\"http://goodreads.com/author/show/9810.Albert_Einstein\",\"https://quotes.toscrape.com/tag/change/page/1/\",\"https://quotes.toscrape.com/tag/deep-thoughts/page/1/\",\"https://quotes.toscrape.com/tag/thinking/page/1/\",\"https://quotes.toscrape.com/tag/world/page/1/\"],[\"https://quotes.toscrape.com/author/J-K-Rowling\",\"http://goodreads.com/author/show/1077326.J_K_Rowling\",\"https://quotes.toscrape.com/tag/abilities/p …s://quotes.toscrape.com/tag/humor/page/1/\",\"https://quotes.toscrape.com/tag/obvious/page/1/\",\"https://quotes.toscrape.com/tag/simile/page/1/\"]]"
+
+$ agent-browser eval "document.querySelector('a[href=\"goodreads.com\"]') ? 'has goodreads link' : 'none'; [...document.querySelectorAll('a')].filter(a=>/Log out|Login/.test(a.textContent)).map(a=>a.textContent)"
+-> [3 chars] []
+
+$ agent-browser eval "JSON.stringify([location.href, [...document.querySelectorAll('a')].slice(0,5).map(a=>a.textContent)])"
+-> [115 chars] "[\"https://quotes.toscrape.com/\",[\"Quotes to Scrape\",\"Logout\",\"(about)\",\"(Goodreads page)\",\"change\"]]"
+
+$ agent-browser eval "JSON.stringify(document.querySelector('.quote').querySelector('a[href*=\"goodreads\"]').href)"
+-> [60 chars] "\"http://goodreads.com/author/show/9810.Albert_Einstein\""
+
+SAY: Logged in successfully (the nav now shows "Logout"), and each quote block now contains a "(Goodreads page)" link. For the first quote on the first page (Albert Einstein's "In a sensitive way..."), that link's text is "Albert Einstein (Goodreads page)" and it points to:
+
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

@@ -1,0 +1,46 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r5", "correct": true, "score": 0.971, "wtok": 19159, "out_tok": 570, "turns": 7, "secs": 5, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login
+-> [55 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+
+$ agent-browser snapshot -i
+-> [247 chars] - heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill @e5 "admin"; agent-browser fill @e6 "pass"; agent-browser click @e2
+-> [21 chars] ✓ Done
+✓ Done
+✓ Done
+
+$ agent-browser open https://quotes.toscrape.com/; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('div.quote')][0].querySelector('a').href)
+JS
+-> [107 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+"\"https://quotes.toscrape.com/author/Albert-Einstein\""
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('div.quote')][0].querySelectorAll('a').map(a => a.textContent.trim() + ' => ' + a.href))
+JS
+-> [168 chars] ✗ Evaluation error: TypeError: [(...document.querySelectorAll(...))][0].querySelectorAll(...).map is not a function
+    at <anonymous>:1:85
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(Array.from(document.querySelectorAll('div.quote')[0].querySelectorAll('a')).map(a => a.textContent.trim() + ' => ' + a.href))
+JS
+-> [408 chars] "[\"(about) => https://quotes.toscrape.com/author/Albert-Einstein\",\"(Goodreads page) => http://goodreads.com/author/show/9810.Albert_Einstein\",\"change => https://quotes.toscrape.com/tag/change/page/1/\",\"deep-thoughts => https://quotes.toscrape.com/tag/deep-thoughts/page/1/\",\"thinking => https://quotes.toscrape.com/tag/thinking/page/1/\",\"world => https://quotes.toscrape.com/tag/world/page/1/\"]"
+
+SAY: Logged in, and the first quote on the first page is Einstein's "The world as we have created it..." which includes a "(Goodreads page)" link pointing to `http://goodreads.com/author/show/9810.Albert_Einstein`.
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

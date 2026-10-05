@@ -1,0 +1,103 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r4", "correct": true, "score": 0.92, "wtok": 53008, "out_tok": 2300, "turns": 11, "secs": 110, "timed_out": false, "curl": false, "answer": "After Remove the message is \"It's gone!\". After Enable and typing, the message is \"It's enabled!\" and the input's value is \"hello\"."}
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/dynamic_controls" && break; sleep 5; done; agent-browser snapshot -i
+-> [559 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+SAY: Page is loaded. Now I'll click "Remove" and wait for the checkbox to disappear.
+$ agent-browser click @e5; agent-browser wait --fn "!document.querySelector('input[type=checkbox]') && !document.querySelector('ul li')"; agent-browser get text #flash; agent-browser snapshot -i
+-> [113 chars] ✓ Done
+true
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser get text "#flash"; agent-browser snapshot -i
+-> [396 chars] ✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+SAY: The checkbox is gone (button now says "Add"), but `#flash` not found — it may have expired. Let me check the DOM.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const el = document.querySelector('#flash') || document.querySelector('ul li');
+  return JSON.stringify({flash: el ? el.textContent : null, bodyHasLi: !!document.querySelector('li')});
+})()
+JS
+-> [39 chars] "{\"flash\":null,\"bodyHasLi\":false}"
+
+SAY: Flash expired. I'll redo: Add the checkbox back, then click Remove and immediately read the flash.
+$ agent-browser click @e5; agent-browser wait "#flash"; agent-browser get text "#flash"
+-> [176 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const li = document.querySelector('li');
+  return JSON.stringify({
+    li: li ? li.outerHTML : null,
+    hasCheckbox: !!document.querySelector('input[type=checkbox]'),
+    flashCandidates: [...document.querySelectorAll('div,li,span')].filter(e => /done|added/i.test(e.textContent) && e.children.length === 0).map(e => e.id + '|' + e.className + '|' + e.textContent.trim()).slice(0,10),
+    sample: document.querySelector('body').innerHTML.match(/<li[\s\S]*?<\/li>|<div[\s\S]*?<\/div>/) ? 'found' : 'none'
+  });
+})()
+JS
+-> [81 chars] "{\"li\":null,\"hasCheckbox\":true,\"flashCandidates\":[],\"sample\":\"found\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify(document.body.innerHTML.replace(/\n/g,' ').slice(0, 2500));
+})()
+JS
+-> [2771 chars] "\"     <div class=\\\"row\\\">       <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">                                                              </div>     </div>     <div class=\\\"row\\\">       <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>       <div id=\\\"content\\\" class=\\\"large-12 columns\\\">         <script …r(\\\"disabled\\\", false);       load.hide();     } else {       btn.text(\\\"Enable\\\");       input.prop(\\\"disabled\\\", true)       btn.aft\""
+
+SAY: The message element is `<p id='message'>` (not `#flash`). Now let me click Remove and read the message.
+$ agent-browser wait --fn "document.querySelector('#checkbox-example button') && document.querySelector('#checkbox-example button').textContent === 'Remove' && !document.querySelector('#checkbox-example button').disabled"; agent-browser click "#checkbox-example button"; agent-browser wait --fn "[...document.querySelectorAll('#checkbox-example p')].some(p => p.textContent === \"It's gone!\")"; agent-browser get text "#message"
+-> [28 chars] true
+✓ Done
+true
+It's gone!
+
+SAY: Message after removing the checkbox: **"It's gone!"**. Now Enable the input, type hello, and check.
+$ agent-browser click "#input-example button"; agent-browser wait --fn "!document.querySelector('#input-example input').disabled"; agent-browser fill "#input-example input" "hello"; agent-browser get text "#message"; agent-browser get attr "#input-example input" "value"
+-> [40 chars] ✓ Done
+true
+✓ Done
+It's enabled!
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const input = document.querySelector('#input-example input');
+  return JSON.stringify({value: input.value, disabled: input.disabled, message: (document.querySelector('#message')||{}).textContent});
+})()
+JS
+-> [73 chars] "{\"value\":\"hello\",\"disabled\":false,\"message\":\"It's enabled!\"}"
+
+SAY: Done. Summary of what happened in the browser:
+
+1. **Remove**: Clicked the Remove button; after the 3-second delay the checkbox disappeared and the button changed to "Add". The message shown (in `<p id='message'>`) was **"It's gone!"**
+2. **Enable**: Clicked Enable, waited until the text input was no longer disabled, then typed `hello`. The message shown was **"It's enabled!"** and the input's value was **`hello`** (confirmed via DOM: `{"value":"hello","disabled":false,"message":"It's enabled!"}

@@ -1,0 +1,96 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r3", "correct": true, "score": 0.935, "wtok": 43389, "out_tok": 2018, "turns": 10, "secs": 65, "timed_out": false, "curl": false, "answer": "Mystery has 32 books in total, of which 5 have a five-star rating."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/mystery_2/index.html"; agent-browser wait "#book_carousel"; agent-browser get text body 2>/dev/null | head -30
+-> [143 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/mystery_2/index.html
+✗ Wait timed out after 25000ms
+404 Not Found
+nginx/1.21.6
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait "body"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a=>/mystery/i.test(a.textContent)).map(a=>[a.textContent.trim(),a.href]))
+JS
+-> [175 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"[[\"Mystery\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\"]]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; agent-browser wait ".post.card"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  next: (document.querySelector('.pagination a.next')||{}).href,
+  count: (document.querySelector('.page-top')||{}).textContent,
+  books: document.querySelectorAll('.post.card').length,
+  five: [...document.querySelectorAll('.starRating')].filter(e=>e.className.includes('Five')).length
+})
+JS
+-> [171 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+✗ Wait timed out after 25000ms
+"{\"books\":0,\"five\":0}"
+
+$ agent-browser eval --stdin <<'JS'
+const arts = document.querySelectorAll('article');
+JSON.stringify({
+  articles: arts.length,
+  sample: arts[0]?arts[0].outerHTML.slice(0,600):null,
+  bodyHasBooks: document.body.textContent.includes('books'),
+  topText: document.body.textContent.slice(0,300)
+})
+JS
+-> [1130 chars] "{\"articles\":20,\"sample\":\"<article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"../../../sharp-objects_997/index.html\\\"><img src=\\\"../../../../media/cache/32/51/3251cf3a3412f53f339e42cac2134093.jpg\\\" alt=\\\"Sharp Objects\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n           …       \\n    \\n        \\n            Home\\n        \\n        \\n            \\n                Books\\n            \\n        \\n        Mys\"}"
+
+$ agent-browser eval --stdin <<'JS'
+const m = document.body.textContent.match(/(\d+) books?/);
+JSON.stringify({total: m?m[1]:null, next: (document.querySelector('.pagination')||{}).innerHTML && [...document.querySelectorAll('.pagination a')].map(a=>a.href)})
+JS
+-> [19 chars] "{\"total\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+const p = document.querySelector('.pagination');
+const info = document.querySelector('.page-bottom') || document.querySelector('.top-links');
+JSON.stringify({
+  pagHTML: p?p.innerHTML.slice(0,400):null,
+  infoText: info?info.textContent:null,
+  bodyTail: document.body.textContent.trim().slice(-300)
+})
+JS
+-> [433 chars] "{\"pagHTML\":null,\"infoText\":null,\"bodyTail\":\"/static/oscar/js/jquery/jquery-1.9.1.min.js\\\"><\\\\/script>')\\n        \\n  \\n\\n\\n        \\n        \\n    \\n        \\n    \\n    \\n    \\n    \\n\\n    \\n    \\n\\n\\n        \\n        \\n    \\n\\n    \\n\\n\\n        \\n        \\n            $(function() {\\n                \\n    \\n    \\n    oscar.init();\\n\\n    oscar.search.init();\\n\\n            });\"}"
+
+$ agent-browser eval --stdin <<'JS'
+const links=[...document.querySelectorAll('a')].filter(a=>/next|prev|›|«/i.test(a.textContent.trim()));
+JSON.stringify({links:links.map(a=>[a.textContent.trim(),a.href]), pageLinks:[...document.querySelectorAll('li a')].map(a=>[a.textContent.trim(),a.href]).slice(0,30)})
+JS
+-> [2952 chars] "{\"links\":[[\"next\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html\"]],\"pageLinks\":[[\"Home\",\"https://books.toscrape.com/index.html\"],[\"Books\",\"https://books.toscrape.com/catalogue/category/books_1/index.html\"],[\"Books\",\"https://books.toscrape.com/catalogue/category/books_1/index.html\"],[\"Travel\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\"],[\"Mystery\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/i …ogue/category/books/autobiography_27/index.html\"],[\"Parenting\",\"https://books.toscrape.com/catalogue/category/books/parenting_28/index.html\"]]}"
+
+$ base="https://books.toscrape.com/catalogue/category/books/mystery_3"; 
+# page 1 already loaded; count it, then follow next pages
+agent-browser eval --stdin <<'JS' > /tmp/m1.json
+JSON.stringify({books:document.querySelectorAll('article').length,five:[...document.querySelectorAll('article p.star-rating')].filter(p=>p.classList.contains('Five')).length})
+JS
+cat /tmp/m1.json
+for i in 2 3 4 5 6 7 8 9 10; do
+  agent-browser open "$base/page-$i.html" >/dev/null 2>&1 || agent-browser open "$base/page-$i.html"
+  agent-browser wait "article" 
+  agent-browser eval --stdin <<JS > /tmp/m$i.json
+JSON.stringify({books:document.querySelectorAll('article').length,five:[...document.querySelectorAll('article p.star-rating')].filter(p=>p.classList.contains('Five')).length,next:!![...document.querySelectorAll('a')].some(a=>a.textContent.trim()==='next' && a.href==='$base/page-$((i+1)).html')})
+JS
+  cat /tmp/
+-> [78 chars] "{\"books\":20,\"five\":3}"
+✓ Done
+"{\"books\":12,\"five\":2,\"next\":false}"
+
+$ agent-browser eval --stdin <<'JS'
+const t=document.body.textContent;
+JSON.stringify({
+  hasNext3: [...document.querySelectorAll('a')].some(a=>a.href.endsWith('/page-3.html')),
+  countText: (t.match(/\d+\s*(of|-)\s*\d+\s*book/g)||null),
+  allLinks: [...new Set([...document.querySelectorAll('a')].filter(a=>/page-\d/.test(a.href)).map(a=>a.href))]
+})
+JS
+-> [135 chars] "{\"hasNext3\":false,\"countText\":null,\"allLinks\":[\"https://books.toscrape.com/catalogue/category/books/mystery_3/page-1.html\"]}"
+
+SAY: Page 1: 20 books (3 five-star). Page 2: 12 books (2 five-star), and no further pagination. Total: 32 books, 5 five-star.
+
+ANSWER: Mystery has 32 books in total, of which 5 have a five-star rating.

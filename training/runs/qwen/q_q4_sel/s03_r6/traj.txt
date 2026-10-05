@@ -1,0 +1,207 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r6", "correct": true, "score": 0.846, "wtok": 102787, "out_tok": 4961, "turns": 16, "secs": 281, "timed_out": false, "curl": false, "answer": "5 one-star books out of 26 total books in the Historical Fiction category."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction/index.html"; agent-browser wait ".postcard a"; agent-browser eval --stdin <<'JS'
+(() => {
+  const pageLinks = [...document.querySelectorAll('.pagination a')].map(a => a.textContent.trim());
+  const total = document.querySelector('.alert h2') ? document.querySelector('.alert h2').textContent : '';
+  return JSON.stringify({pageLinks, total});
+})()
+JS
+-> [161 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction/index.html
+✗ Wait timed out after 25000ms
+"{\"pageLinks\":[],\"total\":\"\"}"
+
+SAY: The direct URL 404'd. Let me find the real link from the site.
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait ".active-nav a"; agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('.active-nav a')].map(a => ({t: a.textContent.trim(), h: a.href}));
+  return JSON.stringify(links.filter(l => /historical/i.test(l.t)));
+})()
+JS
+-> [109 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('a')].map(a => a.href).filter(h => /historical/i.test(h));
+  return JSON.stringify(links);
+})()
+JS
+-> [173 chars] "[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical_42/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser wait ".postcard"; agent-browser eval --stdin <<'JS'
+(() => {
+  const total = document.querySelector('.alert') ? document.querySelector('.alert').textContent.trim() : '';
+  const pages = [...document.querySelectorAll('.pagination a')].map(a => a.textContent.trim());
+  return JSON.stringify({total, pages});
+})()
+JS
+-> [329 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✗ Wait timed out after 25000ms
+"{\"total\":\"Warning! This is a demo website for web scraping purposes. Prices and ratings here were randomly assigned and have no real meaning.\",\"pages\":[]}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = document.querySelectorAll('.product_pod, article').length;
+  const totalEl = document.querySelector('div.header .alert, .page-header h2') ? document.querySelector('div.header .alert, .page-header h2').textContent : '';
+  const pags = [...document.querySelectorAll('li a')].map(a => a.textContent.trim());
+  return JSON.stringify({arts, totalEl, pags});
+})()
+JS
+-> [1432 chars] "{\"arts\":20,\"totalEl\":\"\",\"pags\":[\"Home\",\"Books\",\"Books\",\"Travel\",\"Mystery\",\"Historical Fiction\",\"Sequential Art\",\"Classics\",\"Philosophy\",\"Romance\",\"Womens Fiction\",\"Fiction\",\"Childrens\",\"Religion\",\"Nonfiction\",\"Music\",\"Default\",\"Science Fiction\",\"Sports and Games\",\"Add a comment\",\"Fantasy\",\"New Adult\",\"Young Adult\",\"Science\",\"Poetry\",\"Paranormal\",\"Art\",\"Psychology\",\"Autobiography\",\"Parenting\",\"Adult Fiction\",\"Humor\",\"Horror …lander #3)\",\"\",\"The Red Tent\",\"\",\"The Last Painting of ...\",\"\",\"The Guernsey Literary and ...\",\"\",\"Girl in the Blue ...\",\"next\"]}"
+
+$ for i in 1 2 3 4 5 6 7 8; do
+  if [ $i -eq 1 ]; then url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; else url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index$i.html"; fi
+  agent-browser open "$url" >/dev/null
+  agent-browser wait ".product_pod" 2>/dev/null
+  agent-browser eval --stdin <<'JS'
+(() => {
+  const total = document.querySelector('.page-header h2') ? document.querySelector('.page-header h2').textContent.trim() : '';
+  const stars = [...document.querySelectorAll('.product_pod .starRating')];
+  const one = stars.filter(s => s.className.includes('One')).length;
+  const next = [...document.querySelectorAll('li.next, ul.pagination a')].some(a => /next/i.test(a.textContent));
+  return JSON.stringify({page: location.pathname, n: stars.length, one, total, hasNext: next});
+})()
+JS
+done
+-> [1021 chars] ✓ Done
+"{\"page\":\"/catalogue/category/books/historical-fiction_4/index.html\",\"n\":0,\"one\":0,\"total\":\"\",\"hasNext\":true}"
+"{\"page\":\"/catalogue/category/books/historical-fiction_4/index2.html\",\"n\":0,\"one\":0,\"total\":\"\",\"hasNext\":false}"
+"{\"page\":\"/catalogue/category/books/historical-fiction_4/index3.html\",\"n\":0,\"one\":0,\"total\":\"\",\"hasNext\":false}"
+"{\"page\":\"/catalogue/category/books/historical-fiction_4/index4.html\",\"n\":0,\"one\":0,\"total\":\"\",\"hasNe …\",\"hasNext\":false}"
+"{\"page\":\"/catalogue/category/books/historical-fiction_4/index8.html\",\"n\":0,\"one\":0,\"total\":\"\",\"hasNext\":false}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify({
+    title: document.title,
+    pp: document.querySelectorAll('.product_pod').length,
+    art: document.querySelectorAll('article').length,
+    star: document.querySelectorAll('.starRating').length,
+    header: (document.querySelector('.page-header')||{}).textContent
+  });
+})()
+JS
+-> [308 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"title\":\"Historical Fiction | Books to Scrape - Sandbox\",\"pp\":20,\"art\":20,\"star\":0,\"header\":\"\\n                    Historical Fiction\\n                \"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const el = document.querySelector('.product_pod p');
+  return JSON.stringify([...el.classList]);
+})()
+JS
+-> [28 chars] "[\"star-rating\",\"One\"]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const p = document.querySelector('.page-header') ? document.querySelector('.page-header').innerHTML : '';
+  return p;
+})()
+JS
+-> [70 chars] "\n                    <h1>Historical Fiction</h1>\n                "
+
+$ total=0; one=0; i=1
+while true; do
+  if [ $i -eq 1 ]; then url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; else url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index$i.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1
+  out=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const js = (() => {
+    const pp = document.querySelectorAll('.product_pod');
+    const one = [...document.querySelectorAll('.product_pod .star-rating')].filter(s => s.classList.contains('One')).length;
+    const hasNext = [...document.querySelectorAll('ul.pagination a')].some(a => /next/i.test(a.textContent));
+    return JSON.stringify({n: pp.length, one, hasNext, t: document.title});
+  });
+  return js();
+})()
+JS
+)
+  echo "page $i: $out"
+  n=$(echo "$out" | sed 's/.*"n":\([0-9]*\).*/\1/')
+  o=$(echo "$out" | sed 's/.*"one":\([0-9]*\).*/\1/')
+  i
+-> [401 chars] page 1: "{\"n\":20,\"one\":5,\"hasNext\":false,\"t\":\"Historical Fiction | Books to Scrape - Sandbox\"}"
+/bin/bash: line 21: "{\"n\":20,\"one\":5,\"hasNext\":false,\"t\":\"Historical Fiction | Books to Scrape - Sandbox\"}": syntax error: operand expected (error token is ""{\"n\":20,\"one\":5,\"hasNext\":false,\"t\":\"Historical Fiction | Books to Scrape - Sandbox\"}"")
+TOTAL books: 0, ONE-STAR: 0
+
+$ total=0; one=0; i=1
+while true; do
+  if [ $i -eq 1 ]; then url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; else url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index$i.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1
+  out=$(agent-browser eval --stdin <<'JS'
+[document.querySelectorAll('.product_pod').length,
+ [...document.querySelectorAll('.product_pod .star-rating')].filter(s=>s.classList.contains('One')).length,
+ [...document.querySelectorAll('ul.pagination a')].some(a=>/next/i.test(a.textContent))].join('|')
+JS
+)
+  echo "page $i: $out"
+  n=${out%%|*}; rest=${out#*|}; o=${rest%%|*}; hn=${rest#*|}
+  if [ "$n" = "0" ]; then break; fi
+  total=$((total+n)); one=$((one+o))
+  [ "$hn" = "false" ] && break
+  i=$((i+1)); [ $i -gt 10 ] && break
+done
+echo "TOTAL books: $total, ONE-STAR: $one, pages walked: $((i-1))"
+-> [145 chars] page 1: "20|5|false"
+TOTAL books: 0, ONE-STAR: 0, pages walked: 0
+/bin/bash: line 14: "20: syntax error: operand expected (error token is ""20")
+
+$ total=0; one=0; i=1
+while true; do
+  if [ $i -eq 1 ]; then url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; else url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index$i.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1
+  out=$(agent-browser eval --stdin <<'JS'
+[document.querySelectorAll('.product_pod').length,
+ [...document.querySelectorAll('.product_pod .star-rating')].filter(s=>s.classList.contains('One')).length,
+ [...document.querySelectorAll('ul.pagination a')].some(a=>/next/i.test(a.textContent))].join('|')
+JS
+)
+  out=${out%\"}; out=${out#\"}
+  echo "page $i: $out"
+  n=${out%%|*}; rest=${out#*|}; o=${rest%%|*}; hn=${rest#*|}
+  if [ "$n" = "0" ]; then break; fi
+  total=$((total+n)); one=$((one+o))
+  [ "$hn" = "false" ] && break
+  i=$((i+1)); [ $i -gt 10 ] && break
+done
+echo "TOTAL books: $total, ONE-STAR: $o
+-> [48 chars] page 1: 20|5|false
+TOTAL books: 20, ONE-STAR: 5
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" >/dev/null; agent-browser eval --stdin <<'JS'
+[...document.querySelectorAll('ul.pagination li')].map(li => li.textContent.trim()).join(' ~ ')
+JS
+-> [3 chars] ""
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const uls = [...document.querySelectorAll('ul')].map(u => (u.className||'') + ' :: ' + u.innerHTML.slice(0,200).replace(/\s+/g,' '));
+  return uls.filter(s => /next/i.test(s)).join('\n----\n') || 'no next found; first uls:\n' + uls.slice(0,5).join('\n');
+})()
+JS
+-> [110 chars] "pager ::  <li class=\"current\"> Page 1 of 2 </li> <li class=\"next\"><a href=\"page-2.html\">next</a></li>"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html" >/dev/null; agent-browser eval --stdin <<'JS'
+[document.querySelectorAll('.product_pod').length,
+ [...document.querySelectorAll('.product_pod .star-rating')].filter(s=>s.classList.contains('One')).length,
+ document.querySelector('.pager') ? document.querySelector('.pager').textContent.replace(/\s+/g,' ') : ''
+].join('|')
+JS
+-> [29 chars] "6|0| previous Page 2 of 2 "
+
+SAY: Done. Results from the real browser:
+
+- **Page 1**: 20 books, 5 with one-star ratings
+- **Page 2** (the last, per "Page 2 of 2"): 6 books, 0 one-star
+
+**Total: 26 books in the Historical Fiction category, of which 5 have a one-star rating.**
+
+ANSWER: 5 one-star books out of 26 total books in the Historical Fiction category.

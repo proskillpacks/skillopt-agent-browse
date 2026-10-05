@@ -1,0 +1,422 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r2", "correct": true, "score": 0.716, "wtok": 189028, "out_tok": 9497, "turns": 21, "secs": 74, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ which agent-browser && agent-browser --help 2>&1 | head -50
+$ env | grep -i -E 'agent|browser' | sed 's/\(KEY=\).*/\1***/'
+-> [2342 chars] /home/user/.nvm/versions/node/v24.21.0/bin/agent-browser
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, prote … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+-> [745 chars] PI_CODING_AGENT=true
+AI_AGENT=pi
+PWD=/home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_sel-s08_r2
+AGENT_BROWSER_SESSION=so-q_noskill_sel-s08_r2
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_sel-s08_r2
+PATH=<scrubbed> …sr/local/cuda/bin:/opt/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+AGENT_BROWSER_HEADED=1
+
+$ agent-browser open https://books.toscrape.com/ && agent-browser read | head -40
+-> [254 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+Books to Scrape We love being scraped!
+
+-
+Home
+
+- All products
+
+-
+
+Books
+
+-
+
+Travel
+
+-
+
+Mystery
+
+-
+
+Historical Fiction
+
+-
+
+Sequential Art
+
+-
+
+Classics
+
+-
+
+Philosophy
+
+-
+
+Romance
+
+-
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent)})))' 
+-> [1191 chars] "[{\"t\":\"A Light in the Attic\",\"p\":null},{\"t\":\"Tipping the Velvet\",\"p\":null},{\"t\":\"Soumission\",\"p\":null},{\"t\":\"Sharp Objects\",\"p\":null},{\"t\":\"Sapiens: A Brief History of Humankind\",\"p\":null},{\"t\":\"The Requiem Red\",\"p\":null},{\"t\":\"The Dirty Little Secrets of Getting Your Dream Job\",\"p\":null},{\"t\":\"The Coming Woman: A Novel Based on the Life of the Infamous Feminist, Victoria Woodhull\",\"p\":null},{\"t\":\"The Boys in the Boat: Nine Americans and Their  … Science Fiction Stories 1800-1849\",\"p\":null},{\"t\":\"Libertarianism for Beginners\",\"p\":null},{\"t\":\"It's Only the Himalayas\",\"p\":null}]"
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' | head -c 300
+-> [300 chars] "[{\"t\":\"A Light in the Attic\",\"p\":51.77},{\"t\":\"Tipping the Velvet\",\"p\":53.74},{\"t\":\"Soumission\",\"p\":50.1},{\"t\":\"Sharp Objects\",\"p\":47.82},{\"t\":\"Sapiens: A Brief History of Humankind\",\"p\":54.23},{\"t\":\"The Requiem Red\",\"p\":22.65},{\"t\":\"The Dirty Little Secrets of
+SAY: Extraction works. Now loop through all pages:
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+JS='JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))'
+> books.jsonl
+page=1
+while true; do
+  if [ "$page" -gt 1 ]; then agent-browser open "https://books.toscrape.com/catalogue/page-$page/" >/dev/null 2>&1 || break; fi
+  data=$(agent-browser eval "$JS" 2>/dev/null)
+  count=$(echo "$data" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))' 2>/dev/null || echo 0)
+  [ "$count" = "0" ] && break
+  echo "$data" | python3 -c 'import json,sys
+for b in json.load(sys.stdin):
+    print(json.dumps(b))' >> books.jsonl
+  # check for next link
+  has_next=$(agent-browser eval 'document.querySelector(".next") ? "yes":"no"' 2>/dev/null)
+  [ "$has_nex
+-> [17 chars] 1088 books.jsonl
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+python3 - <<'EOF'
+import json
+books=[json.loads(l) for l in open('books.jsonl')]
+print("total records:", len(books))
+print("unique titles:", len({b['t'] for b in books}))
+print("unique (t,p):", len({(b['t'],b['p']) for b in books}))
+from collections import Counter
+c=Counter(b['t'] for b in books)
+dups={k:v for k,v in c.items() if v>2}
+print("titles appearing >2 times:", len(dups))
+EOF
+-> [175 chars] total records: 1088
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+grep -vn '^{.*}$' books.jsonl | head; grep -c '^$' books.jsonl
+-> [94 chars] 1:"["
+2:"{"
+3:"\""
+4:"t"
+5:"\""
+6:":"
+7:"\""
+8:"A"
+9:" "
+10:"L"
+0
+
+
+Command exited with code 1
+SAY: The page-1 data got mangled (eval output is a JSON-encoded string, needs double-decoding). Redo cleanly:
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+> books.jsonl
+page=1
+total=0
+while true; do
+  if [ "$page" -gt 1 ]; then agent-browser open "https://books.toscrape.com/catalogue/page-$page/" >/dev/null 2>&1; fi
+  data=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' 2>/dev/null)
+  n=$(printf '%s' "$data" | python3 -c 'import json,sys
+try:
+    d=json.loads(sys.stdin.read())
+    if isinstance(d,str): d=json.loads(d)
+    print(len(d)); [print(json.dumps(b)) for b in d]
+except Exception:
+    print(0)')
+  nlast=$(echo "$n" | tail -1)
+  [ "$nlast" = "0" ] && break
+  echo "$n" | head -n -1 >> books.jsonl
+  nbooks=$(echo "$n" | head -1)
+  total=$((total+nbooks))
+  has_next=$(a
+-> [33 chars] pages: 0, books: 0
+0 books.jsonl
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+agent-browser open https://books.toscrape.com/ >/dev/null
+data=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' 2>/dev/null)
+printf '%s' "$data" | head -c 120; echo; echo "len=${#data}"
+printf '%s' "$data" | python3 -c 'import json,sys
+d=json.loads(sys.stdin.read())
+print(type(d))
+if isinstance(d,str): d=json.loads(d)
+print(len(d)); print(d[0])'
+-> [189 chars] "[{\"t\":\"A Light in the Attic\",\"p\":51.77},{\"t\":\"Tipping the Velvet\",\"p\":53.74},{\"t\":\"Soumission\",\"p\":50
+len=1208
+<class 'str'>
+20
+{'t': 'A Light in the Attic', 'p': 51.77}
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+agent-browser open https://books.toscrape.com/ >/dev/null
+data=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' 2>/dev/null)
+n=$(printf '%s' "$data" | python3 -c 'import json,sys
+try:
+    d=json.loads(sys.stdin.read())
+    if isinstance(d,str): d=json.loads(d)
+    print(len(d)); [print(json.dumps(b)) for b in d]
+except Exception:
+    print(0)')
+nlast=$(echo "$n" | tail -1)
+echo "nlast=[$nlast]"; echo "line1=[$(echo "$n" | head -1)]"
+h=$(agent-browser eval 'document.querySelector(".next") ? "yes":"no"')
+echo "has_next=[$h]"
+-> [81 chars] nlast=[{"t": "It's Only the Himalayas", "p": 45.17}]
+line1=[20]
+has_next=["yes"]
+
+SAY: The loop broke because the browser was sitting on the last page (no `.next` link). Now on page 1 — rerun:
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+> books.jsonl
+page=1
+total=0
+while true; do
+  if [ "$page" -gt 1 ]; then agent-browser open "https://books.toscrape.com/catalogue/page-$page/" >/dev/null; fi
+  data=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' 2>/dev/null)
+  n=$(printf '%s' "$data" | python3 -c 'import json,sys
+try:
+    d=json.loads(sys.stdin.read())
+    if isinstance(d,str): d=json.loads(d)
+    print(len(d)); [print(json.dumps(b)) for b in d]
+except Exception:
+    print(0)')
+  [ "$(echo "$n" | head -1)" = "0" ] && { echo "PARSE FAIL at page $page"; break; }
+  echo "$n" | head -n -1 >> books.jsonl
+  total=$((total+$(echo "$n" | head -1)))
+  h=$(agent-
+-> [52 chars] PARSE FAIL at page 2
+pages: 2, books: 20, lines: 20
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+agent-browser open "https://books.toscrape.com/catalogue/page-2/"
+agent-browser eval 'document.querySelectorAll("article.product_pod").length'
+-> [65 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page-2/
+0
+
+$ agent-browser open https://books.toscrape.com/ >/dev/null
+agent-browser eval 'document.querySelector(".next a") ? document.querySelector(".next a").href : "none"'
+-> [51 chars] "https://books.toscrape.com/catalogue/page-2.html"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+> books.jsonl
+total=0
+page=1
+while true; do
+  data=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' 2>/dev/null)
+  n=$(printf '%s' "$data" | python3 -c 'import json,sys
+try:
+    d=json.loads(sys.stdin.read())
+    if isinstance(d,str): d=json.loads(d)
+    print(len(d)); [print(json.dumps(b)) for b in d]
+except Exception:
+    print(0)')
+  c=$(echo "$n" | head -1)
+  [ "$c" = "0" ] && { echo "PARSE FAIL page $page"; break; }
+  echo "$n" | head -n -1 >> books.jsonl
+  total=$((total+c))
+  nxt=$(agent-browser eval 'document.querySelector(".next a") ? document.querySelector(".next a").getAttribute("href") : "none"' 2>/dev/null)
+ 
+-> [97 chars] ✗ Navigation failed: net::ERR_NAME_NOT_RESOLVED
+PARSE FAIL page 2
+pages: 2, books: 20, lines: 20
+
+SAY: The href comes back JSON-quoted. Fix by decoding:
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+> books.jsonl
+total=0
+page=1
+agent-browser open https://books.toscrape.com/ >/dev/null
+while true; do
+  data=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' 2>/dev/null)
+  n=$(printf '%s' "$data" | python3 -c 'import json,sys
+try:
+    d=json.loads(sys.stdin.read())
+    if isinstance(d,str): d=json.loads(d)
+    print(len(d)); [print(json.dumps(b)) for b in d]
+except Exception:
+    print(0)')
+  c=$(echo "$n" | head -1)
+  [ "$c" = "0" ] && { echo "PARSE FAIL page $page"; break; }
+  echo "$n" | head -n -1 >> books.jsonl
+  total=$((total+c))
+  nxt=$(agent-browser eval 'document.querySelector(".next a") ? document.querySelecto
+-> [97 chars] ✗ Navigation failed: net::ERR_NAME_NOT_RESOLVED
+PARSE FAIL page 2
+pages: 2, books: 20, lines: 20
+
+SAY: The `getAttribute("href")` returns a relative path; use the absolute `.href` property instead:
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+> books.jsonl
+total=0
+page=1
+agent-browser open https://books.toscrape.com/ >/dev/null
+while true; do
+  data=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' 2>/dev/null)
+  n=$(printf '%s' "$data" | python3 -c 'import json,sys
+try:
+    d=json.loads(sys.stdin.read())
+    if isinstance(d,str): d=json.loads(d)
+    print(len(d)); [print(json.dumps(b)) for b in d]
+except Exception:
+    print(0)')
+  c=$(echo "$n" | head -1)
+  [ "$c" = "0" ] && { echo "PARSE FAIL page $page"; break; }
+  echo "$n" | head -n -1 >> books.jsonl
+  total=$((total+c))
+  nxt=$(agent-browser eval 'document.querySelector(".next a") ? document.querySelecto
+-> [36 chars] pages: 50, books: 1000, lines: 1000
+
+SAY: All 50 pages, 1000 books scraped. Now compute the answer:
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+python3 - <<'EOF'
+import json
+books=[json.loads(l) for l in open('books.jsonl')]
+assert len(books)==1000
+assert len({(b['t'],b['p']) for b in books})==1000, "unexpected duplicates"
+lt12=[b for b in books if b['p']<12.0]
+print("books < £12.00:", len(lt12))
+cheapest=min(books, key=lambda b: b['p'])
+print("cheapest:", cheapest['p'], cheapest['t'])
+prices=sorted(b['p'] for b in books)
+print("min price:", prices[0], "| books <= £12.00:", sum(1 for p in prices if p<=12.0), "| any price exactly 12? any in 11.9-12.01:", [p for p in prices if 11.9<=p<=12.01])
+EOF
+-> [146 chars] Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+TypeError: 'int' object is not subscriptable
+
+
+Command exited with code 1
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+python3 - <<'EOF'
+import json
+lines=open('books.jsonl').read().splitlines()
+bad=[(i,l) for i,l in enumerate(lines) if not l.startswith('{')]
+print("bad lines:", len(bad), bad[:3])
+recs=[]
+for i,l in enumerate(lines):
+    o=json.loads(l)
+    if isinstance(o,dict): recs.append(o)
+    else: print("line",i,"->",repr(o))
+print("dict records:", len(recs))
+EOF
+-> [812 chars] bad lines: 50 [(0, '20'), (20, '20'), (40, '20')]
+line 0 -> 20
+line 20 -> 20
+line 40 -> 20
+line 60 -> 20
+line 80 -> 20
+line 100 -> 20
+line 120 -> 20
+line 140 -> 20
+line 160 -> 20
+line 180 -> 20
+line 200 -> 20
+line 220 -> 20
+line 240 -> 20
+line 260 -> 20
+line 280 -> 20
+line 300 -> 20
+line 320 -> 20
+line 340 -> 20
+line 360 -> 20
+line 380 -> 20
+line 400 -> 20
+line 420 -> 20
+line 440 -> 20
+line 460 -> 20
+line 480 -> 20
+line 500 -> 20
+line 520 -> 20
+line 540 -> 20
+line 560 -> 20
+line 580 -> 20
+line 6 …e 820 -> 20
+line 840 -> 20
+line 860 -> 20
+line 880 -> 20
+line 900 -> 20
+line 920 -> 20
+line 940 -> 20
+line 960 -> 20
+line 980 -> 20
+dict records: 950
+
+SAY: The `head -n -1` kept the count line and dropped each page's last book (950/1000). Rerun with proper filtering:
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+> books.jsonl
+total=0
+page=1
+agent-browser open https://books.toscrape.com/ >/dev/null
+while true; do
+  data=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll("article.product_pod")].map(a=>({t:a.querySelector("h3 a").getAttribute("title"), p:parseFloat(a.querySelector(".price_color").textContent.replace(/[^0-9.]/g,""))})))' 2>/dev/null)
+  n=$(printf '%s' "$data" | python3 -c 'import json,sys
+d=json.loads(sys.stdin.read())
+if isinstance(d,str): d=json.loads(d)
+[print(json.dumps(b)) for b in d]')
+  c=$(echo "$n" | wc -l)
+  [ "$c" = "0" ] && { echo "PARSE FAIL page $page"; break; }
+  echo "$n" >> books.jsonl
+  total=$((total+c))
+  nxt=$(agent-browser eval 'document.querySelector(".next a") ? document.querySelector(".next a").href : "none"' 2>/dev/null)
+  nxt=$(printf '%s' "$nxt" | python3 
+-> [63 chars] pages: 50, books: 1000, lines: 1000
+records: 1000 unique: 1000
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s08_r2
+python3 - <<'EOF'
+import json
+books=[json.loads(l) for l in open('books.jsonl')]
+lt=[b for b in books if b['p']<12.0]
+print("count < £12.00:", len(lt))
+cheapest=min(books,key=lambda b:b['p'])
+print("cheapest: £%.2f - %s" % (cheapest['p'], cheapest['t']))
+# sanity
+from collections import Counter
+low=sorted(b['p'] for b in books)[:8]
+print("lowest 8 prices:", low)
+print("ties at min price:", sum(1 for b in books if b['p']==cheapest['p']))
+le12=sum(1 for b in books if b['p']<=12.0)
+print("books <= £12.00:", le12, "| exactly 12.00:", le12-len(lt))
+EOF
+-> [195 chars] count < £12.00: 44
+cheapest: £10.00 - An Abundance of Katherines
+lowest 8 prices: [10, 10.01, 10.02, 10.16, 10.23, 10.27, 10.29, 10.4]
+ties at min price: 1
+books <= £12.00: 44 | exactly 12.00: 0
+
+SAY: Done. Scraped all 50 catalog pages (1,000 unique books) via the real browser with `agent-browser` (open/next-link navigation + `eval` for extraction).
+
+**Results:**
+- Books priced less than £12.00: **44** (none are priced exactly £12.00)
+- Cheapest book: **"An Abundance of Katherines"** at **£10.00** (the unique minimum, no ties)
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00.

@@ -1,0 +1,83 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r3", "correct": true, "score": 0.937, "wtok": 42164, "out_tok": 1467, "turns": 10, "secs": 39, "timed_out": false, "curl": false, "answer": "Priya N.'s message subject is \"Q3 vendor audit \u2014 rescheduled to the 19th\"; after archiving (confirming the dialog), the receipt shown was #A-7028."}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser wait "body"; agent-browser snapshot -i
+-> [426 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✓ Done
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('button')].map((b,i)=>{
+  let el=b; for(let k=0;k<6&&el;k++){ el=el.parentElement; if(el&&el.textContent.includes('Priya')) break; }
+  return {i, ctx: el? el.textContent.slice(0,200):null};
+}).filter(x=>x.ctx&&x.ctx.includes('Priya')))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval "JSON.stringify(document.body.innerText.slice(0,3000))"
+-> [1004 chars] "\"Inbox\\n\\nShowing 24 of 60\\n\\nAlex A.\\nInvoice #100\\nArchive\\nFemi H.\\nLunch order #113\\nArchive\\nKai C.\\nOn-call swap #126\\nArchive\\nDana K.\\nRetro actions #139\\nArchive\\nIvo E.\\nRelease checklist #152\\nArchive\\nBo M.\\nDesign review #165\\nArchive\\nGus G.\\nHiring loop #178\\nArchive\\nLena B.\\nStandup notes #191\\nArchive\\nElif J.\\nTravel booking #204\\nArchive\\nJude D.\\nBudget draft #217\\nArchive\\nChen L.\\nInvoice #230\\nArchive\\nHana F.\\nLunch order #243\\nAr …\\nArchive\\nJude D.\\nLunch order #373\\nArchive\\nChen L.\\nOn-call swap #386\\nArchive\\nHana F.\\nRetro actions #399\\nArchive\\nLoading more…\""
+
+SAY: Priya N. isn't in the first 24 messages; need to load more.
+$ agent-browser eval "window.scrollTo(0, document.body.scrollHeight); 'scrolled'"; agent-browser wait --fn "[...document.querySelectorAll('body *')].some(e=>e.textContent&&e.textContent.includes('Priya N.'))" || agent-browser eval "JSON.stringify(document.body.innerText.slice(-500))"
+-> [16 chars] "scrolled"
+true
+
+$ agent-browser eval --stdin <<'JS'
+const rows=[...document.querySelectorAll('li,tr,div')].filter(e=>e.textContent.includes('Priya N.'));
+const t=rows[rows.length-1];
+JSON.stringify(t?t.textContent.slice(0,300):'notfound')
+JS
+-> [15 chars] "\"notfound\""
+
+$ agent-browser eval "JSON.stringify(document.body.innerText.slice(-600))"; agent-browser eval "window.scrollTo(0, document.body.scrollHeight)"; agent-browser wait --text "Priya N." ; agent-browser eval "JSON.stringify(document.body.innerText.slice(-600))"
+-> [1456 chars] "\"4\\nArchive\\nLena B.\\nBudget draft #347\\nArchive\\nElif J.\\nInvoice #360\\nArchive\\nJude D.\\nLunch order #373\\nArchive\\nChen L.\\nOn-call swap #386\\nArchive\\nHana F.\\nRetro actions #399\\nArchive\\nAlex A.\\nRelease checklist #412\\nArchive\\nFemi H.\\nDesign review #425\\nArchive\\nKai C.\\nHiring loop #438\\nArchive\\nDana K.\\nStandup notes #451\\nArchive\\nIvo E.\\nTravel booking #464\\nArchive\\nBo M.\\nBudget draft #477\\nArchive\\nGus G.\\nInvoice #490\\nArchive\\nLena B.\\n …\nArchive\\nJude D.\\nDesign review #685\\nArchive\\nChen L.\\nHiring loop #698\\nArchive\\nHana F.\\nStandup notes #711\\nArchive\\nLoading more…\""
+
+SAY: Found it: subject "Q3 vendor audit — rescheduled to the 19th". Now archiving.
+$ agent-browser eval --stdin <<'JS'
+const btns=[...document.querySelectorAll('button')].filter(b=>b.textContent.trim()==='Archive');
+const rows=[...document.querySelectorAll('li,tr,div')].filter(e=>e.textContent.includes('Priya N.'));
+const t=rows[rows.length-1];
+const b=[...t.querySelectorAll('button')].find(x=>x.textContent.trim()==='Archive');
+b.click();
+JSON.stringify('clicked')
+JS
+agent-browser dialog accept; agent-browser eval "JSON.stringify(document.body.innerText.slice(0,800))"
+-> [1094 chars] ✗ Evaluation error: SyntaxError: Identifier 'rows' has already been declared
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+"\"Inbox\\n\\nShowing 48 of 60\\n\\nAlex A.\\nInvoice #100\\nArchive\\nFemi H.\\nLunch order #113\\nArchive\\nKai C.\\nOn-call swap #126\\nArchive\\nDana K.\\nRetro actions #139\\nArchive\\nIvo E.\\nRelease checklist #152\\nArchive\\nBo M.\\nDesign review #165\\nArchive\\nGus G.\\nHiring loop #178\\nArchive\\nLena B.\\nStandup notes #191\\nArchive\\nElif J. …udget draft #347\\nArchive\\nElif J.\\nInvoice #360\\nArchive\\nJude D.\\nLunch order #373\\nArchive\\nChen L.\\nOn-call swap #386\\nArchive\\nHan\""
+
+$ agent-browser eval --stdin <<'JS'
+(()=>{const t=[...document.querySelectorAll('li,tr,div')].filter(e=>e.textContent.includes('Priya N.'));const c=t[t.length-1];const b=[...c.querySelectorAll('button')].find(x=>x.textContent.trim()==='Archive');b.click();return 'clicked'})()
+JS
+agent-browser dialog accept ; agent-browser eval "JSON.stringify(document.body.innerText.slice(0,400))"
+-> [664 chars] ✗ CDP command timed out: Runtime.evaluate
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+"\"Inbox\\n\\nShowing 48 of 60\\n\\nAlex A.\\nInvoice #100\\nArchive\\nFemi H.\\nLunch order #113\\nArchive\\nKai C.\\nOn-call swap #126\\nArchive\\nDana K.\\nRetro actions #139\\nArchive\\nIvo E.\\nRelease checklist #152\\nArchive\\nBo M.\\nDesign review #165\\nArchive\\nGus G.\\nHiring loop #178\\nArchive\\nLena B.\\nStandup notes #191\\nArchive\\nElif J.\\nTravel booking #204\\nArchive\\nJude D.\\nBudget draft #217\\nArchive\\nChen L.\\nInvoice #230\\nArchive\\nHana F.\\n\""
+
+SAY: Dialog confirmed. Now looking for the receipt number shown afterwards.
+$ agent-browser eval "JSON.stringify((document.body.innerText.match(/[^.]*[Rr]eceipt[^.]*\.?/g)||[]))"; agent-browser eval "JSON.stringify([...document.querySelectorAll('body *')].filter(e=>e.children.length===0&&/receipt/i.test(e.textContent)).map(e=>e.textContent).slice(0,5))"
+-> [1627 chars] "[\" Receipt #A-7028\"]"
+"[\"Archived. Receipt #A-7028\",\"\\nconst first=[\\\"Alex\\\",\\\"Bo\\\",\\\"Chen\\\",\\\"Dana\\\",\\\"Elif\\\",\\\"Femi\\\",\\\"Gus\\\",\\\"Hana\\\",\\\"Ivo\\\",\\\"Jude\\\",\\\"Kai\\\",\\\"Lena\\\"],last=\\\"ABCDEFGHJKLM\\\";\\nconst topics=[\\\"Invoice\\\",\\\"Standup notes\\\",\\\"Release checklist\\\",\\\"Lunch order\\\",\\\"Travel booking\\\",\\\"Design review\\\",\\\"On-call swap\\\",\\\"Budget draft\\\",\\\"Hiring loop\\\",\\\"Retro actions\\\"];\\nconst msgs=[] …of inbox';}\\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\\n\"]"
+
+SAY: Done.
+
+- **Sender:** Priya N.
+- **Subject:** Q3 vendor audit — rescheduled to the 19th
+- **Archived:** confirmed the "Archive this message?" dialog, and the toast afterwards showed receipt **A-7028**
+
+ANSWER: Priya N.'s message subject is "Q3 vendor audit — rescheduled to the 19th"; after archiving (confirming the dialog), the receipt shown was #A-7028.

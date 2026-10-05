@@ -1,0 +1,82 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r4", "correct": true, "score": 0.944, "wtok": 37592, "out_tok": 1232, "turns": 10, "secs": 11, "timed_out": false, "curl": false, "answer": "5 one-star books out of 26 total in the Historical Fiction category"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_23/index.html"; agent-browser snapshot -i
+-> [141 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_23/index.html
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical_23/index.html"; agent-browser snapshot -i | head -50
+-> [133 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical_23/index.html
+- heading "404 Not Found" [level=1, ref=e2]
+
+$ agent-browser open "https://books.toscrape.com/" ; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#genres_all a')].map(a=>[a.textContent.trim(), a.getAttribute('href')]))
+JS
+-> [78 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('nav ul li a, #categories_left a')].map(a=>[a.textContent.trim(), a.getAttribute('href')]).filter(([t])=>t))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].map(a=>a.getAttribute('href')).filter(h=>h&&h.includes('category')))
+JS
+-> [2705 chars] "[\"catalogue/category/books_1/index.html\",\"catalogue/category/books/travel_2/index.html\",\"catalogue/category/books/mystery_3/index.html\",\"catalogue/category/books/historical-fiction_4/index.html\",\"catalogue/category/books/sequential-art_5/index.html\",\"catalogue/category/books/classics_6/index.html\",\"catalogue/category/books/philosophy_7/index.html\",\"catalogue/category/books/romance_8/index.html\",\"catalogue/category/books/womens-fiction_9/index.html\",\"catalogue/category/books/f …talogue/category/books/cultural_49/index.html\",\"catalogue/category/books/erotica_50/index.html\",\"catalogue/category/books/crime_51/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  books: document.querySelectorAll('.product-grid li').length,
+  next: [...document.querySelectorAll('li.next a')].map(a=>a.getAttribute('href')),
+  body: document.querySelector('.col-sm-9') ? document.querySelector('.col-sm-9').textContent.trim().slice(0,300) : document.body.textContent.trim().slice(0,300)
+})
+JS
+-> [550 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"books\":0,\"next\":[\"page-2.html\"],\"body\":\"Books to Scrape We love being scraped!\\n\\n\\n                \\n            \\n        \\n    \\n\\n    \\n    \\n\\n    \\n        \\n    \\n        \\n            Home\\n        \\n        \\n            \\n                Books\\n            \\n        \\n        Historical Fiction\\n    \\n\\n        \\n\\n            \\n                \\n          \"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  articles: document.querySelectorAll('article.product_pod').length,
+  items: document.querySelectorAll('li').length,
+  sample: document.querySelector('article.product_pod') ? document.querySelector('article.product_pod').innerHTML.slice(0,800) : null
+})
+JS
+-> [975 chars] "{\"articles\":20,\"items\":76,\"sample\":\"\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"../../../tipping-the-velvet_999/index.html\\\"><img src=\\\"../../../../media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg\\\" alt=\\\"Tipping the Velvet\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n                <p cla …          \\n        \\n\\n        \\n            <h3><a href=\\\"../../../tipping-the-velvet_999/index.html\\\" title=\\\"Tipping the Velvet\\\"\"}"
+
+SAY: Page 1 has 20 books with a next link. Let me walk through all pages and collect ratings.
+$ base="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/"
+agent-browser open "$base" >/dev/null
+agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  total: document.querySelectorAll('article.product_pod').length,
+  ones: document.querySelectorAll('p.star-rating.One').length,
+  next: document.querySelector('li.next a') ? document.querySelector('li.next a').getAttribute('href') : null
+})
+JS
+-> [53 chars] "{\"total\":20,\"ones\":5,\"next\":\"page-2.html\"}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"
+agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  total: document.querySelectorAll('article.product_pod').length,
+  ones: document.querySelectorAll('p.star-rating.One').length,
+  next: document.querySelector('li.next a') ? document.querySelector('li.next a').getAttribute('href') : null
+})
+JS
+-> [177 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"total\":6,\"ones\":0,\"next\":null}"
+
+SAY: Done. Results from the Historical Fiction category (2 pages):
+
+- **Page 1:** 20 books, 5 one-star ratings
+- **Page 2:** 6 books, 0 one-star ratings
+- **Total: 26 books, of which 5 have a one-star rating**
+
+ANSWER: 5 one-star books out of 26 total in the Historical Fiction category

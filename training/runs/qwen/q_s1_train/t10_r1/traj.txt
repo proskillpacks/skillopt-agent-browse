@@ -1,0 +1,58 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r1", "correct": true, "score": 0.98, "wtok": 13309, "out_tok": 440, "turns": 5, "secs": 60, "timed_out": false, "curl": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/jqueryui/menu"; agent-browser wait "#menu"; agent-browser snapshot -i
+-> [517 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e8; agent-browser wait "#menu ul ul"; agent-browser snapshot -i
+-> [625 chars] ✓ Done
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+    - menuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser hover @e10; sleep 1; agent-browser snapshot -i
+-> [790 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+      - menuitem "PDF" [ref=e14 …- link "Excel" [ref=e19]
+    - menuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu li')].filter(li=>li.style.display!=='none'&&li.offsetParent!==null).map(li=>li.textContent.trim()))"; agent-browser close
+-> [385 chars] "[\"Disabled\\n        \\n            Should not see this\",\"Enabled\\n      \\n        \\n          Downloads\\n          \\n            PDF\\n            CSV\\n            Excel\\n          \\n        \\n        Back to JQuery UI\",\"Downloads\\n          \\n            PDF\\n            CSV\\n            Excel\",\"PDF\",\"CSV\",\"Excel\",\"Back to JQuery UI\"]"
+✓ Browser closed
+
+SAY: Opened the page, clicked **Enabled**, then opened the **Downloads** submenu. The items actually displayed in the Downloads submenu are: **PDF**, **CSV**, **Excel** (verified both via the live snapshot and DOM check — the hidden "Should not see this" item under the Disabled branch was not shown).
+
+ANSWER: PDF, CSV, Excel

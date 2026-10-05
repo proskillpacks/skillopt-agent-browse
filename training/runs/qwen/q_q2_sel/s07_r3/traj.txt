@@ -1,0 +1,44 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r3", "correct": true, "score": 0.975, "wtok": 16810, "out_tok": 635, "turns": 6, "secs": 60, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "#column-a"; agent-browser snapshot -i
+-> [207 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser get text "#column-a"; agent-browser get text "#column-b"
+-> [11 chars] ✓ Done
+B
+A
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([
+  [...document.querySelectorAll('ul')].map(u => ({id: u.id, text: u.textContent.trim(), x: u.getBoundingClientRect().x})).sort((a,b)=>a.x-b.x)
+])
+JS
+-> [7 chars] "[[]]"
+
+SAY: The drag succeeded — box A was dropped onto box B. Let me verify the left-to-right layout:
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([
+  document.querySelector('#column-a').textContent.trim(),
+  document.querySelector('#column-b').textContent.trim(),
+  document.querySelector('#column-a').getBoundingClientRect().x,
+  document.querySelector('#column-b').getBoundingClientRect().x
+])
+JS
+-> [23 chars] "[\"B\",\"A\",15,230]"
+
+SAY: The drag-and-drop worked as expected. After dropping box A onto box B, their contents swapped:
+
+- Left box (`#column-a`, x=15) now shows **B**
+- Right box (`#column-b`, x=230) now shows **A**
+
+ANSWER: B, A

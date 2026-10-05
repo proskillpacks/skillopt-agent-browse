@@ -1,0 +1,99 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r2", "correct": true, "score": 0.903, "wtok": 64438, "out_tok": 953, "turns": 12, "secs": 59, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser status 2>&1 | head -20; agent-browser get url 2>&1
+-> [77 chars] Unknown command: status
+https://the-internet.herokuapp.com/dynamic_loading/2
+
+SAY: The URL is loaded (the open command just timed out waiting for full load). Now click Start:
+$ agent-browser click "text=Start" 2>&1
+-> [142 chars] ✗ Element not found: text=Start. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get text 2>&1 | head -30
+-> [73 chars] Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+$ agent-browser --help 2>&1
+-> [25299 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … agent-browser -p ios swipe up                            # Swipe gesture
+  agent-browser -p ios tap @e1                             # Touch element
+
+
+$ agent-browser reload 2>&1; agent-browser snapshot -i 2>&1
+-> [288 chars] https://the-internet.herokuapp.com/dynamic_loading/2
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+- button "Start" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+SAY: The Start button is now visible. Clicking it:
+$ agent-browser click @e4 2>&1
+-> [7 chars] ✓ Done
+
+$ agent-browser wait "#finished" 2>&1; agent-browser get text "#finished" 2>&1
+-> [172 chars] ✗ Wait timed out after 25000ms
+✗ Element not found: #finished. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1
+-> [421 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+  - heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+  - LineBreak "\n"
+  - heading "Hello World!" [level=4, ref=e6]
+  - LineBreak "\n"
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e5]
+
+SAY: The element has appeared. Let me verify its text:
+$ agent-browser find text "Hello World!" text 2>&1; agent-browser get text "#finished" 2>&1
+-> [541 chars] 
+  $(function(){
+    $('#start button').click(function(){
+      $('#start').hide();
+      $('#start').before("<div id='loading'>Loading... <img src='/img/ajax-loader.gif'></div>");
+      setTimeout(function() {
+        $('#loading').hide();
+        $('#loading').before("<div id='finish' style='display:none'><h4>Hello World!</h4></div>")
+        $('#finish').show();
+      } , 5000 );
+    });
+  });
+✗ Element not found: #finished. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get text "#finish" 2>&1
+-> [13 chars] Hello World!
+
+SAY: After clicking Start, a loading spinner appeared, and after about 5 seconds the element `#finish` was rendered containing an `<h4>` with the text.
+
+ANSWER: Hello World!

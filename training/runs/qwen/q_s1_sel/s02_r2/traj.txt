@@ -1,0 +1,25 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r2", "correct": true, "score": 0.988, "wtok": 8221, "out_tok": 457, "turns": 3, "secs": 5, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open "https://quotes.toscrape.com/login"; agent-browser eval "JSON.stringify({form: !!document.querySelector('form'), action: document.querySelector('form')?.getAttribute('action'), inputs: [...document.querySelectorAll('input')].map(i=>({name:i.name,type:i.type}))})"; agent-browser close
+-> [295 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+"{\"form\":true,\"action\":\"/login\",\"inputs\":[{\"name\":\"csrf_token\",\"type\":\"hidden\"},{\"name\":\"username\",\"type\":\"text\"},{\"name\":\"password\",\"type\":\"password\"},{\"name\":\"\",\"type\":\"submit\"}]}"
+✓ Browser closed
+
+$ agent-browser open "https://quotes.toscrape.com/login"; agent-browser fill 'input[name=username]' "admin"; agent-browser fill 'input[name=password]' "admin"; agent-browser click 'input[type=submit]'; agent-browser wait --fn "location.href==='/' || location.pathname==='/'"; agent-browser eval "JSON.stringify(JSON.parse(document.querySelector('body').textContent.length && document.body.innerHTML))" 2>/dev/null; agent-browser eval "JSON.stringify((document.querySelector('body')||{textContent:''}).textContent.slice(0,500))"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.quote')).slice(0,2).map(q=>Array.from(q.querySelectorAll('a')).map(a=>[a.textContent.trim(), a.href])))"; agent-browser close
+-> [1374 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+✓ Done
+✓ Done
+true
+"\"\\n    \\n        \\n            \\n                \\n                    Quotes to Scrape\\n                \\n            \\n            \\n                \\n                \\n                    Logout\\n                \\n                \\n            \\n        \\n    \\n\\n\\n    \\n\\n    \\n        “The world as we have created it is a process of our thinking. It cannot be changed without changing our …lities\",\"https://quotes.toscrape.com/tag/abilities/page/1/\"],[\"choices\",\"https://quotes.toscrape.com/tag/choices/page/1/\"]]]"
+✓ Browser closed
+
+SAY: I logged in with username/password `admin` (any credentials accepted) and confirmed the "(Goodreads page)" link appeared. The first quote on the first page is Albert Einstein's "The world as we have created it..." quote, and its extra Goodreads link is:
+
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

@@ -1,0 +1,212 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r2", "correct": false, "score": 0.0, "wtok": 148761, "out_tok": 5510, "turns": 17, "secs": 900, "timed_out": true, "curl": false, "answer": "The pagination URLs are `/catalogue/page-N.html`. Now I'll follow \"next\" links from the home page with 403 retries."}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser snapshot -i
+-> [5436 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfiction" [r …"It's Only the Himalayas" [level=3, ref=e75]
+  - link "It's Only the Himalayas" [ref=e115]
+- button "Add to basket" [ref=e135]
+- link "next" [ref=e5]
+
+SAY: The catalogue is paginated (50 books/page). I'll walk through all pages in a shell loop, collecting title/price pairs via `eval`.
+$ rm -f /tmp/books.jsonl
+n=1
+while :; do
+  if [ $n -eq 1 ]; then url="https://books.toscrape.com/catalogue/"; else url="https://books.toscrape.com/catalogue/page-$n/index.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1
+  out=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = [...document.querySelectorAll('article')];
+  return JSON.stringify(arts.map(a => {
+    const h2 = a.querySelector('h3 a');
+    const p = a.querySelector('.price_color');
+    return { t: h2 ? h2.textContent : null, p: p ? p.textContent : null };
+  }));
+})()
+JS
+)
+  if [ -z "$out" ]; then echo "page $n returned nothing, stopping"; break; fi
+  echo "$out" > /tmp/page.json
+  cat /tmp/page.json
+  next=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('li.next a, .pagination a')].map(a => a.href);
+  return JSON.stringify(links);
+})()
+JS
+)
+  echo "next: $next"
+  if ! echo
+-> [43 chars] "[]"
+next: "[]"
+no more pages
+last page: 0
+
+SAY: The page didn't load. Let me check state and retry with explicit waits.
+$ agent-browser eval "document.location.href + ' | articles: ' + document.querySelectorAll('article').length + ' | h1: ' + (document.querySelector('h1') ? document.querySelector('h1').textContent : 'none')"
+-> [74 chars] "https://books.toscrape.com/catalogue/ | articles: 0 | h1: 403 Forbidden"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/"; agent-browser wait "article" ; agent-browser eval "document.querySelectorAll('article').length"
+-> [89 chars] ✓ 403 Forbidden
+  https://books.toscrape.com/catalogue/
+✗ Wait timed out after 25000ms
+0
+
+SAY: The site is now returning 403 — likely rate limiting after rapid consecutive requests. Let me pause and retry.
+$ sleep 20; agent-browser open "https://books.toscrape.com/catalogue/" && agent-browser eval "document.querySelector('h1') ? document.querySelector('h1').textContent : 'no h1'"
+-> [72 chars] ✓ 403 Forbidden
+  https://books.toscrape.com/catalogue/
+"403 Forbidden"
+
+$ agent-browser read | head -30; agent-browser eval "document.location.href"
+-> [70 chars] # 403 Forbidden
+
+nginx/1.21.6
+"https://books.toscrape.com/catalogue/"
+
+$ sleep 30; agent-browser open "https://books.toscrape.com/"; agent-browser wait "a[href='/catalogue/page-1/']" 2>&1 | tail -1; agent-browser eval "document.title + ' | ' + document.querySelectorAll('article').length"
+-> [152 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+"All products | Books to Scrape - Sandbox | 20"
+
+SAY: Home page works again (20 books/page). Now I'll walk all pages with retries on 403 and delays between requests.
+$ rm -f /tmp/books.jsonl
+n=1
+while :; do
+  if [ $n -eq 1 ]; then url="https://books.toscrape.com/catalogue/"; else url="https://books.toscrape.com/catalogue/page-$n/index.html"; fi
+  ok=0
+  for try in 1 2 3 4 5; do
+    agent-browser open "$url" >/dev/null 2>&1
+    res=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const h1 = document.querySelector('h1');
+  if (h1 && h1.textContent === '403 Forbidden') return '__403__';
+  const arts = [...document.querySelectorAll('article')];
+  if (arts.length === 0) return '__empty__';
+  return JSON.stringify(arts.map(a => {
+    const h3 = a.querySelector('h3 a');
+    const p = a.querySelector('.price_color');
+    return [ h3 ? h3.textContent.trim() : null, p ? p.textContent.trim() : null ];
+  }));
+})()
+JS
+)
+    case "$res" in
+      *__403__*) sleep 15 ;;
+      *__empty__*) sleep 5 ;;
+      *) echo "$res" >> /tmp/books.jsonl; ok=1; break ;;
+    esac
+  don
+-> [92 chars] FAILED page 1
+/bin/bash: line 43: /tmp/books.jsonl: No such file or directory
+total lines: 
+
+$ ls -la /tmp | head; agent-browser eval "document.querySelector('h1') ? document.querySelector('h1').textContent : 'ok'"; agent-browser eval "document.querySelectorAll('article').length"
+-> [608 chars] total 61316
+drwxrwxrwt 6195 root   root    192512 Oct  5 14:33 .
+drwxr-xr-x   24 root   root      4096 Jan  1  2000 ..
+-rw-rw-r--    1 user user   46878 Oct  5 14:27 169-how-to-send-an-update.html
+-rw-rw-r--    1 user user   29143 Oct  5 14:27 289-file-size-limits-on-gumroad.html
+-rw-rw-r--    1 user user   28525 Oct  4 10:50 a249.html
+-rw-rw-r--    1 user user    6512 Oct  4 10:50 a249.txt
+-rw-rw-r--    1 user user   45588 Oct  4 10:50 a333.html
+-rw-rw-r--    1 user user   15538 Oct  4 10:50 a333.txt
+-rw-rw-r--    1 user user   80334 Oct  5 14:27 aa.html
+"403 Forbidden"
+0
+
+$ df -h /tmp; sleep 15; agent-browser open "https://books.toscrape.com/catalogue/"; agent-browser eval "document.querySelector('h1').textContent + ' | arts: ' + document.querySelectorAll('article').length"
+-> [171 chars] Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme0n1p2  3.7T  349G  3.2T  10% /
+✓ 403 Forbidden
+  https://books.toscrape.com/catalogue/
+"403 Forbidden | arts: 0"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "document.title + ' | ' + document.querySelectorAll('article').length"; agent-browser open "https://books.toscrape.com/catalogue/page-2/index.html"; agent-browser eval "document.querySelector('h1').textContent"
+-> [210 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"All products | Books to Scrape - Sandbox | 20"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page-2/index.html
+"404 Not Found"
+
+$ agent-browser eval "JSON.stringify(document.querySelector('li.next a') ? document.querySelector('li.next a').href : 'no next')"
+-> [14 chars] "\"no next\""
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('a')].map(a => a.href).filter(h => h.includes('page') || h.includes('catalogue'));
+  return JSON.stringify([...new Set(links)]);
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const pag = document.querySelector('.pagination, nav, #pager');
+  return JSON.stringify({
+    pag: pag ? pag.outerHTML.slice(0, 500) : null,
+    bodyLinks: [...document.querySelectorAll('body > .container_footer a, .footer a')].map(a => a.href),
+    allA: [...document.querySelectorAll('a')].length
+  });
+})()
+JS
+-> [45 chars] "{\"pag\":null,\"bodyLinks\":[],\"allA\":0}"
+
+$ agent-browser eval "document.location.href + ' | ' + document.title + ' | h1: ' + (document.querySelector('h1') ? document.querySelector('h1').textContent : 'none')"
+-> [93 chars] "https://books.toscrape.com/catalogue/page-2/index.html | 404 Not Found | h1: 404 Not Found"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval --stdin <<'JS'
+(() => {
+  const next = document.querySelector('li.next a');
+  const all = [...document.querySelectorAll('a')].map(a => a.getAttribute('href')).filter(h => h && (h.includes('page') || h.includes('catalogue')));
+  return JSON.stringify({ next: next ? next.href : null, all: [...new Set(all)], articles: document.querySelectorAll('article').length });
+})()
+JS
+-> [4183 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"{\"next\":\"https://books.toscrape.com/catalogue/page-2.html\",\"all\":[\"catalogue/category/books_1/index.html\",\"catalogue/category/books/travel_2/index.html\",\"catalogue/category/books/mystery_3/index.html\",\"catalogue/category/books/historical-fiction_4/index.html\",\"catalogue/category/books/sequential-art_5/index.html\",\"catalogue/category/books/classics_6/index.html\",\"catalogue/category/books/philosophy_7/inde …alogue/libertarianism-for-beginners_982/index.html\",\"catalogue/its-only-the-himalayas_981/index.html\",\"catalogue/page-2.html\"],\"articles\":20}"
+
+SAY: The pagination URLs are `/catalogue/page-N.html`. Now I'll follow "next" links from the home page with 403 retries.
+$ : > /tmp/books.jsonl
+agent-browser open "https://books.toscrape.com/" >/dev/null
+page=1
+while :; do
+  res=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const h1 = document.querySelector('h1');
+  if (h1 && h1.textContent.startsWith('403')) return '__403__';
+  const arts = [...document.querySelectorAll('article')];
+  if (arts.length === 0) return '__empty__';
+  return JSON.stringify(arts.map(a => {
+    const h3 = a.querySelector('h3 a');
+    const p = a.querySelector('.price_color');
+    return [ h3 ? h3.textContent.trim() : null, p ? p.textContent.trim() : null ];
+  }));
+})()
+JS
+)
+  case "$res" in
+    *__403__*|__*403*|__403__*) agent-browser open "https://books.toscrape.com/" >/dev/null 2>&1; sleep 15; continue ;;
+    *__empty__*) sleep 5; continue ;;
+    *) ;;
+  esac
+  echo "$res" >> /tmp/books.jsonl
+  echo "page $page: $(echo "$res" | python3 -c 'import json,sys; print(len(json.load(s

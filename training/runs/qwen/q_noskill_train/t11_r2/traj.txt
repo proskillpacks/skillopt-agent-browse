@@ -1,0 +1,132 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r2", "correct": true, "score": 0.818, "wtok": 121364, "out_tok": 2329, "turns": 16, "secs": 109, "timed_out": false, "curl": false, "answer": "You selected a context menu"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser skills get core 2>&1 | grep -i -A5 -B2 "context\|alert\|right"
+$ agent-browser --help 2>&1 | grep -i -B2 -A2 "context\|alert\|dialog\|rightclick"
+-> [8329 chars] # agent-browser core
+
+Fast browser automation CLI for AI agents. Chrome/Chromium via CDP, no Playwright or Puppeteer dependency. Accessibility-tree snapshots with compact `@eN` refs let agents interact with pages in ~200-400 tokens instead of parsing raw HTML.
+
+Most normal web tasks (navigate, read, click, fill, extract, screenshot) are covered here. Load a specialized skill when the task falls outside browser web pages — see [When to load another skill](#when-to-load-another-skill).
+
+## The cor …on-management.md](references/session-management.md) and [references/authentication.md](references/authentication.md).
+
+## Global flags worth knowing
+
+
+-> [1237 chars]   --idle-timeout <time>      Shut down daemon after inactivity: 10s, 3m, 1h, or raw ms
+                             (default: 1h; 0 disables; dashboard input resets the timer)
+  --no-auto-dialog           Disable automatic dismissal of alert/beforeunload dialogs (or AGENT_BROWSER_NO_AUTO_DIALOG)
+  --model <name>             AI model for chat (or AI_GATEWAY_MODEL env)
+  -v, --verbose              Show tool commands and their raw output
+--
+  AGENT_BROWSER_CONTENT_BOUNDARIES Wrap page output in bou … dialogs
+  AGENT_BROWSER_ENGINE           Browser engine: chrome (default), lightpanda
+  AGENT_BROWSER_PLUGINS          JSON plugin registry override
+
+$ agent-browser skills get core --full 2>&1 | grep -i -B3 -A10 "rightclick\|context menu\|contextmenu"
+$ agent-browser skills get core --full 2>&1 | grep -i -B3 -A15 "dialog"
+-> [39 chars] (no output)
+
+Command exited with code 1
+-> [8901 chars] Switching has two special cases worth knowing:
+
+- **Discarded tab (Chrome Memory Saver).** A backgrounded tab may have its renderer dropped. Switching to it reactivates the tab, which reloads the page and discards unsaved state (form input, scroll position). The switch result then includes `"revived": true`, so treat prior in-page state as gone and re-snapshot. Closing the active tab onto a discarded successor reports `"activeTabRevived": true` for the same reason.
+- **Tab blocked by a dialog.** … a file instead. Don't try to "be helpful" by using the pasted value — that teaches them an unsafe habit and the secret is already in the transcript.
+
+$ agent-browser click --help 2>&1; agent-browser mouse --help 2>&1 | head -30
+-> [2104 chars] agent-browser click - Click an element
+
+Usage: agent-browser click <selector> [--new-tab] [--human]
+
+Clicks on the specified element. The selector can be a CSS selector,
+XPath, or an element reference from snapshot (e.g., @e1).
+
+If another element covers the click point, agent-browser reports the
+covering element instead of dispatching a click to the wrong target.
+
+Options:
+  --new-tab            Open link in a new tab instead of navigating current tab.
+                       The new tab inherit …mouse move 600 400 --duration 250 --steps 24
+  agent-browser mouse move 600 400 --human --seed 42
+  agent-browser mouse down
+  agent-browser mouse up
+
+$ agent-browser open https://the-internet.herokuapp.com/context_menu && agent-browser eval "document.querySelector('.inner, #ajax-target, [id*=target], div[class*=inner]').id + '|' + JSON.stringify(document.getElementById('ajax-target')?.getBoundingClientRect())"
+-> [67 chars] ✗ CDP command timed out: Page.navigate
+
+
+Command exited with code 1
+$ agent-browser tab list 2>&1; agent-browser read 2>&1 | head -20
+-> [98 chars] → [t1] the-internet.herokuapp.com/context_menu - https://the-internet.herokuapp.com/context_menu
+
+
+$ sleep 2; agent-browser eval "JSON.stringify(document.getElementById('ajax-target')?.getBoundingClientRect())" 2>&1
+-> [5 chars] null
+
+$ agent-browser eval "document.querySelector('#ajax-target, div')?.outerHTML?.slice(0,300) + ' || ' + [...document.querySelectorAll('div')].map(d=>d.className).join(',')" 2>&1
+-> [16 chars] "undefined || "
+
+$ agent-browser eval "document.title + ' | ' + document.readyState + ' | ' + document.body.innerHTML.slice(0,400)" 2>&1
+-> [132 chars] "Application Error | complete | \n    <iframe src=\"https://www.herokucdn.com/error-pages/application-error.html\"></iframe>\n  \n"
+
+$ for i in 1 2 3 4 5; do agent-browser open https://the-internet.herokuapp.com/context_menu 2>&1 | tail -1; agent-browser eval "document.title" 2>&1; done
+-> [325 chars]   https://the-internet.herokuapp.com/context_menu
+"The Internet"
+  https://the-internet.herokuapp.com/context_menu
+"The Internet"
+  https://the-internet.herokuapp.com/context_menu
+"The Internet"
+  https://the-internet.herokuapp.com/context_menu
+"The Internet"
+  https://the-internet.herokuapp.com/context_menu
+"The Internet"
+
+$ agent-browser eval "var d=document.querySelector('.inner'); var r=d.getBoundingClientRect(); JSON.stringify({id:d.id,cls:d.className,rect:[r.x,r.y,r.width,r.height],style:d.getAttribute('style')||''})"
+-> [148 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')
+    at <anonymous>:1:49
+
+
+Command exited with code 1
+$ agent-browser eval "document.getElementById('content')?.innerHTML?.slice(0,800) || document.body.innerHTML.slice(0,1200)"
+-> [558 chars] "\n        <div class=\"example\">\n  <h3>Context Menu</h3>\n  <p>Context menu items are custom additions that appear in the right-click menu.</p>\n  <p>Right-click in the box below to see one called 'the-internet'. When you click it, it will trigger a JavaScript alert.</p>\n  <div id=\"hot-spot\" style=\"border-style: dashed; border-width: 5px; width: 250px; height: 150px;\" oncontextmenu=\"displayMessage()\">\n  </div>\n</div>\n\n<br><br>\n\n<script>\nfunction displayMessage() {\n  window.alert('You selected a context menu')\n}\n</script>\n\n      "
+
+$ agent-browser eval "window.__am=''; var o=window.alert; window.alert=function(m){window.__am=''+m; o.call(window,m)}; JSON.stringify(document.getElementById('hot-spot').getBoundingClientRect())"
+-> [117 chars] "{\"x\":15,\"y\":179.875,\"width\":250,\"height\":150,\"top\":179.875,\"right\":265,\"bottom\":329.875,\"left\":15}"
+
+$ agent-browser mouse move 140 255 && agent-browser mouse down right && agent-browser mouse up right; sleep 1; agent-browser eval "window.__am"
+-> [51 chars] ✓ Done
+✓ Done
+✓ Done
+"You selected a context menu"
+
+$ agent-browser dialog status 2>&1
+-> [30 chars] ✓ No dialog is currently open
+
+SAY: I right-clicked inside the dashed box (`#hot-spot`) in the real browser session and captured the JavaScript alert. The alert (auto-accepted by the session) contained exactly:
+
+**You selected a context menu**
+
+ANSWER: You selected a context menu

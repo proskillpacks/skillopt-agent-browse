@@ -1,0 +1,76 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r2", "correct": true, "score": 0.928, "wtok": 48250, "out_tok": 1551, "turns": 11, "secs": 112, "timed_out": false, "curl": false, "answer": "\"A day without sunshine is like, you know, night.\""}
+
+$ agent-browser open "https://quotes.toscrape.com/search.aspx"; agent-browser wait "#search_form"; agent-browser eval "document.querySelector('#search_form').outerHTML.slice(0,1500)"
+-> [228 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'outerHTML')
+    at <anonymous>:1:39
+
+
+Command exited with code 1
+$ agent-browser open "https://quotes.toscrape.com/search.aspx" >/dev/null; agent-browser wait "select#author_select"; agent-browser snapshot -i
+-> [2282 chars] ✗ Wait timed out after 25000ms
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- combobox "Author" [expanded=false, ref=e5]: ----------
+  - option "----------" [selected, ref=e9]
+  - option "Albert Einstein" [ref=e10]
+  - option "J.K. Rowling" [ref=e11]
+  - option "Jane Austen" [ref=e12]
+  - option "Marilyn Monroe" [ref=e13]
+  - option "André Gide" [ref=e14]
+  - option "Thomas A. Edison" [ref=e15]
+  - option "Eleanor Roosevelt" [ref=e16 …se, ref=e6]: ----------
+  - option "----------" [selected, ref=e59]
+- button "Search" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+SAY: The form is loaded. The Tag dropdown looks empty — it likely populates dynamically after picking an author. Let me select the author first:
+$ agent-browser select @e17; agent-browser wait "select#tag_select option:nth-child(n+2)"; agent-browser eval "JSON.stringify(Array.from(document.querySelector('#tag_select').options).map(o => o.textContent))"
+-> [245 chars] Missing arguments for: select
+Usage: agent-browser select <selector> <value...>
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'options')
+    at <anonymous>:1:64
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('select')).map(s => ({id: s.id, name: s.name, label: s.getAttribute('aria-label')})))"
+-> [108 chars] "[{\"id\":\"author\",\"name\":\"author\",\"label\":null},{\"id\":\"tag\",\"name\":\"tag\",\"label\":null}]"
+
+SAY: The selects use ids `#author` and `#tag`. Now select both and search:
+$ agent-browser select #author "Steve Martin"; agent-browser wait "#tag option:nth-child(n+2)"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#tag option')).map(o => o.textContent))"
+-> [108 chars] Missing arguments for: select
+Usage: agent-browser select <selector> <value...>
+
+
+Command exited with code 1
+$ agent-browser select "#author" "Steve Martin"
+-> [7 chars] ✓ Done
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#tag option')).map(o => o.textContent))"
+-> [178 chars] "[\"----------\",\"\\n                    humor\\n                \",\"\\n                    obvious\\n                \",\"\\n                    simile\\n                \"]"
+
+SAY: Tags populated dynamically after selecting the author. Now select 'humor' and run the search:
+$ agent-browser select "#tag" "humor"; agent-browser click "button[type=submit], #search_form button, .btn" ; agent-browser wait "text=This quote..." ; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.search_result')).map(e => e.textContent.replace(/\\s+/g,' ').trim()))"
+-> [50 chars] ✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser eval "JSON.stringify({url: location.href, body: document.body.innerText.slice(0,500)})"
+-> [642 chars] "{\"url\":\"https://quotes.toscrape.com/filter.aspx\",\"body\":\"Quotes to Scrape\\n\\nLogin\\n\\nAuthor\\n----------\\nAlbert Einstein\\nJ.K. Rowling\\nJane Austen\\nMarilyn Monroe\\nAndré Gide\\nThomas A. Edison\\nEleanor Roosevelt\\nSteve Martin\\nBob Marley\\nDr. Seuss\\nDouglas Adams\\nElie Wiesel\\nFriedrich Nietzsche\\nMark Twain\\nAllen Saunders\\nPablo Neruda\\nRalph Waldo Emerson\\nMother Teresa\\nGarrison Keillor\\nJim Henson\\nCharles M. Schulz\\nWilliam Nicholson\\nJorge Luis Borges\\nGeorge Eliot\\nGeorge R.R. Martin\\nC.S. Lewis\\nMartin Luther King Jr.\\nJames Baldwin\\nHaruki Murakami\\nAlexandre Dumas fils\\nSte\"}"
+
+$ agent-browser eval "JSON.stringify({count: document.querySelectorAll('.quote').length, results: Array.from(document.querySelectorAll('.search_result, .quote')).slice(0,5).map(e => e.textContent.replace(/\\s+/g,' ').trim())})"
+-> [108 chars] "{\"count\":1,\"results\":[\"“A day without sunshine is like, you know, night.” - Steve Martin (humor)\"]}"
+
+SAY: The search ran successfully (the page navigated to `/filter.aspx`), and exactly one quote is returned:
+
+**"A day without sunshine is like, you know, night."** — Steve Martin (tag: humor)
+
+ANSWER: "A day without sunshine is like, you know, night."

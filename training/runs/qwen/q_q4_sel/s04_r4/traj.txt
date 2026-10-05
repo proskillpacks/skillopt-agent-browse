@@ -1,0 +1,59 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r4", "correct": true, "score": 0.964, "wtok": 24181, "out_tok": 508, "turns": 4, "secs": 5, "timed_out": false, "curl": false, "answer": "Wins: 49, GF: 269"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill "e9" "Bruins"; agent-browser click "e10"; agent-browser snapshot -i
+-> [1724 chars] ✓ Done
+✓ Done
+- link "Sandbox" [ref=e249]
+- link "Lessons" [ref=e250]
+- link "FAQ" [ref=e251]
+- link "Login" [ref=e252]
+- heading "Hockey Teams: Forms, Searching and Pagination 21 items" [level=1, ref=e248]
+- link "8 video lessons" [ref=e253]
+- link "http://www.opensourcesports.com/hockey/" [ref=e254]
+- textbox "Search for Teams:  " [ref=e255]: Bruins
+- button "Search" [ref=e256]
+- columnheader "Team Name" [ref=e257]
+- columnheader "Year" [ref=e258]
+- columnheader "Wins" [ref=e259]
+- columnheade …=e299]
+- cell "27" [ref=e300]
+- cell "18" [ref=e301]
+- cell "0.562" [ref=e302]
+- cell "150" [ref=e303]
+- cell "127" [ref=e304]
+- cell "23" [ref=e305]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('table tr')].map(tr => {
+    const c = tr.querySelectorAll('td');
+    return c.length ? c[1].textContent.trim() + '|' + c[2].textContent.trim() + '|' + c[6].textContent.trim() : null;
+  }).filter(Boolean);
+  const pag = [...document.querySelectorAll('a')].filter(a => /^\d+$/.test(a.textContent.trim())).length;
+  return JSON.stringify({rows, pag, count: document.querySelector('h1')?.textContent});
+})()
+JS
+-> [518 chars] "{\"rows\":[\"1990|44|299\",\"1991|36|270\",\"1992|51|332\",\"1993|42|289\",\"1994|27|150\",\"1995|40|282\",\"1996|26|234\",\"1997|39|221\",\"1998|39|214\",\"1999|24|210\",\"2000|36|227\",\"2001|43|236\",\"2002|36|245\",\"2003|41|209\",\"2005|29|230\",\"2006|35|219\",\"2007|41|212\",\"2008|53|274\",\"2009|39|206\",\"2010|46|246\",\"2011|49|269\"],\"pag\":0,\"count\":\"\\n                            Hockey Teams: Forms, Searching and Pagination\\n                            21 items\\n                        \"}"
+
+SAY: The search returned 21 Bruins rows, all visible on one page. For the 2011 season the Boston Bruins had 49 Wins and 269 Goals For.
+
+ANSWER: Wins: 49, GF: 269

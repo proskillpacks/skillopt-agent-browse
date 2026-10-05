@@ -1,0 +1,154 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r3", "correct": true, "score": 0.86, "wtok": 93661, "out_tok": 3621, "turns": 15, "secs": 89, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open "https://books.toscrape.com/" ; agent-browser wait "#books_container"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#books_container .book_wishlist > h3 > a')).length)"
+-> [108 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+"0"
+
+$ agent-browser eval "JSON.stringify({url: location.href, title: document.title, books: document.querySelectorAll('.book_wrapper, .book').length, hasContainer: !!document.getElementById('books_container'), bodyLen: document.body.innerHTML.length})"
+-> [152 chars] "{\"url\":\"https://books.toscrape.com/\",\"title\":\"All products | Books to Scrape - Sandbox\",\"books\":0,\"hasContainer\":false,\"bodyLen\":49830}"
+
+$ agent-browser eval "document.querySelector('body').innerHTML.slice(0,2000)"
+-> [2117 chars] "\n        \n        \n    \n    \n    <header class=\"header container-fluid\">\n        <div class=\"page_inner\">\n            <div class=\"row\">\n                <div class=\"col-sm-8 h1\"><a href=\"index.html\">Books to Scrape</a><small> We love being scraped!</small>\n</div>\n\n                \n            </div>\n        </div>\n    </header>\n\n    \n    \n<div class=\"container-fluid page\">\n    <div class=\"page_inner\">\n        \n    <ul class=\"breadcrumb\">\n        <li>\n       …egory/books/historical-fiction_4/index.html\">\n                            \n                                Historical Fiction\n                  "
+
+$ agent-browser eval "JSON.stringify({h3count: document.querySelectorAll('h3 a').length, articleTags: document.getElementsByTagName('article').length, main: (document.querySelector('main')||{}).innerHTML ? document.querySelector('main').innerHTML.slice(0,500) : null, hasMain: !!document.querySelector('main')})"
+-> [70 chars] "{\"h3count\":20,\"articleTags\":20,\"main\":null,\"hasMain\":false}"
+
+SAY: The sandbox variant uses 20 books per page. Let me check pagination.
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('a')).filter(a=>/next|page/i.test(a.className)||/Next/.test(a.textContent)).map(a=>({cls:a.className, href:a.href, txt:a.textContent.trim()})))"
+-> [5 chars] "[]"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('a')).map(a=>a.href).slice(0,60))"
+-> [4676 chars] "[\"https://books.toscrape.com/index.html\",\"https://books.toscrape.com/index.html\",\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\",\"https://books.tosc …dex.html\",\"https://books.toscrape.com/catalogue/soumission_998/index.html\",\"https://books.toscrape.com/catalogue/sharp-objects_997/index.html\"]"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('a')).map(a=>a.href).filter(h=>/page/.test(h)))"
+-> [57 chars] "[\"https://books.toscrape.com/catalogue/page-2.html\"]"
+
+$ agent-browser eval "const a=[...document.querySelectorAll('a')].find(a=>a.href.includes('page-2'));JSON.stringify({parent:a.parentElement.outerHTML.slice(0,400), rel:a.rel, cls:a.className, txt:a.textContent.trim()})"
+-> [137 chars] "{\"parent\":\"<li class=\\\"next\\\"><a href=\\\"catalogue/page-2.html\\\">next</a></li>\",\"rel\":\"\",\"cls\":\"\",\"txt\":\"next\"}"
+
+SAY: Pagination is `li.next a`. Now loop through all pages, accumulating title/price data.
+$ cd /tmp && rm -f all.json && echo "[" > all.json
+url="https://books.toscrape.com/index.html"
+page=1
+while :; do
+  agent-browser open "$url" >/dev/null 2>&1
+  agent-browser wait "li.next a, article" >/dev/null 2>&1
+  agent-browser eval --stdin <<'JS' >> all.raw.jsonl 2>/dev/null
+JSON.stringify({page: location.href, books: Array.from(document.querySelectorAll('article')).map(a=>({t:a.querySelector('h3 a').getAttribute('title')||a.querySelector('h3 a').textContent.trim(), p:a.querySelector('.price_color').textContent}))})
+JS
+  next=$(agent-browser eval "JSON.stringify(document.querySelector('li.next a') ? document.querySelector('li.next a').href : null)")
+  next=${next#\"}; next=${next%\"}
+  if [ "$next" = "null" ] || [ -z "$next" ]; then break; fi
+  case "$next" in http*) url="$next";; *) url="https://books.toscrape.com/$next";; esac
+  page=$((page+1))
+  echo "fetched page $page (from $url
+-> [121 chars] fetched page 2 (from https://books.toscrape.com/\"https://books.toscrape.com/catalogue/page-2.html\")
+loop done, pages=2
+
+SAY: The eval output had double-escaped quotes. Fixing the quote-stripping and rerunning.
+$ cd /tmp && rm -f all.json all.raw.jsonl && echo "[" > all.json
+url="https://books.toscrape.com/index.html"
+page=1
+while :; do
+  agent-browser open "$url" >/dev/null 2>&1
+  agent-browser wait "li.next a, article" >/dev/null 2>&1
+  agent-browser eval --stdin <<'JS' >> all.raw.jsonl 2>/dev/null
+JSON.stringify({page: location.href, books: Array.from(document.querySelectorAll('article')).map(a=>({t:a.querySelector('h3 a').getAttribute('title')||a.querySelector('h3 a').textContent.trim(), p:a.querySelector('.price_color').textContent}))})
+JS
+  next=$(agent-browser eval "JSON.stringify(document.querySelector('li.next a') ? document.querySelector('li.next a').href : null)" | sed 's/\\//g; s/"//g')
+  if [ "$next" = "null" ] || [ -z "$next" ]; then break; fi
+  case "$next" in http*) url="$next";; *) url="https://books.toscrape.com/$next";; esac
+  page=$((page+1))
+  echo "page $page: $url"
+  [ $pag
+-> [2910 chars] page 2: https://books.toscrape.com/catalogue/page-2.html
+page 3: https://books.toscrape.com/catalogue/page-3.html
+page 4: https://books.toscrape.com/catalogue/page-4.html
+page 5: https://books.toscrape.com/catalogue/page-5.html
+page 6: https://books.toscrape.com/catalogue/page-6.html
+page 7: https://books.toscrape.com/catalogue/page-7.html
+page 8: https://books.toscrape.com/catalogue/page-8.html
+page 9: https://books.toscrape.com/catalogue/page-9.html
+page 10: https://books.toscrape.com/catalogu …e 49: https://books.toscrape.com/catalogue/page-49.html
+page 50: https://books.toscrape.com/catalogue/page-50.html
+pages fetched: 50
+50 all.raw.jsonl
+
+SAY: All 50 pages fetched. Now aggregate.
+$ cd /tmp && python3 - <<'EOF'
+import json
+books=[]
+for line in open('all.raw.jsonl'):
+    d=json.loads(line)
+    for b in d['books']:
+        books.append((b['t'], b['p']))
+print("total books:", len(books))
+vals=[]
+for t,p in books:
+    vals.append((float(p.replace('£','')), t))
+under=[v for v in vals if v[0]<12.00]
+print("under 12.00:", len(under))
+cheapest=min(vals)
+print("cheapest:", cheapest)
+# check for any duplicates across pages
+print("unique titles:", len(set(t for _,t in books)))
+EOF
+-> [155 chars] Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+$ cd /tmp && head -c 300 all.raw.jsonl
+-> [296 chars] "{\"page\":\"https://books.toscrape.com/index.html\",\"books\":[{\"t\":\"A Light in the Attic\",\"p\":\"£51.77\"},{\"t\":\"Tipping the Velvet\",\"p\":\"£53.74\"},{\"t\":\"Soumission\",\"p\":\"£50.10\"},{\"t\":\"Sharp Objects\",\"p\":\"£47.82\"},{\"t\":\"Sapiens: A Brief History of Humankind\",\"
+$ cd /tmp && python3 - <<'EOF'
+import json
+books=[]
+for line in open('all.raw.jsonl'):
+    s=json.loads(line)
+    if isinstance(s,str): s=json.loads(s)
+    for b in s['books']:
+        books.append((b['t'], float(b['p'].replace('£',''))))
+print("total books:", len(books), "| unique:", len(set(t for t,_ in books)))
+under=[v for v in books if v[1]<12.00]
+print("under £12.00:", len(under))
+c=min(books,key=lambda x:x[1])
+print("cheapest:", c[0], "£%.2f"%c[1])
+# sanity: distribution check
+print("under 10:", len([v for v in books if v[1]<10]))
+EOF
+-> [105 chars] total books: 1000 | unique: 999
+under £12.00: 44
+cheapest: An Abundance of Katherines £10.00
+under 10: 0
+
+SAY: 999 unique titles out of 1000 — check the duplicate.
+$ cd /tmp && python3 - <<'EOF'
+import json
+from collections import Counter
+books=[]
+for line in open('all.raw.jsonl'):
+    s=json.loads(line)
+    if isinstance(s,str): s=json.loads(s)
+    for b in s['books']:
+        books.append((b['t'], b['p']))
+c=Counter(t for t,_ in books)
+dups={t:n for t,n in c.items() if n>1}
+print(dups)
+for t in dups:
+    print([b for b in books if b[0]==t])
+EOF
+-> [107 chars] {'The Star-Touched Queen': 2}
+[('The Star-Touched Queen', '£46.02'), ('The Star-Touched Queen', '£32.30')]
+
+SAY: Scraped all 50 pages via `agent-browser` (real browser, following the `next` pagination link), extracting each book's title and price from the `<article>` elements. Results:
+
+- Total books: 1,000 (all catalogued; "The Star-Touched Queen" appears twice at different prices, matching the source site)
+- Books priced under £12.00: **44**
+- Cheapest book: **An Abundance of Katherines** at **£10.00**
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of Katherines" at £1

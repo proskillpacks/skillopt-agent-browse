@@ -1,0 +1,144 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r1", "correct": true, "score": 0.849, "wtok": 100917, "out_tok": 1962, "turns": 14, "secs": 42, "timed_out": false, "curl": false, "answer": "You selected a context menu"}
+
+$ agent-browser --help 2>&1 | head -100
+-> [4361 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …nt
+  inspect                    Open Chrome DevTools for the active page
+  clipboard <op> [text]      Read/write clipboard (read, write, copy, paste)
+
+$ agent-browser skills get core --full 2>&1 | grep -iA20 "context\|right" | head -80
+-> [5588 chars] Fast browser automation CLI for AI agents. Chrome/Chromium via CDP, no Playwright or Puppeteer dependency. Accessibility-tree snapshots with compact `@eN` refs let agents interact with pages in ~200-400 tokens instead of parsing raw HTML.
+
+Most normal web tasks (navigate, read, click, fill, extract, screenshot) are covered here. Load a specialized skill when the task falls outside browser web pages — see [When to load another skill](#when-to-load-another-skill).
+
+## The core loop
+
+Open the page  …le heading text --name "Skills"     # implicit roles work: <h2>=heading, <ul>=list, top-level <header>=banner
+agent-browser find text "Sign In" click
+
+$ agent-browser skills get core --full 2>&1 | grep -i -B5 -A30 "contextmenu\|right-click\|rightclick\|context menu"
+-> [3866 chars] 
+Session cookies, bearer tokens, API keys, OAuth codes, and any other credentials are the user's — not yours.
+
+- **Prefer file-based cookie import.** When a task needs auth, ask the user to save their cookies to a file and give you the path. Use `cookies set --curl <file>` — it auto-detects JSON / cURL / bare Cookie header formats. Error messages never echo cookie values.
+
+  Tell the user exactly this: "Open DevTools → Network, click any authenticated request, right-click → Copy → Copy as cURL,  …ecrets (auto-filled form fields, visible tokens in URL bars, etc.). Review before sending.
+
+--- references/video-recording.md ---
+
+# Video Recording
+
+
+$ agent-browser mouse --help 2>&1; echo ---; agent-browser click --help 2>&1 | head -40
+-> [2207 chars] agent-browser mouse - Low-level mouse operations
+
+Usage: agent-browser mouse <subcommand> [args]
+
+Performs low-level mouse operations for precise control.
+
+Subcommands:
+  move <x> <y>         Move mouse to coordinates
+  down [button]        Press mouse button (left, right, middle)
+  up [button]          Release mouse button
+  wheel <dy> [dx]      Scroll mouse wheel
+
+Movement Options:
+  --duration <ms>       Target total duration, including browser response time
+  --steps <n>           Number of  …browser click "button.primary"
+  agent-browser click "//button[@type='submit']"
+  agent-browser click @e3 --new-tab
+  agent-browser click @e3 --human
+
+$ agent-browser skills get core --full 2>&1 | grep -i -B3 -A15 "dialog\|alert"
+-> [8901 chars] Switching has two special cases worth knowing:
+
+- **Discarded tab (Chrome Memory Saver).** A backgrounded tab may have its renderer dropped. Switching to it reactivates the tab, which reloads the page and discards unsaved state (form input, scroll position). The switch result then includes `"revived": true`, so treat prior in-page state as gone and re-snapshot. Closing the active tab onto a discarded successor reports `"activeTabRevived": true` for the same reason.
+- **Tab blocked by a dialog.** … a file instead. Don't try to "be helpful" by using the pasted value — that teaches them an unsafe habit and the secret is already in the transcript.
+
+$ agent-browser dialog --help 2>&1
+-> [598 chars] agent-browser dialog - Handle browser dialogs
+
+Usage: agent-browser dialog <accept|dismiss|status> [text]
+
+Respond to or check for browser dialogs (alert, confirm, prompt).
+
+Operations:
+  accept [text]        Accept dialog, optionally with prompt text
+  dismiss              Dismiss/cancel dialog
+  status               Check if a dialog is currently open
+
+Global Options:
+  --json               Output as JSON
+  --session <name>     Use specific session
+
+Examples:
+  agent-browser dialog accept
+  agent-browser dialog accept "my input"
+  agent-browser dialog dismiss
+  agent-browser dialog status
+
+SAY: I'll hook `window.alert` to capture its message, then perform a real right-click inside the dashed box.
+$ agent-browser open https://the-internet.herokuapp.com/context_menu && agent-browser get box "#cm"
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser open https://the-internet.herokuapp.com/context_menu 2>&1
+-> [113 chars] https://the-internet.herokuapp.com/context_menu
+✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+
+$ agent-browser get box "#cm"; agent-browser snapshot -i 2>&1 | head -20
+-> [223 chars] ✗ Element not found: #cm. Verify the selector, role, or name is correct and the element exists in the DOM.
+- link "Fork me on GitHub" [ref=e1]
+- heading "Context Menu" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval --stdin <<'EOF'
+document.querySelector('.example').outerHTML
+EOF
+-> [424 chars] "<div class=\"example\">\n  <h3>Context Menu</h3>\n  <p>Context menu items are custom additions that appear in the right-click menu.</p>\n  <p>Right-click in the box below to see one called 'the-internet'. When you click it, it will trigger a JavaScript alert.</p>\n  <div id=\"hot-spot\" style=\"border-style: dashed; border-width: 5px; width: 250px; height: 150px;\" oncontextmenu=\"displayMessage()\">\n  </div>\n</div>"
+
+SAY: The dashed box is `#hot-spot`. Now hook the alert, right-click inside the box, and read the captured message.
+$ agent-browser eval --stdin <<'EOF'
+window.__capturedAlerts = [];
+const orig = window.alert;
+window.alert = (m) => { window.__capturedAlerts.push(String(m)); orig(m); };
+"hooked"
+EOF
+agent-browser get box "#hot-spot"
+-> [60 chars] "hooked"
+x:      15
+y:      179.875
+width:  250
+height: 150
+
+$ agent-browser mouse move 140 255 && agent-browser mouse down right && agent-browser mouse up right; agent-browser eval "JSON.stringify(window.__capturedAlerts)"
+-> [57 chars] ✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+
+$ agent-browser dialog status 2>&1
+-> [30 chars] ✓ No dialog is currently open
+
+SAY: Done. I right-clicked inside the dashed box (`#hot-spot`, the element with `oncontextmenu="displayMessage()"`) using real mouse events (`mouse move 140 255` → `mouse down right` → `mouse up right`), with `window.alert` hooked beforehand to capture the message (the browser auto-accepted the dialog, confirmed by `dialog status` showing no pending dialog afterwards).
+
+The JavaScript alert's exact message text: **You selected a context menu**
+
+ANSWER: You selected a context menu

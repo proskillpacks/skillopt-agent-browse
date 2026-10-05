@@ -1,0 +1,57 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r5", "correct": true, "score": 0.974, "wtok": 17411, "out_tok": 770, "turns": 5, "secs": 111, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser eval --stdin <<'JS'
+(() => {
+  const c = document.querySelector('#columns');
+  const h1 = c.querySelector('h1');
+  const items = [...c.querySelectorAll('ul li')].map(li => li.textContent.trim());
+  return JSON.stringify({header: h1.textContent, items});
+})()
+JS
+-> [246 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'querySelector')
+    at <anonymous>:3:16
+    at <anonymous>:6:3
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "#columns"; agent-browser eval --stdin <<'JS'
+(() => {
+  const c = document.querySelector('#columns');
+  return JSON.stringify({header: c.querySelector('h1').textContent, items: [...c.querySelectorAll('ul li')].map(li => li.textContent.trim())});
+})()
+JS
+-> [275 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:3:55
+    at <anonymous>:4:3
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "body"; agent-browser eval --stdin <<'JS'
+(() => {
+  const main = document.querySelector('#content') || document.querySelector('main') || document.body;
+  return JSON.stringify({url: location.href, title: document.title, html: main.innerHTML.slice(0, 1500)});
+})()
+JS
+-> [1904 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+"{\"url\":\"https://the-internet.herokuapp.com/drag_and_drop\",\"title\":\"The Internet\",\"html\":\"\\n        <style>\\n.columns {\\n  width: 400px;\\n}\\n.column {\\n  height: 150px;\\n  width: 150px;\\n  float: left;\\n  border: 2px solid #666666;\\n  background-color: #ccc;\\n  margin-right: 5px;\\n  text-align: center;\\n  cursor: move;\\n}\\n.column.over {\\n  border: 2px dashed #000;\\n}\\n</style>\ … = '1';\\n}\\n\\nvar cols = document.querySelectorAll('#columns .column');\\n[].forEach.call(cols, function(col) {\\n  col.addEventListener('drag\"}"
+
+SAY: The page is loaded — the boxes are `#column-a` and `#column-b` containing `<header>` letters. Now drag A onto B:
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval --stdin <<'JS'
+(() => {
+  const c = document.querySelector('#columns');
+  const heads = [...c.querySelectorAll('header')].map(h => h.textContent.trim());
+  return JSON.stringify(heads);
+})()
+JS
+-> [23 chars] ✓ Done
+"[\"B\",\"A\"]"
+
+SAY: The drag succeeded. After the drop, the two boxes (left to right) have headers **B** and **A** — the contents were swapped as the page's JS swap logic works.
+
+ANSWER: B, A

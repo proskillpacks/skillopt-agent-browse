@@ -1,0 +1,102 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09_r2", "correct": true, "score": 0.941, "wtok": 39361, "out_tok": 1450, "turns": 11, "secs": 11, "timed_out": false, "curl": false, "answer": "Quote reference NOR-2087, total price \u20ac1470.00"}
+
+$ agent-browser open "http://localhost:8791/shop.html"; agent-browser snapshot -i
+-> [446 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click @e6; agent-browser select "Choose region…" "Nordics" 2>&1 || agent-browser find text "Nordics" 2>&1 | head -5
+-> [132 chars] ✓ Done
+✗ Element not found: Choose region…. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('select')].map(s => ({id: s.id, name: s.name, options: [...s.options].map(o => o.value)})))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser click @e2; agent-browser snapshot -i
+-> [278 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('li, [role=option], .option, [class*=option], [class*=dropdown]')].map(e => e.tagName + ':' + e.textContent.trim()).slice(0,30))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+const el = document.querySelector('[onclick], [id*=region], [name*=region]');
+el ? el.outerHTML.slice(0,1500) : "not found"
+JS
+-> [12 chars] "not found"
+
+$ agent-browser eval "document.body.innerHTML.length"
+agent-browser read | head -60
+-> [120 chars] 1742
+# Request a quote
+
+Region
+
+Choose region…
+
+Benelux
+
+Nordics
+
+Iberia
+
+DACH
+
+Baltics
+
+Quantity
+
+Basic
+Pro
+
+Get quote
+
+$ agent-browser eval "document.querySelector('body').innerHTML" 2>&1 | head -80
+-> [1823 chars] "\n\n<h1>Request a quote</h1>\n<p>Region</p>\n<div class=\"dd\" id=\"dd\">Choose region…</div><div class=\"opts open\" id=\"opts\"><div class=\"opt\">Benelux</div><div class=\"opt\">Nordics</div><div class=\"opt\">Iberia</div><div class=\"opt\">DACH</div><div class=\"opt\">Baltics</div></div>\n<p><label>Quantity <input id=\"qty\" type=\"number\" min=\"1\" value=\"1\"></label></p>\n<p><label><input type=\"radio\" name=\"plan\" value=\"basic\" checked=\"\"> Basic</label>\n<label><input type=\"radi …ion.length*104729+(pro?31337:0))%9973);\nout.innerHTML='<p>Quote ref: <b>'+ref+'</b></p><p>Total: €'+total.toFixed(2)+'</p>';},2500);};\n</script>\n"
+
+SAY: The page structure is clear. Now I'll select Nordics, set quantity 7, choose Pro, and request the quote.
+$ agent-browser eval "const o=[...document.querySelectorAll('#opts .opt')].find(x=>x.textContent==='Nordics'); o && o.click(); 'clicked'"
+agent-browser fill @e9 "7" 2>&1 || agent-browser eval "const q=document.getElementById('qty'); q.value='7'; q.dispatchEvent(new Event('input',{bubbles:true})); 'qty set'"
+agent-browser click @e8
+agent-browser click @e3
+agent-browser wait --text "Total:"
+agent-browser get text #out
+-> [139 chars] "clicked"
+✓ Done
+✓ Done
+✓ Done
+Total:
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser eval "document.getElementById('out').textContent"
+-> [37 chars] "Quote ref: NOR-2087Total: €1470.00"
+
+SAY: The quote was generated in the browser:
+
+- **Quote reference:** `NOR-2087`
+- **Total price:** €1,470.00 (Nordics base €140 × 7 × 1.5 Pro multiplier)
+
+ANSWER: Quote reference NOR-2087, total price €1470.00

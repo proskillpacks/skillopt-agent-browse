@@ -1,0 +1,81 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r1", "correct": true, "score": 0.911, "wtok": 59505, "out_tok": 2579, "turns": 14, "secs": 204, "timed_out": false, "curl": false, "answer": "After uploading, the heading shown is \"File Uploaded!\" and the page displays the uploaded file name as \"skillopt-note.txt\"."}
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && echo "skill-opt test note for upload" > skillopt-note.txt && cat skillopt-note.txt && agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "#file-uploader"; agent-browser snapshot -i
+-> [337 chars] skill-opt test note for upload
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "File Uploader" [level=3, ref=e2]
+- button "Choose File" [ref=e3]: No file chosen
+- button "Upload" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser upload "input[type=file]" "$(pwd)/skillopt-note.txt"; agent-browser click "button:has-text('Upload')"; agent-browser wait h2; agent-browser get text h2; agent-browser get text h4
+-> [407 chars] ✓ Done
+✗ Element not found: button:has-text('Upload'). Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: h2. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: h4. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser eval "document.querySelector('button[type=submit]').click(); 'clicked'"; sleep 2; agent-browser eval "JSON.stringify({h3: [...document.querySelectorAll('h3')].map(e=>e.textContent.trim()), h4: [...document.querySelectorAll('h4')].map(e=>e.textContent.trim()), files: [...document.querySelectorAll('input[type=file]')].map(i=>i.files.length)})"
+-> [159 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'click')
+    at <anonymous>:1:46
+"{\"h3\":[\"File Uploader\"],\"h4\":[],\"files\":[1]}"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser eval "document.querySelector('input[type=submit]').click(); 'clicked'"; sleep 2; agent-browser eval "JSON.stringify({h3: [...document.querySelectorAll('h3')].map(e=>e.textContent.trim()), h4: [...document.querySelectorAll('h4')].map(e=>e.textContent.trim())})"
+-> [34 chars] "clicked"
+"{\"h3\":[],\"h4\":[]}"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser read
+-> [1 chars] 
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser eval "JSON.stringify({url: location.href, title: document.title, body: document.body.innerText.slice(0,300)})"
+-> [136 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:80
+
+
+Command exited with code 1
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser eval "location.href"; agent-browser eval "document.readyState"; agent-browser snapshot
+-> [67 chars] "https://the-internet.herokuapp.com/upload"
+"loading"
+(empty page)
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser wait "h3,h4"; agent-browser eval "JSON.stringify({h3: [...document.querySelectorAll('h3')].map(e=>e.textContent.trim()), h4: [...document.querySelectorAll('h4')].map(e=>e.textContent.trim())})"
+-> [55 chars] ✗ Wait timed out after 25000ms
+"{\"h3\":[],\"h4\":[]}"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "#file_uploader"; agent-browser upload "#file_uploader" "$(pwd)/skillopt-note.txt"; agent-browser eval "document.querySelector('input[type=submit]').click(); 'clicked'"; sleep 3; agent-browser eval "JSON.stringify({h3: [...document.querySelectorAll('h3')].map(e=>e.textContent.trim()), h4: [...document.querySelectorAll('h4')].map(e=>e.textContent.trim())})"
+-> [266 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #file_uploader. Verify the selector, role, or name is correct and the element exists in the DOM.
+"clicked"
+"{\"h3\":[],\"h4\":[]}"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser eval "JSON.stringify([...document.querySelectorAll('input')].map(i=>({id:i.id,name:i.name,type:i.type})))"
+-> [5 chars] "[]"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser eval "document.body ? document.body.innerHTML.slice(0,800) : 'NOBODY'"
+-> [33 chars] "<h1>Internal Server Error</h1>"
+
+SAY: The server returned a 500 error on the last attempt. Let me retry the whole flow fresh.
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "input[type=file]"; agent-browser upload "input[type=file]" "$(pwd)/skillopt-note.txt"; agent-browser eval "document.querySelector('input[type=submit]').click(); 'clicked'"; sleep 3; agent-browser eval "JSON.stringify({url: location.href, h1: [...document.querySelectorAll('h1')].map(e=>e.textContent.trim()), h3: [...document.querySelectorAll('h3')].map(e=>e.textContent.trim()), h4: [...document.querySelectorAll('h4')].map(e=>e.textContent.trim())})"
+-> [189 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✓ Done
+✓ Done
+"clicked"
+"{\"url\":\"https://the-internet.herokuapp.com/upload\",\"h1\":[],\"h3\":[\"File Uploaded!\"],\"h4\":[]}"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r1 && agent-browser eval "document.body.innerText"
+-> [67 chars] "File Uploaded!\nskillopt-note.txt\nPowered by Elemental Selenium"
+
+SAY: Upload succeeded. The page now shows:
+
+- **Heading:** File Uploaded!
+- **Displayed file name:** skillopt-note.txt
+
+ANSWER: After uploading, the heading shown is "File Uploaded!" and the page displays the uploaded file name as "skillopt-note.txt".

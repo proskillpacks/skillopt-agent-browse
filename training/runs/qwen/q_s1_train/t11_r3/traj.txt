@@ -1,0 +1,87 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r3", "correct": true, "score": 0.931, "wtok": 45668, "out_tok": 1769, "turns": 13, "secs": 159, "timed_out": false, "curl": false, "answer": "You selected a context menu"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser wait "#hogwarts" ; agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser get box "#hogspeel"; agent-browser close 2>/dev/null; true
+-> [229 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+✗ Wait timed out after 25000ms
+{}
+✗ Element not found: #hogspeel. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser get box "#container"; agent-browser close 2>/dev/null; true
+-> [199 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+{}
+✗ Element not found: #container. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser eval "JSON.stringify([...document.querySelectorAll('div, #content')].map(e=>e.id||e.className))"
+-> [44 chars] ✗ CDP command timed out: Page.navigate
+"[]"
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#content, .example, div')].slice(0,30).map(e=>e.id+':'+e.className))"; agent-browser close
+-> [61 chars] ✗ CDP command timed out: Page.navigate
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser wait --fn "document.querySelectorAll('div').length>0"; agent-browser eval "JSON.stringify([...document.querySelectorAll('div')].slice(0,20).map(e=>e.id+'|'+e.className));JSON.stringify(document.title)"
+-> [89 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+true
+"\"The Internet\""
+
+$ agent-browser eval "document.body.innerHTML.length + '|' + document.body.innerHTML.slice(0,400)"
+-> [440 chars] "1237|\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" clas"
+
+$ agent-browser eval "document.querySelector('#content').innerHTML"
+-> [558 chars] "\n        <div class=\"example\">\n  <h3>Context Menu</h3>\n  <p>Context menu items are custom additions that appear in the right-click menu.</p>\n  <p>Right-click in the box below to see one called 'the-internet'. When you click it, it will trigger a JavaScript alert.</p>\n  <div id=\"hot-spot\" style=\"border-style: dashed; border-width: 5px; width: 250px; height: 150px;\" oncontextmenu=\"displayMessage()\">\n  </div>\n</div>\n\n<br><br>\n\n<script>\nfunction displayMessage() {\n  window.alert('You selected a context menu')\n}\n</script>\n\n      "
+
+$ agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser get box "#hot-spot"; agent-browser close 2>/dev/null; true
+-> [71 chars] {}
+x:      15
+y:      179.875
+width:  250
+height: 150
+✓ Browser closed
+
+$ agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser get box "#hot-spot"; agent-browser eval "JSON.stringify(window.__a)"; agent-browser close
+-> [138 chars] {}
+✗ Element not found: #hot-spot. Verify the selector, role, or name is correct and the element exists in the DOM.
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser wait --fn "document.querySelector('#hot-spot')"; agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser get box "#hot-spot" | tee /dev/stderr > /tmp/box.txt; x=$(grep -A1 'x:' /tmp/box.txt | tail -1 | tr -dc '0-9.').y=$(grep -A1 'y:' /tmp/box.txt | tail -1 | tr -dc '0-9.'); agent-browser close; true
+-> [247 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+{}
+tee: /dev/stderr: No such device or address
+✗ Element not found: #hot-spot. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser wait --fn "document.querySelector('#hot-spot')"; agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser get box "#hot-spot"; agent-browser close; true
+-> [139 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+{}
+{}
+x:      15
+y:      179.875
+width:  250
+height: 150
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser wait --fn "document.querySelector('#hot-spot')"; agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m))"; agent-browser mouse move 140 254; agent-browser mouse down right; agent-browser mouse up right; agent-browser eval "JSON.stringify(window.__a)"; agent-browser close
+-> [145 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+{}
+{}
+✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+✓ Browser closed
+
+SAY: The right-click on the dashed box (`#hot-spot`) triggered the page's `displayMessage()` handler, which fired a JavaScript alert. Captured message: **"You selected a context menu"** (matching the page's inline script `window.alert('You selected a context menu')`).
+
+ANSWER: You selected a context menu

@@ -1,0 +1,103 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r2", "correct": true, "score": 0.951, "wtok": 32552, "out_tok": 1073, "turns": 9, "secs": 82, "timed_out": false, "curl": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/jqueryui/menu"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/jqueryui/menu"; agent-browser wait "#demo"; agent-browser snapshot -i
+-> [541 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e6; agent-browser snapshot -i
+-> [594 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+    - menuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click @e10; agent-browser snapshot -i
+-> [594 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+    - menuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(
+  Array.from(document.querySelectorAll('#demo .ui-menu')).map(m => Array.from(m.querySelectorAll(':scope > .ui-menu-item > a')).map(a => a.textContent.trim()))
+)
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  menus: Array.from(document.querySelectorAll('[role=menu]')).map(m => m.outerHTML.slice(0, 200)),
+  demoHTML: (document.getElementById('demo')||{}).outerHTML ? document.getElementById('demo').outerHTML.slice(0, 2000) : null
+})
+JS
+-> [1015 chars] "{\"menus\":[\"<ul id=\\\"menu\\\" class=\\\"ui-menu ui-widget ui-widget-content\\\" role=\\\"menu\\\" tabindex=\\\"0\\\" aria-activedescendant=\\\"ui-id-4\\\">\\n    <li class=\\\"ui-state-disabled ui-menu-item\\\" aria-haspopup=\\\"true\\\" id=\\\"ui-id-1\\\" tab\",\"<ul class=\\\"ui-menu ui-widget ui-widget-content ui-front\\\" role=\\\"menu\\\" aria-hidden=\\\"true\\\" aria-expanded=\\\"false\\\" style=\\\"display: none;\\\">\\n            <li class=\\\"ui-menu-item\\\" id=\\\"ui-id-2\\\" ta …\\\" style=\\\"display: block; position: relative; top: -25.5938px; left: 129px;\\\">\\n            <li class=\\\"ui-menu-item\"],\"demoHTML\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(
+  Array.from(document.querySelectorAll('ul.ui-menu')).map(m => ({
+    id: m.id || null,
+    hidden: m.style.display === 'none' || m.getAttribute('aria-hidden') === 'true',
+    items: Array.from(m.querySelectorAll(':scope > li')).map(li => li.querySelector(':scope > a') ? li.querySelector(':scope > a').textContent.trim() : li.textContent.trim())
+  }))
+)
+JS
+-> [290 chars] "[{\"id\":\"menu\",\"hidden\":false,\"items\":[\"Disabled\",\"Enabled\"]},{\"id\":null,\"hidden\":true,\"items\":[\"Should not see this\"]},{\"id\":null,\"hidden\":false,\"items\":[\"Downloads\",\"Back to JQuery UI\"]},{\"id\":null,\"hidden\":false,\"items\":[\"PDF\",\"CSV\",\"Excel\"]}]"
+
+$ agent-browser snapshot -i; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('ul.ui-menu:not(#menu)')).map(m => m.style.display))"
+-> [816 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e4]
+- menu "Disabled\n        \n            Should not see this\n        \n    \n    \n      Enabled" [ref=e3] focusable [tabindex]
+  - menuitem "Disabled" [disabled, ref=e5]
+    - link "Disabled" [disabled, ref=e7]
+  - menuitem "Enabled" [ref=e6]
+    - link "Enabled" [ref=e8]
+    - menuitem "Downloads" [ref=e10]
+      - link "Downloads" [ref=e12]
+      - menuitem "PDF" [ref=e14]
+      …nuitem "Back to JQuery UI" [ref=e11]
+      - link "Back to JQuery UI" [ref=e13]
+- link "Elemental Selenium" [ref=e9]
+"[\"none\",\"block\",\"block\"]"
+
+SAY: After navigating Enabled → Downloads on the page, the Downloads submenu is open and displays three items (confirmed via live DOM snapshot of the visible submenu, excluding the hidden Disabled submenu "Should not see this"):
+
+- PDF
+- CSV
+- Excel
+
+ANSWER: PDF, CSV, Excel

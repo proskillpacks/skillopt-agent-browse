@@ -1,0 +1,33 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r2", "correct": true, "score": 0.981, "wtok": 12791, "out_tok": 371, "turns": 5, "secs": 83, "timed_out": false, "curl": false, "answer": "Heading \"File Uploaded!\", file name \"skillopt-note.txt\""}
+
+$ echo "hello from skillopt" > /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q2_train/t12_r2/skillopt-note.txt && cat skillopt-note.txt
+-> [20 chars] hello from skillopt
+
+$ agent-browser open https://the-internet.herokuapp.com/upload; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open https://the-internet.herokuapp.com/upload; agent-browser wait "input[type=file]"; agent-browser snapshot -i
+-> [282 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "File Uploader" [level=3, ref=e2]
+- button "Choose File" [ref=e3]: No file chosen
+- button "Upload" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+$ agent-browser upload "input[type=file]" /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q2_train/t12_r2/skillopt-note.txt; agent-browser click "e4"; agent-browser wait "text=skillopt-note.txt"; agent-browser read
+-> [114 chars] ✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+### File Uploaded!
+
+skillopt-note.txt
+
+Powered by Elemental Selenium
+
+SAY: The upload succeeded. After uploading, the page displays the heading **"File Uploaded!"** and shows the uploaded file name **skillopt-note.txt**.
+
+ANSWER: Heading "File Uploaded!", file name "skillopt-note.txt"

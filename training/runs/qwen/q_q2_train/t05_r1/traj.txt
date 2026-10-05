@@ -1,0 +1,165 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r1", "correct": true, "score": 0.94, "wtok": 40260, "out_tok": 822, "turns": 8, "secs": 7, "timed_out": false, "curl": false, "answer": "\"A day without sunshine is like, you know, night.\""}
+
+$ agent-browser open https://quotes.toscrape.com/search.aspx; agent-browser snapshot -i
+-> [2312 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- combobox "Author" [expanded=false, ref=e5]: ----------
+  - option "----------" [selected, ref=e9]
+  - option "Albert Einstein" [ref=e10]
+  - option "J.K. Rowling" [ref=e11]
+  - option "Jane Austen" [ref=e12]
+  - option "Marilyn Monroe" [ref=e13]
+  - option "André Gide" [ref=e14]
+  - option "Thomas A. Edison" [ref=e15]
+  - optio …se, ref=e6]: ----------
+  - option "----------" [selected, ref=e59]
+- button "Search" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser select @e5 "Steve Martin"; agent-browser snapshot -i
+-> [2322 chars] ✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e60]
+  - link "Quotes to Scrape" [ref=e61]
+- link "Login" [ref=e62]
+- combobox "Author" [expanded=false, ref=e64]: Steve Martin
+  - option "----------" [ref=e66]
+  - option "Albert Einstein" [ref=e67]
+  - option "J.K. Rowling" [ref=e68]
+  - option "Jane Austen" [ref=e69]
+  - option "Marilyn Monroe" [ref=e70]
+  - option "André Gide" [ref=e71]
+  - option "Thomas A. Edison" [ref=e72]
+  - option "Eleanor Roosevelt" [ref=e73]
+  - option "Steve Martin" …------" [selected, ref=e116]
+  - option "humor" [ref=e117]
+  - option "obvious" [ref=e118]
+  - option "simile" [ref=e119]
+- button "Search" [ref=e63]
+
+$ agent-browser select @e65 "humor"; agent-browser click @e63; agent-browser snapshot -i
+-> [2383 chars] ✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e60]
+  - link "Quotes to Scrape" [ref=e61]
+- link "Login" [ref=e62]
+- combobox "Author" [expanded=false, ref=e64]: Steve Martin
+  - option "----------" [ref=e66]
+  - option "Albert Einstein" [ref=e67]
+  - option "J.K. Rowling" [ref=e68]
+  - option "Jane Austen" [ref=e69]
+  - option "Marilyn Monroe" [ref=e70]
+  - option "André Gide" [ref=e71]
+  - option "Thomas A. Edison" [ref=e72]
+  - option "Eleanor Roosevelt" [ref=e73]
+  - option "Steve  …  - option "obvious" [ref=e118]
+  - option "simile" [ref=e119]
+- button "Search" [ref=e63]
+- link "GoodReads.com" [ref=e120]
+- link "Zyte" [ref=e121]
+
+$ agent-browser read | head -50
+-> [368 chars] #
+Quotes to Scrape
+
+Login
+
+Author
+
+----------
+
+Albert Einstein
+
+J.K. Rowling
+
+Jane Austen
+
+Marilyn Monroe
+
+André Gide
+
+Thomas A. Edison
+
+Eleanor Roosevelt
+
+Steve Martin
+
+Bob Marley
+
+Dr. Seuss
+
+Douglas Adams
+
+Elie Wiesel
+
+Friedrich Nietzsche
+
+Mark Twain
+
+Allen Saunders
+
+Pablo Neruda
+
+Ralph Waldo Emerson
+
+Mother Teresa
+
+Garrison Keillor
+
+Jim Henson
+
+Charles M. Schulz
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([].slice.call(document.querySelectorAll('.quote'),0).map(q=>q.querySelector('.text')?.textContent))
+JS
+-> [9 chars] "[null]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({url: location.href, main: document.querySelector('#search_area, .search_results, main, #quotes')?.innerText?.slice(0,500), bodyLen: document.body.innerText.length})
+JS
+-> [72 chars] "{\"url\":\"https://quotes.toscrape.com/filter.aspx\",\"bodyLen\":943}"
+
+$ agent-browser eval "location.href"; agent-browser read | tail -30
+-> [307 chars] "https://quotes.toscrape.com/filter.aspx"
+Jimi Hendrix
+
+J.M. Barrie
+
+E.E. Cummings
+
+Khaled Hosseini
+
+Harper Lee
+
+Madeleine L'Engle
+
+Tag
+
+----------
+
+humor
+
+obvious
+
+simile
+
+### Results
+
+“A day without sunshine is like, you know, night.” -
+Steve Martin (humor)
+
+Quotes by: GoodReads.com
+
+Made with ❤ by Zyte
+
+SAY: The search was executed. With author **Steve Martin** and tag **humor**, the results section shows exactly one quote:
+
+> "A day without sunshine is like, you know, night." — Steve Martin (humor)
+
+ANSWER: "A day without sunshine is like, you know, night."

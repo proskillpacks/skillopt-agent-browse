@@ -1,0 +1,136 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r2", "correct": true, "score": 0.785, "wtok": 143278, "out_tok": 4892, "turns": 9, "secs": 44, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q3_sel/s08_r2 && for i in 1 2 3; do agent-browser open "https://books.toscrape.com/" && break; sleep 5; done && agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('article.product_pod')];
+  const next = [...document.querySelectorAll('li.next a')].map(a => a.href);
+  return JSON.stringify({count: rows.length, next, sample: rows[0] ? rows[0].innerHTML.slice(0,400) : null});
+})()
+JS
+-> [629 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"{\"count\":20,\"next\":[\"https://books.toscrape.com/catalogue/page-2.html\"],\"sample\":\"\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"catalogue/a-light-in-the-attic_1000/index.html\\\"><img src=\\\"media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\\\" alt=\\\"A Light in the Attic\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n                <p class=\\\"st\"}"
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q3_sel/s08_r2 && cat > /tmp/extract.js <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const title = a.querySelector('h3 a').getAttribute('title');
+    const price = a.querySelector('.price_color').textContent.trim();
+    return [title, price];
+  });
+  const next = document.querySelector('li.next a');
+  return JSON.stringify({rows, next: next ? next.href : null});
+})()
+JS
+echo "setup done"
+-> [11 chars] setup done
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q3_sel/s08_r2 && url="https://books.toscrape.com/" && > /tmp/all_books.jsonl && pages=0 && while [ -n "$url" ]; do
+  for i in 1 2 3; do agent-browser open "$url" > /dev/null && break; sleep 5; done
+  agent-browser eval --stdin < /tmp/extract.js > /tmp/page_out.json
+  jq -r . /tmp/page_out.json > /tmp/page.json
+  jq -c '.rows[]' /tmp/page.json >> /tmp/all_books.jsonl
+  pages=$((pages+1))
+  url=$(jq -r '.next' /tmp/page.json)
+  [ "$url" = "null" ] && url=""
+done
+echo "pages: $pages, books: $(wc -l < /tmp/all_books.jsonl)"
+-> [23 chars] pages: 50, books: 1000
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q3_sel/s08_r2 && head -3 /tmp/all_books.jsonl
+echo "---"
+# Count books priced less than 12.00 and find the minimum
+jq -c '[.[0], (.[1] | sub("£";"") | sub("[^0-9.]";"") | tonumber)]' /tmp/all_books.jsonl > /tmp/prices.jsonl
+head -3 /tmp/prices.jsonl
+echo "---"
+awk -F'"' '{ } ' /dev/null
+jq -r 'select(.[1] < 12.00)' /tmp/prices.jsonl | wc -l
+jq -r 'sort_by(.[1]) | .[0][]' /tmp/prices.jsonl
+-> [51295 chars] jq: error (at /tmp/prices.jsonl:270): Cannot index string with number
+jq: error (at /tmp/prices.jsonl:271): Cannot index string with number
+jq: error (at /tmp/prices.jsonl:272): Cannot index string with number
+jq: error (at /tmp/prices.jsonl:273): Cannot index string with number
+jq: error (at /tmp/prices.jsonl:274): Cannot index string with number
+jq: error (at /tmp/prices.jsonl:275): Cannot index string with number
+jq: error (at /tmp/prices.jsonl:276): Cannot index string with number
+jq: error  … index string with number
+
+[Showing lines 279-1009 of 1009 (50.0KB limit). Full output: /tmp/pi-bash-f0a9ea702de755ec.log]
+
+Command exited with code 5
+$ sed -n '268,272p' /tmp/prices.jsonl; echo ---; sed -n '268,272p' /tmp/all_books.jsonl; echo ---; wc -l /tmp/prices.jsonl /tmp/all_books.jsonl
+-> [499 chars] ["Shtum",55.84]
+["See America: A Celebration of Our National Parks & Treasured Sites",48.87]
+["salt.",46.78]
+["Robin War",47.82]
+["Red Hood/Arsenal, Vol. 1: Open for Business (Red Hood/Arsenal #1)",25.48]
+---
+["Shtum","£55.84"]
+["See America: A Celebration of Our National Parks & Treasured Sites","£48.87"]
+["salt.","£46.78"]
+["Robin War","£47.82"]
+["Red Hood/Arsenal, Vol. 1: Open for Business (Red Hood/Arsenal #1)","£25.48"]
+---
+  1000 /tmp/prices.jsonl
+  1000 /tmp/all_books.jsonl
+  2000 total
+
+$ jq -c -n '[inputs] | sort_by(.[1])' <(sed -n '1,100p' /tmp/prices.jsonl) >/dev/null && echo first100-ok; jq -c 'select(.[1]<12)' /tmp/prices.jsonl 2>&1 | head -5; echo "exit: $?"; sed -n '270p' /tmp/prices.jsonl | cat -A | head -5
+-> [277 chars] first100-ok
+["Patience",10.16]
+["The Project",10.65]
+["The Long Shadow of Small Ghosts: Murder and Memory in an American City",10.97]
+["The Argonauts",10.93]
+["Miss Peregrine’s Home for Peculiar Children (Miss Peregrine’s Peculiar Children #1)",10.76]
+exit: 0
+["salt.",46.78]$
+
+$ jq -s 'sort_by(.[1]) | .[0]' /tmp/prices.jsonl; echo ---; jq -s '[.[] | select(.[1] < 12)] | length' /tmp/prices.jsonl; echo ---; jq -s '[.[] | select(.[1] < 12.0) | .[1]] | min as $m | [.[], $m] | @csv' /tmp/prices.jsonl | head; jq -s '[.[] | select(.[1] <= 10.2)]' /tmp/prices.jsonl | head -20
+-> [555 chars] [
+  "An Abundance of Katherines",
+  10.00
+]
+---
+44
+---
+"10.16,10.65,10.97,10.93,10.76,11.11,10.40,10.69,11.89,10.56,11.83,10.60,10.23,11.21,11.23,10.90,11.53,11.88,11.84,11.68,11.82,10.41,10.29,11.45,10.01,11.38,10.27,11.05,11.33,11.83,11.48,10.00,10.79,10.02,10.92,11.10,11.87,10.79,10.62,10.66,11.89,11.75,11.64,10.64,10.00"
+[
+  [
+    "Patience",
+    10.16
+  ],
+  [
+    "The Origin of Species",
+    10.01
+  ],
+  [
+    "An Abundance of Katherines",
+    10.00
+  ],
+  [
+    "The Tipping Point: How Little Things Can Make a Big Difference",
+    10.02
+  ]
+]
+
+$ jq -s '[.[] | select(.[1] == 10.00)]' /tmp/prices.jsonl; echo ---; jq -s '[.[] | select(.[1] < 12) | .[]] | length' /tmp/prices.jsonl; jq -s '[.[][] | .[1]] | {min: min, max: max, total: length}' /tmp/prices.jsonl; echo ---; grep -c '£' /tmp/all_books.jsonl
+-> [143 chars] [
+  [
+    "An Abundance of Katherines",
+    10.00
+  ]
+]
+---
+88
+jq: error (at /tmp/prices.jsonl:1000): Cannot index string with number
+---
+1000
+
+SAY: Verification complete. Summary of what I did and found:
+
+**Method:**
+- Opened https://books.toscrape.com/ in the agent-browser session, inspected the DOM (each book is an `article.product_pod` with an `h3 a` title and a `.price_color` span).
+- Walked all 50 catalogue pages by following the `li.next a` link on each page, extracting each page's 20 titles/prices plus the next-page URL in one `eval` per page.
+- Collected all 1,000 books, stripped the `£` symbol, converted to numbers, and computed st

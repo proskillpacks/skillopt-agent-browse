@@ -1,0 +1,54 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r5", "correct": true, "score": 0.951, "wtok": 32768, "out_tok": 597, "turns": 5, "secs": 5, "timed_out": false, "curl": false, "answer": "49 wins, 269 GF"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill 'e9' "Bruins"; agent-browser click 'e10'; agent-browser snapshot -i | head -80
+-> [2219 chars] ✓ Done
+✓ Done
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]: Bruins
+- button "Search" [ref=e10]
+- columnheader "Team Name" [ref=e11]
+- columnheader "Year" [ref=e12]
+- columnheader "Wins" [ref=e13]
+- columnheader "Losses" [ref=e14] …ell "Los Angeles Kings" [ref=e76]
+- cell "1990" [ref=e77]
+- cell "46" [ref=e78]
+- cell "24" [ref=e79]
+- cell "0.575" [ref=e80]
+- cell "340" [ref=e81]
+
+$ agent-browser eval "window.location.href"; agent-browser eval "JSON.stringify([...document.querySelectorAll('tbody tr')].slice(0,3).map(r=>[...r.cells].map(c=>c.textContent)))"
+-> [1906 chars] "https://www.scrapethissite.com/pages/forms/?q=Bruins"
+"[[\"\\n                            Team Name\\n                        \",\"\\n                            Year\\n                        \",\"\\n                            Wins\\n                        \",\"\\n                            Losses\\n                        \",\"\\n                            OT Losses\\n                        \",\"\\n                            Win %\\n                        \",\"\\n                       …             \",\"\\n                            275\\n                        \",\"\\n                            -5\\n                        \"]]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('tbody tr')].filter(r=>r.cells[1]&&r.cells[1].textContent.trim()==='2011').map(r=>[...r.cells].map(c=>c.textContent.trim())))"; agent-browser eval "document.querySelector('h1').textContent"
+-> [228 chars] "[[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+"\n                            Hockey Teams: Forms, Searching and Pagination\n                            21 items\n                        "
+
+SAY: The search for "Bruins" returned the 2011 season row: Boston Bruins, 2011 — Wins: 49, Goals For (GF): 269.
+
+ANSWER: 49 wins, 269 GF

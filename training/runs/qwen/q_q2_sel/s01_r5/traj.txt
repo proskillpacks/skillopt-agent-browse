@@ -1,0 +1,51 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r5", "correct": true, "score": 0.949, "wtok": 34078, "out_tok": 1352, "turns": 10, "secs": 170, "timed_out": false, "curl": false, "answer": "The third avatar shows the name \"user3\" and its \"View profile\" link has href \"/users/3\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser snapshot -i
+-> [57 chars] ✗ CDP command timed out: Page.navigate
+- Iframe [ref=e1]
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers" ; agent-browser wait "#hurs" 2>/dev/null; agent-browser wait --fn "document.querySelectorAll('#hurs img').length===3" ; agent-browser eval "document.querySelectorAll('#hurs img').length"
+-> [72 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+0
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers" ; agent-browser wait --fn "document.querySelectorAll('img.avatar').length===3" ; agent-browser eval "JSON.stringify([...document.querySelectorAll('#hurs > div')].map(d=>d.className))"
+-> [119 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser eval "document.title" ; agent-browser eval "document.querySelector('main, body').innerText.slice(0,300)"
+-> [108 chars] "The Internet"
+"Hovers\n\nHover over the image for additional information\n\nPowered by Elemental Selenium"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#container > div')].map(d=>({id:d.id,c:d.className,html:d.innerHTML.slice(0,200)})))"
+-> [5 chars] "[]"
+
+$ agent-browser eval "document.body.innerHTML.length" ; agent-browser eval "document.querySelector('img') ? document.querySelector('img').outerHTML : 'no img'"
+-> [141 chars] 1581
+"<img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\">"
+
+$ agent-browser eval "document.querySelector('.example-canvas, .wrapper, #hurs, #hover').outerHTML" 2>&1 | head -50; agent-browser eval "document.body.innerHTML.slice(800,1581)"
+-> [959 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'outerHTML')
+    at <anonymous>:1:67
+"ame: user1</h5>\n      <a href=\"/users/1\">View profile</a>\n    </div>\n  </div>\n  \n  <div class=\"figure\">\n    <img src=\"/img/avatar-blank.jpg\" alt=\"User Avatar\">\n    <div class=\"figcaption\">\n      <h5>name: user2</h5>\n      <a href=\"/users/2\">View profile</a>\n    </div>\n  </div>\n  \n  <div class=\"figure\">\n    <img src=\"/img/avatar-blank.jpg\" alt=\"User Avatar\"> …ign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+
+SAY: The figures are there. Now hover over the third avatar:
+$ agent-browser hover ".figure:nth-of-type(3) img" ; agent-browser eval "JSON.stringify(()=>0)"; agent-browser eval "JSON.stringify({name:document.querySelectorAll('.figure h5')[2].textContent, href:document.querySelectorAll('.figure .figcaption a')[2].getAttribute('href'), html:document.querySelectorAll('.figure')[2].innerHTML})"
+-> [281 chars] ✓ Done
+null
+"{\"name\":\"name: user3\",\"href\":\"/users/3\",\"html\":\"\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  \"}"
+
+$ agent-browser eval "var f=document.querySelectorAll('.figure')[2];JSON.stringify({cls:f.className,h5:f.querySelector('h5').textContent,shown:getComputedStyle(f.querySelector('h5')).display!== 'none'})" ; agent-browser get text ".figure:nth-of-type(3) h5" ; agent-browser get attr ".figure:nth-of-type(3) a" href
+-> [82 chars] "{\"cls\":\"figure\",\"h5\":\"name: user3\",\"shown\":true}"
+name: user3
+/users/3
+
+SAY: Hovering over the third avatar on https://the-internet.herokuapp.com/hovers reveals its caption:
+
+- **Name shown:** `name: user3`
+- **'View profile' link href:** `/users/3` (full URL: `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: The third avatar shows the name "user3" and its "View profile" link has href "/users/3".

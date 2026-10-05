@@ -1,0 +1,30 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r1", "correct": true, "score": 0.98, "wtok": 13449, "out_tok": 550, "turns": 5, "secs": 6, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login/ ; agent-browser eval 'JSON.stringify({u:!!document.querySelector("#username"),p:!!document.querySelector("#password")})'
+-> [81 chars] ✓ 404 Not Found
+  https://quotes.toscrape.com/login/
+"{\"u\":false,\"p\":false}"
+
+$ agent-browser open https://quotes.toscrape.com/ ; agent-browser eval 'JSON.stringify([...document.querySelectorAll("a")].map(a=>[a.href,a.textContent]).filter(([h])=>h.includes("log")||h.includes("Log")))'
+-> [104 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+"[[\"https://quotes.toscrape.com/login\",\"Login\"]]"
+
+$ agent-browser open https://quotes.toscrape.com/login ; agent-browser fill "#username" "admin" ; agent-browser fill "#password" "admin" ; agent-browser press Enter ; agent-browser get text .login-msg ; agent-browser open https://quotes.toscrape.com/ ; agent-browser eval 'JSON.stringify((()=>{const q=document.querySelector(".quote");const a=q? q.querySelector("a[href*=\"goodreads\"], a.goodread"): null; const links=q?[...q.querySelectorAll("a")].map(x=>x.href):null; return {html:q?q.innerHTML:null,links};})())'
+-> [1640 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+✓ Done
+✓ Done
+✗ Element not found: .login-msg. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Navigation failed: net::ERR_ABORTED
+"{\"html\":\"\\n        <span class=\\\"text\\\" itemprop=\\\"text\\\">“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”</span>\\n        <span>by <small class=\\\"author\\\" itemprop=\\\"author\\\">Albert  …es.toscrape.com/tag/deep-thoughts/page/1/\",\"https://quotes.toscrape.com/tag/thinking/page/1/\",\"https://quotes.toscrape.com/tag/world/page/1/\"]}"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Logged in at `https://quotes.toscrape.com/login` with any credentials. After login, the first quote (Albert Einstein's "The world as we have created it...") shows an extra "(Goodreads page)" link pointing to:
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

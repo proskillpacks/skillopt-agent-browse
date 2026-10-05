@@ -1,0 +1,146 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r2", "correct": true, "score": 0.918, "wtok": 54972, "out_tok": 2762, "turns": 11, "secs": 17, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser wait "body"; agent-browser snapshot -i
+-> [426 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✓ Done
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(Array.from(document.querySelectorAll('[ref], .message, li, .msg')).slice(0,50).map(el=>el.tagName))
+JS
+agent-browser eval "document.querySelector('main,body').innerText.slice(0,1200)"
+-> [929 chars] "[]"
+"Inbox\n\nShowing 24 of 60\n\nAlex A.\nInvoice #100\nArchive\nFemi H.\nLunch order #113\nArchive\nKai C.\nOn-call swap #126\nArchive\nDana K.\nRetro actions #139\nArchive\nIvo E.\nRelease checklist #152\nArchive\nBo M.\nDesign review #165\nArchive\nGus G.\nHiring loop #178\nArchive\nLena B.\nStandup notes #191\nArchive\nElif J.\nTravel booking #204\nArchive\nJude D.\nBudget draft #217\nArchive\nChen L.\nInvoice #230\nArchive\nHana F.\nLunch order #243\nArchive\nAlex A.\nOn-call swap #256\nA …nInvoice #360\nArchive\nJude D.\nLunch order #373\nArchive\nChen L.\nOn-call swap #386\nArchive\nHana F.\nRetro actions #399\nArchive\nLoading more…"
+
+$ agent-browser eval --stdin <<'JS'
+for (let i=0;i<40;i++){ window.scrollTo(0, document.body.scrollHeight); await new Promise(r=>setTimeout(r,300)); }
+JSON.stringify(document.body.innerText.length)
+JS
+agent-browser eval --stdin <<'JS'
+const txt = document.body.innerText;
+const idx = txt.indexOf('Priya');
+JSON.stringify({idx, snippet: idx>=0 ? txt.slice(idx-100, idx+150) : null})
+JS
+-> [140 chars] ✗ Evaluation error: SyntaxError: await is only valid in async functions and the top level bodies of modules
+"{\"idx\":-1,\"snippet\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+const root = document.querySelector('main') || document.body;
+JSON.stringify({
+  root: root.tagName,
+  buttons: Array.from(document.querySelectorAll('button')).map(b=>b.textContent.trim()),
+  text: document.body.innerText.slice(-300)
+})
+JS
+-> [690 chars] "{\"root\":\"BODY\",\"buttons\":[\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\",\"Archive\"],\"text\":\"n review #295\\nArchive\\nIvo E.\\nHiring loop #308\\nArchive\\nBo M.\\nStandup notes #321\\nArchive\\nGus G.\\nTravel booking #334\\nArchive\\nLena B.\\nBudget draft #347\\nArchive\\nElif J.\\nInvoice #360\\nArchive\\nJude D.\\nLunch order #373\\nArchive\\nChen L.\\nOn-call swap #386\\nArchive\\nHana F.\\nRetro actions #399\\nArchive\\nLoading more…\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(async()=>{
+  for (let i=0;i<30;i++){
+    window.scrollTo(0, document.body.scrollHeight);
+    await new Promise(r=>setTimeout(r,250));
+    if (document.body.innerText.length < 4000) break;
+  }
+  return document.body.innerText.length;
+})()
+JS
+agent-browser eval --stdin <<'JS'
+const t=document.body.innerText; const i=t.indexOf('Priya');
+i>=0 ? JSON.stringify(t.slice(i-120,i+120)) : JSON.stringify({i, len:t.length, tail:t.slice(-200)})
+JS
+-> [277 chars] 845
+"{\"i\":-1,\"len\":845,\"tail\":\" booking #334\\nArchive\\nLena B.\\nBudget draft #347\\nArchive\\nElif J.\\nInvoice #360\\nArchive\\nJude D.\\nLunch order #373\\nArchive\\nChen L.\\nOn-call swap #386\\nArchive\\nHana F.\\nRetro actions #399\\nArchive\\nLoading more…\"}"
+
+$ agent-browser eval --stdin <<'JS'
+const els = Array.from(document.querySelectorAll('*')).filter(e=>e.scrollHeight>e.clientHeight+50);
+JSON.stringify(els.map(e=>({tag:e.tagName, id:e.id, cls:e.className, sh:e.scrollHeight, ch:e.clientHeight})))
+JS
+-> [71 chars] "[{\"tag\":\"HTML\",\"id\":\"\",\"cls\":\"\",\"sh\":2550,\"ch\":973}]"
+
+$ agent-browser eval --stdin <<'JS'
+const all = Array.from(document.querySelectorAll('*'));
+const el = all.find(e=>e.childNodes.length===1 && e.textContent.trim()==='Loading more…');
+JSON.stringify({html: el? el.outerHTML : null, parent: el? el.parentElement.outerHTML.slice(0,500) : null})
+JS
+-> [690 chars] "{\"html\":\"<div id=\\\"sentinel\\\" style=\\\"height:40px\\\">Loading more…</div>\",\"parent\":\"<body>\\n<h1>Inbox</h1><p id=\\\"count\\\">Showing 36 of 60</p><div id=\\\"list\\\"><div class=\\\"row\\\"><span class=\\\"from\\\">Alex A.</span><span class=\\\"subj\\\">Invoice #100</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Femi H.</span><span class=\\\"subj\\\">Lunch order #113</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Kai C.</span><span class=\\\"subj\\\">On-call swap #126</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Dana K.</span><span class=\\\"subj\\\"\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(async()=>{
+  for (let i=0;i<30;i++){
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    await new Promise(r=>setTimeout(r,400));
+    if (document.body.innerText.length >= 1500) break;
+  }
+  return document.body.innerText.length + ' | ' + document.getElementById('count').textContent;
+})()
+JS
+agent-browser eval --stdin <<'JS'
+const rows = Array.from(document.querySelectorAll('#list .row'));
+const hit = rows.find(r=>r.querySelector('.from').textContent.trim()==='Priya N.');
+hit ? JSON.stringify({from: hit.querySelector('.from').textContent.trim(), subj: hit.querySelector('.subj').textContent.trim(), idx: rows.indexOf(hit)}) : JSON.stringify({rows: rows.length})
+JS
+-> [118 chars] "1683 | Showing 48 of 60"
+"{\"from\":\"Priya N.\",\"subj\":\"Q3 vendor audit — rescheduled to the 19th\",\"idx\":44}"
+
+SAY: Found it: Priya N.'s subject is **"Q3 vendor audit — rescheduled to the 19th"**. Now archiving it, handling the confirm dialog in the same call:
+$ agent-browser eval "window.__d=[];window.confirm=m=>{window.__d.push('confirm:'+m);return true};window.alert=m=>{window.__d.push('alert:'+m)}; 'hooked'"; agent-browser eval --stdin <<'JS'
+const rows=Array.from(document.querySelectorAll('#list .row'));
+const hit=rows.find(r=>r.querySelector('.from').textContent.trim()==='Priya N.');
+hit.querySelector('button').click();
+JSON.stringify(hit.querySelector('.subj').textContent.trim())
+JS
+agent-browser dialog accept; agent-browser eval "JSON.stringify(window.__d)"; agent-browser eval --stdin <<'JS'
+const rows=Array.from(document.querySelectorAll('#list .row'));
+const gone=!rows.some(r=>r.querySelector('.from').textContent.trim()==='Priya N.');
+JSON.stringify({pryaRowStillPresent: !gone, body: document.body.innerText.slice(-400)})
+JS
+-> [260 chars] "hooked"
+✗ Evaluation error: SyntaxError: Identifier 'rows' has already been declared
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+"[]"
+✗ Evaluation error: SyntaxError: Identifier 'rows' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(()=>{
+  const rs=Array.from(document.querySelectorAll('#list .row'));
+  const hit=rs.find(r=>r.querySelector('.from').textContent.trim()==='Priya N.');
+  if(!hit) return 'priya row not found';
+  hit.querySelector('button').click();
+  return JSON.stringify({clicked: true, dialogs: window.__d});
+})()
+JS
+agent-browser dialog accept; agent-browser eval --stdin <<'JS'
+(()=>{
+  const rs=Array.from(document.querySelectorAll('#list .row'));
+  const hit=rs.find(r=>r.querySelector('.from').textContent.trim()==='Priya N.');
+  return JSON.stringify({dialogs: window.__d, priyaRowPresent: !!hit, bodyTail: document.body.innerText.slice(-400)});
+})()
+JS
+-> [697 chars] "{\"clicked\":true,\"dialogs\":[\"confirm:Archive this message?\"]}"
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+"{\"dialogs\":[\"confirm:Archive this message?\"],\"priyaRowPresent\":false,\"bodyTail\":\".\\nHiring loop #568\\nArchive\\nFemi H.\\nStandup notes #581\\nArchive\\nKai C.\\nTravel booking #594\\nArchive\\nDana K.\\nBudget draft #607\\nArchive\\nIvo E.\\nInvoice #620\\nArchive\\nBo M.\\nLunch order #633\\nArchive\\nGus G.\\nOn-call swap #646\\nArchive\\nLena B.\\nRetro actions #659\\nArchive\\nJude D.\\nDesign review #685\\nArchive\\nChen L.\\nHiring loop #698\\nArchive\\nHana F.\\nStandup notes #711\\nArchive\\nLoading more…\\nArchived. Receipt #A-7028\"}"
+
+SAY: The archive confirm ("Archive this message?") was accepted, and the receipt is shown: **Archived. Receipt #A-7028**.
+
+Summary:
+- **Subject of Priya N.'s message:** Q3 vendor audit — rescheduled to the 19th
+- **Archived with confirmation; receipt number:** #A-7028
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; receipt #A-7028

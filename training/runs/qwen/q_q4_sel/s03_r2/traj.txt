@@ -1,0 +1,214 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": true, "score": 0.879, "wtok": 80689, "out_tok": 3160, "turns": 12, "secs": 21, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the category contains 26 books in total."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category_29/"; agent-browser snapshot -i
+-> [112 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category_29/
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser snapshot -i
+-> [5438 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e3]
+- link "Home" [ref=e4]
+- link "Books" [ref=e5]
+- link "Travel" [ref=e7]
+- link "Mystery" [ref=e8]
+- link "Historical Fiction" [ref=e9]
+- link "Sequential Art" [ref=e10]
+- link "Classics" [ref=e11]
+- link "Philosophy" [ref=e12]
+- link "Romance" [ref=e13]
+- link "Womens Fiction" [ref=e14]
+- link "Fiction" [ref=e15]
+- link "Childrens" [ref=e16]
+- link "Religion" [ref=e17]
+- link "Nonfiction" [ …"It's Only the Himalayas" [level=3, ref=e76]
+  - link "It's Only the Himalayas" [ref=e116]
+- button "Add to basket" [ref=e136]
+- link "next" [ref=e6]
+
+$ agent-browser click @e9; agent-browser wait "h1"; agent-browser eval "document.querySelector('h1').textContent"
+-> [35 chars] ✓ Done
+✓ Done
+"Historical Fiction"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const oneStar = [...document.querySelectorAll('article .star-rating')].filter(e => {
+    const c = e.className;
+    return /one/.test(c);
+  }).length;
+  const totalEl = [...document.querySelectorAll('h4')].find(e => /results/i.test(e.textContent));
+  const next = [...document.querySelectorAll('ul.pagination a')].find(a => /next/i.test(a.textContent));
+  return JSON.stringify({ oneStar, total: totalEl ? totalEl.textContent : null, next: next ? next.href : null });
+})()
+JS
+-> [47 chars] "{\"oneStar\":0,\"total\":null,\"next\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = [...document.querySelectorAll('article')];
+  const h4 = document.querySelector('h4');
+  const pag = document.querySelector('ul.pagination');
+  return JSON.stringify({
+    articles: arts.length,
+    h4: h4 ? h4.textContent : null,
+    pag: pag ? pag.textContent : null,
+    firstStars: arts.slice(0,3).map(a => a.querySelector('.star-rating') ? a.querySelector('.star-rating').className : null)
+  });
+})()
+JS
+-> [125 chars] "{\"articles\":20,\"h4\":null,\"pag\":null,\"firstStars\":[\"star-rating One\",\"star-rating Three\",\"star-rating Five\"]}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const body = document.body;
+  const res = [...body.querySelectorAll('*')].find(e => e.children.length === 0 && /results/i.test(e.textContent));
+  const links = [...document.querySelectorAll('a')].filter(a => /^(next|previous|Page \d+|\d+)$/i.test(a.textContent.trim())).map(a => a.textContent.trim() + ' => ' + a.href);
+  const ul = [...document.querySelectorAll('ul')].map(u => u.className || 'noclass');
+  return JSON.stringify({ resultsText: res ? res.textContent.trim() : null, links, uls: ul });
+})()
+JS
+-> [198 chars] "{\"resultsText\":null,\"links\":[\"next => https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"],\"uls\":[\"breadcrumb\",\"nav nav-list\",\"noclass\",\"pager\"]}"
+
+SAY: Pagination is in `ul.pager`. Let me loop through all pages collecting counts.
+$ total=0; onestar=0;
+page=1
+while :; do
+  r=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const oneStar = [...document.querySelectorAll('article .star-rating')].filter(e => /One/.test(e.className)).length;
+  const arts = document.querySelectorAll('article').length;
+  const next = [...document.querySelectorAll('ul.pager a')].find(a => /next/i.test(a.textContent));
+  return JSON.stringify({ oneStar, arts, next: next ? next.href : null });
+})()
+JS
+)
+  echo "page $page: $r"
+  one=$(echo "$r" | sed 's/.*"oneStar":\([0-9]*\).*/\1/')
+  arts=$(echo "$r" | sed 's/.*"arts":\([0-9]*\).*/\1/')
+  next=$(echo "$r" | sed 's/.*"next":\("http[^"]*"\)\(,null\)\?}]/\1/; s/"//g')
+  total=$((total+arts)); onestar=$((onestar+one))
+  [ -z "$next" ] && break
+  agent-browser open "$next"
+  agent-browser wait "ul.pager"
+  page=$((page+1))
+done
+echo "TOTAL books: $total ; one-star: $onestar"
+-> [492 chars] page 1: "{\"oneStar\":5,\"arts\":20,\"next\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"}"
+/bin/bash: line 17: "{\"oneStar\":5,\"arts\":20,\"next\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"}": syntax error: operand expected (error token is ""{\"oneStar\":5,\"arts\":20,\"next\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"}"")
+TOTAL books: 0 ; one-star: 0
+
+SAY: The eval output is double-quoted; let me simplify parsing by emitting plain fields.
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/" 
+total=0; onestar=0; page=1
+while :; do
+  agent-browser wait "ul.pager, article"
+  read one arts next < <(agent-browser eval --stdin <<'JS'
+(() => {
+  const oneStar = [...document.querySelectorAll('article .star-rating')].filter(e => /One/.test(e.className)).length;
+  const arts = document.querySelectorAll('article').length;
+  const next = [...document.querySelectorAll('ul.pager a')].find(a => /next/i.test(a.textContent));
+  console.log(oneStar + ' ' + arts + ' ' + (next ? next.href : ''));
+  return '';
+})()
+JS
+)
+  echo "page $page: oneStar=$one arts=$arts next=$next"
+  total=$((total+arts)); onestar=$((onestar+one))
+  [ -z "$next" ] && break
+  agent-browser open "$next"
+  page=$((page+1))
+done
+echo "TOTAL books: $total ; one-star: $onestar"
+-> [269 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/
+✓ Done
+page 1: oneStar="" arts= next=
+/bin/bash: line 16: "": syntax error: operand expected (error token is """")
+TOTAL books: 0 ; one-star: 0
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/"
+total=0; onestar=0; page=1
+while :; do
+  agent-browser wait "article"
+  out=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const oneStar = [...document.querySelectorAll('article .star-rating')].filter(e => /One/.test(e.className)).length;
+  const arts = document.querySelectorAll('article').length;
+  const next = [...document.querySelectorAll('ul.pager a')].find(a => /next/i.test(a.textContent));
+  return oneStar + '\t' + arts + '\t' + (next ? next.href : '');
+})()
+JS
+)
+  out=${out#\"}; out=${out%\"}
+  one=$(printf '%s' "$out" | cut -f1)
+  arts=$(printf '%s' "$out" | cut -f2)
+  next=$(printf '%s' "$out" | cut -f3)
+  echo "page $page: oneStar=$one arts=$arts next=$next"
+  total=$((total+arts)); onestar=$((onestar+one))
+  [ -z "$next" ] && break
+  agent-browser open "$next"
+  page=$((page+1))
+done
+-> [728 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/
+✓ Done
+page 1: oneStar=5\t20\thttps://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html arts=5\t20\thttps://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html next=5\t20\thttps://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+TOTAL books: 0 ; one-star: 0
+/bin/bash: line 19: 5\t20\thttps://bo …ntax error: invalid arithmetic operator (error token is "\t20\thttps://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html")
+
+SAY: Tabs got escaped literally — switching to spaces.
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/"
+total=0; onestar=0; page=1
+while :; do
+  agent-browser wait "article"
+  out=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const oneStar = [...document.querySelectorAll('article .star-rating')].filter(e => /One/.test(e.className)).length;
+  const arts = document.querySelectorAll('article').length;
+  const next = [...document.querySelectorAll('ul.pager a')].find(a => /next/i.test(a.textContent));
+  return oneStar + ' ' + arts + ' ' + (next ? next.href : '');
+})()
+JS
+)
+  out=${out#\"}; out=${out%\"}
+  read one arts next <<< "$out"
+  echo "page $page: oneStar=$one arts=$arts next=$next"
+  total=$((total+arts)); onestar=$((onestar+one))
+  [ -z "$next" ] && break
+  agent-browser open "$next"
+  page=$((page+1))
+done
+echo "TOTAL books: $total ; one-star: $onestar"
+-> [452 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/
+✓ Done
+page 1: oneStar=5 arts=20 next=https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+✓ Done
+page 2: oneStar=0 arts=6 next=
+TOTAL books: 26 ; one-star: 5
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"; agent-browser wait "article"; agent-browser eval --stdin <<'JS'
+(() => {
+  const a = [...document.querySelectorAll('article')].map(e => (e.querySelector('h3 a')?.textContent || '').slice(0,20) + '|' + (e.querySelector('.star-rating')?.className || ''));
+  return JSON.stringify(a);
+})()
+JS
+-> [385 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+✓ Done
+"[\"Between Shades of Gr|star-rating Five\",\"While You Were Mine|star-rating Five\",\"The Secret Healer|star-rating Three\",\"Starlark|star-rating Three\",\"Lost Among the Livin|star-rating Four\",\"A Spy's Devotion (Th|star-rating Five\"]"
+
+SAY: Done. Results across both pages of the Historical Fiction category:
+
+- **Page 1:** 20 books, 5 one-star rated
+- **Page 2:** 6 books, 0 one-star rated
+- **Total books in category: 26**
+- **Books with a one-star rating: 5**
+
+ANSWER: 5 books have a one-star rating; the category contains 26 books in total.

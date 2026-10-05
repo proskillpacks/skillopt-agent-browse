@@ -1,0 +1,81 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r5", "correct": true, "score": 0.901, "wtok": 65773, "out_tok": 1569, "turns": 12, "secs": 13, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the Historical Fiction category has 26 books in total."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category_7.html"; agent-browser snapshot -i
+-> [115 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category_7.html
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/" ; agent-browser snapshot -i
+-> [5438 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e3]
+- link "Home" [ref=e4]
+- link "Books" [ref=e5]
+- link "Travel" [ref=e7]
+- link "Mystery" [ref=e8]
+- link "Historical Fiction" [ref=e9]
+- link "Sequential Art" [ref=e10]
+- link "Classics" [ref=e11]
+- link "Philosophy" [ref=e12]
+- link "Romance" [ref=e13]
+- link "Womens Fiction" [ref=e14]
+- link "Fiction" [ref=e15]
+- link "Childrens" [ref=e16]
+- link "Religion" [ref=e17]
+- link "Nonfiction" [ …"It's Only the Himalayas" [level=3, ref=e76]
+  - link "It's Only the Himalayas" [ref=e116]
+- button "Add to basket" [ref=e136]
+- link "next" [ref=e6]
+
+$ agent-browser get attr @e9 "href"
+-> [57 chars] catalogue/category/books/historical-fiction_4/index.html
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval "document.querySelector('.pagination, .record'); [ ...document.querySelectorAll('.product_count, h1, .active') ].map(e=>e.textContent.trim())"
+-> [186 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+[
+  "Historical Fiction",
+  "Historical Fiction"
+]
+
+$ agent-browser eval "JSON.stringify({books: document.querySelectorAll('article.product').length, stars: [...document.querySelectorAll('article.product .star-rating')].map(s=>s.className), pgs: [...document.querySelectorAll('.pagination a')].map(a=>a.textContent.trim()), body: document.body.innerText.split('\n').filter(l=>l.includes('books')).slice(0,5)})"
+-> [52 chars] "{\"books\":0,\"stars\":[],\"pgs\":[],\"body\":[]}"
+
+$ agent-browser eval "JSON.stringify({title: document.title, h1: document.querySelector('h1')?.textContent, articles: document.querySelectorAll('article').length, uls: document.querySelector('ol')?.outerHTML?.slice(0,500), bodylen: document.body.innerText.length})"
+-> [725 chars] "{\"title\":\"Historical Fiction | Books to Scrape - Sandbox\",\"h1\":\"Historical Fiction\",\"articles\":20,\"uls\":\"<ol class=\\\"row\\\">\\n                    \\n                        <li class=\\\"col-xs-6 col-sm-4 col-md-3 col-lg-3\\\">\\n\\n\\n\\n\\n\\n\\n    <article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"../../../tipping-the-velvet_999/index.html\\\"><img src=\ …lt=\\\"Tipping the Velvet\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n    \",\"bodylen\":2063}"
+
+$ agent-browser eval "JSON.stringify({stars:[...document.querySelectorAll('.star-rating')].map(s=>s.className), pgs:[...document.querySelectorAll('.pagination a, ul.pager a')].map(a=>a.textContent.trim()), oneStars: document.querySelectorAll('.star-rating.One').length, body: document.body.innerText.slice(0,200)})"
+-> [706 chars] "{\"stars\":[\"star-rating One\",\"star-rating Three\",\"star-rating Five\",\"star-rating One\",\"star-rating Five\",\"star-rating Four\",\"star-rating Three\",\"star-rating Two\",\"star-rating Four\",\"star-rating Two\",\"star-rating Three\",\"star-rating One\",\"star-rating Four\",\"star-rating Five\",\"star-rating One\",\"star-rating Five\",\"star-rating Five\",\"star-rating Two\",\"star-rating One\",\"star-rating Two\"],\"pgs\":[\"next\"],\"oneStars\":5,\"body\":\"Books to Scrape We love bei …ravel\\nMystery\\nHistorical Fiction\\nSequential Art\\nClassics\\nPhilosophy\\nRomance\\nWomens Fiction\\nFiction\\nChildrens\\nReligion\\nNonfi\"}"
+
+$ total=20; ones=5; agent-browser click a:has-text("next"); sleep 1;
+agent-browser eval "JSON.stringify({books: document.querySelectorAll('article.product_pod').length, oneStars: document.querySelectorAll('.star-rating.One').length, hasNext: !!document.querySelector('a[href*=\"page_2\"]') || [...document.querySelectorAll('a')].some(a=>a.textContent.trim()==='next')})"
+-> [182 chars] /bin/bash: -c: line 1: syntax error near unexpected token `('
+/bin/bash: -c: line 1: `total=20; ones=5; agent-browser click a:has-text("next"); sleep 1;'
+
+
+Command exited with code 2
+$ agent-browser click 'a:has-text("next")'; sleep 1
+agent-browser eval "JSON.stringify({url: location.pathname, books: document.querySelectorAll('article.product_pod').length, oneStars: document.querySelectorAll('.star-rating.One').length, hasNext: [...document.querySelectorAll('a')].some(a=>a.textContent.trim()==='next')})"
+-> [241 chars] ✗ Element not found: a:has-text("next"). Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"url\":\"/catalogue/category/books/historical-fiction_4/index.html\",\"books\":20,\"oneStars\":5,\"hasNext\":true}"
+
+$ agent-browser find text "next" click; sleep 1
+agent-browser eval "JSON.stringify({url: location.pathname, books: document.querySelectorAll('article.product_pod').length, oneStars: document.querySelectorAll('.star-rating.One').length, hasNext: [...document.querySelectorAll('a')].some(a=>a.textContent.trim()==='next')})"
+-> [127 chars] ✓ Done
+"{\"url\":\"/catalogue/category/books/historical-fiction_4/page-2.html\",\"books\":6,\"oneStars\":0,\"hasNext\":false}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.star-rating')].map(s=>s.className))"
+-> [132 chars] "[\"star-rating Five\",\"star-rating Five\",\"star-rating Three\",\"star-rating Three\",\"star-rating Four\",\"star-rating Five\"]"
+
+SAY: I navigated to the Historical Fiction category via the homepage link, which led to `/catalogue/category/books/historical-fiction_4/index.html`.
+
+**Page 1:** 20 books, 5 with a one-star rating (`star-rating One`), plus a "next" link.
+**Page 2:** 6 books (ratings: Five, Five, Three, Three, Four, Five → 0 one-star books), no further "next" link.
+
+**Totals:**
+- One-star rated books: **5**
+- Total books in the category: **26**
+
+ANSWER: 5 books have a one-star rating; the Historical Fiction category h

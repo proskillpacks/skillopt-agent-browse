@@ -1,0 +1,73 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r2", "correct": true, "score": 0.925, "wtok": 50081, "out_tok": 3138, "turns": 10, "secs": 75, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/tables"; agent-browser eval "(()=>{const t=document.querySelectorAll('table')[1];const hdrs=[...t.querySelectorAll('th')].map(h=>h.textContent);const row1=[...t.querySelectorAll('tbody tr')[0].querySelectorAll('td')].map(td=>td.textContent);return JSON.stringify({hdrs,row1});})()"
+-> [256 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Evaluation error: TypeError: Cannot read properties of undefined (reading 'querySelectorAll')
+    at <anonymous>:1:70
+    at <anonymous>:1:250
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/tables"; agent-browser wait "#table2"; agent-browser eval "(()=>{const t=document.querySelector('#table2');const hdrs=[...t.querySelectorAll('th')].map(h=>h.textContent);const row1=[...t.querySelectorAll('tbody tr')[0].querySelectorAll('td')].map(td=>td.textContent);return JSON.stringify({hdrs,row1});})()"
+-> [316 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+"{\"hdrs\":[\"Last Name\",\"First Name\",\"Email\",\"Due\",\"Web Site\",\"Action\"],\"row1\":[\"Smith\",\"John\",\"jsmith@example.com\",\"$50.00\",\"http://www.jsmith.com\",\"\\n          edit\\n          delete\\n        \"]}"
+
+$ agent-browser eval "(()=>{const ths=[...document.querySelectorAll('#table2 thead th')];const due=ths.find(h=>h.textContent.trim()==='Due');due.click();due.click();const t=document.querySelector('#table2');const row1=[...t.querySelectorAll('tbody tr')[0].querySelectorAll('td')].map(td=>td.textContent.trim());return JSON.stringify({row1});})()"
+-> [120 chars] "{\"row1\":[\"Smith\",\"John\",\"jsmith@example.com\",\"$50.00\",\"http://www.jsmith.com\",\"edit\\n          delete\"]}"
+
+$ agent-browser eval "(()=>{const t=document.querySelector('#table2');const rows=[...t.querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].slice(0,4).map(td=>td.textContent.trim()));const ths=[...t.querySelectorAll('thead th')].map(h=>h.className);return JSON.stringify({rows,ths});})()"
+-> [320 chars] "{\"rows\":[[\"Doe\",\"Jason\",\"jdoe@hotmail.com\",\"$100.00\"],[\"Bach\",\"Frank\",\"fbach@yahoo.com\",\"$51.00\"],[\"Smith\",\"John\",\"jsmith@example.com\",\"$50.00\"],[\"Conway\",\"Tim\",\"tconway@earthlink.net\",\"$50.00\"]],\"ths\":[\"header\",\"header\",\"header\",\"header headerSortUp\",\"header\",\"header\"]}"
+
+SAY: The table is now sorted with $100.00 (Doe) at the top. Let me confirm with a real UI click sequence to be certain the double-click semantics work as expected:
+$ agent-browser snapshot -i | head -30
+-> [944 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Data Tables" [level=3, ref=e2]
+- heading "Example 1" [level=4, ref=e3]
+- columnheader "Last Name" [ref=e54]
+- columnheader "First Name" [ref=e55]
+- columnheader "Email" [ref=e56]
+- columnheader "Due" [ref=e57]
+- columnheader "Web Site" [ref=e58]
+- columnheader "Action" [ref=e59]
+- cell "Smith" [ref=e5]
+- cell "John" [ref=e6]
+- cell "jsmith@example.com" [ref=e7]
+- cell "$50.00" [ref=e8]
+- cell "http://www.jsmith.com" [ref=e9]
+- cell "edit delete" [ref= …- cell "Doe" [ref=e17]
+- cell "Jason" [ref=e18]
+- cell "jdoe@hotmail.com" [ref=e19]
+- cell "$100.00" [ref=e20]
+- cell "http://www.jdoe.com" [ref=e21]
+
+$ agent-browser eval "(()=>{const th=[...document.querySelectorAll('#table2 thead th')].find(h=>h.textContent.trim()==='Due');th.setAttribute('data-due','1');return 'ok';})()"; agent-browser snapshot -i | grep -A1 'columnheader "Due"'
+-> [142 chars] "ok"
+- columnheader "Due" [ref=e57]
+- columnheader "Web Site" [ref=e58]
+--
+- columnheader "Due" [ref=e71]
+- columnheader "Web Site" [ref=e72]
+
+SAY: e71 is the Example 2 'Due' header. Let me click it and observe state transitions:
+$ agent-browser click e71; agent-browser eval "(()=>{const t=document.querySelector('#table2');const th=[...t.querySelectorAll('thead th')].find(h=>h.textContent.trim()==='Due');const rows=[...t.querySelectorAll('tbody tr')].map(tr=>tr.cells[3].textContent.trim());return JSON.stringify({cls:th.className,rows});})()"
+-> [99 chars] ✓ Done
+"{\"cls\":\"header headerSortUp\",\"rows\":[\"$100.00\",\"$51.00\",\"$50.00\",\"$50.00\"]}"
+
+$ agent-browser click e71; agent-browser eval "(()=>{const t=document.querySelector('#table2');const th=[...t.querySelectorAll('thead th')].find(h=>h.textContent.trim()==='Due');const rows=[...t.querySelectorAll('tbody tr')].map(tr=>tr.cells[3].textContent.trim());return JSON.stringify({cls:th.className,rows});})()"
+-> [101 chars] ✓ Done
+"{\"cls\":\"header headerSortDown\",\"rows\":[\"$50.00\",\"$50.00\",\"$51.00\",\"$100.00\"]}"
+
+SAY: The class naming is inverted in this plugin: `headerSortUp` = descending data (100 first), `headerSortDown` = ascending. Currently ascending, so one more click gives the two-clicks-descending state:
+$ agent-browser click e71; agent-browser eval "(()=>{const t=document.querySelector('#table2');const th=[...t.querySelectorAll('thead th')].find(h=>h.textContent.trim()==='Due');const firstRow=[...t.querySelectorAll('tbody tr')[0].cells].map(td=>td.textContent.trim());return JSON.stringify({cls:th.className,firstRow,due:[...t.querySelectorAll('tbody tr')].map(tr=>tr.cells[3].textContent.trim())});})()"; agent-browser close
+-> [233 chars] ✓ Done
+"{\"cls\":\"header headerSortUp\",\"firstRow\":[\"Doe\",\"Jason\",\"jdoe@hotmail.com\",\"$100.00\",\"http://www.jdoe.com\",\"edit\\n          delete\"],\"due\":[\"$100.00\",\"$51.00\",\"$50.00\",\"$50.00\"]}"
+✓ Browser closed
+
+SAY: The Example 2 table is now sorted by Due in descending order ($100.00 → $51.00 → $50.00 → $50.00), confirmed in a real browser via `agent-browser` (clicked the 'Due' column header in the Example 2 table). The first data row after sorting is **Doe, Jason** with due $100.00.
+
+The email address in the first data row: **jdoe@hotmail.com**
+
+ANSWER: jdoe@hotmail.com

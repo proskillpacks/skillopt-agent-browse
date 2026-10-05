@@ -1,0 +1,53 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r1", "correct": true, "score": 0.942, "wtok": 38818, "out_tok": 531, "turns": 5, "secs": 6, "timed_out": false, "curl": false, "answer": "49 wins, 269 GF"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/ ; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill e9 "Bruins" ; agent-browser click e10 ; agent-browser snapshot -i
+-> [6446 chars] ✓ Done
+✓ Done
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]: Bruins
+- button "Search" [ref=e10]
+- columnheader "Team Name" [ref=e11]
+- columnheader "Year" [ref=e12]
+- columnheader "Wins" [ref=e13]
+- columnheader "Losses" [ref=e14] …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('table tbody tr')).map(r=>Array.from(r.cells).map(c=>c.textContent.trim())))" ; agent-browser get text h1
+-> [1894 chars] "[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\",\"0.607\",\"332\",\"268\",\"64\"],[\"Boston Bruins\",\"1993\",\"42\",\"29\",\"\",\"0.5\",\"289\",\"252\",\"37\"],[\"Boston Bruins\",\"1994\",\"27\",\"18\",\"\",\"0.562\", …\",\"51\"],[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+Hockey Teams: Forms, Searching and Pagination 21 items
+
+SAY: The search worked — the table now shows only the 21 Boston Bruins rows. The 2011 row reads: 49 wins, 29 losses, 4 OT losses, 0.598 win %, GF 269, GA 202, +/− 67.
+
+For the 2011 season, the Boston Bruins had **49 wins** and **Goals For (GF) of 269**.
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: ANSWER: 49 wins, 269 GF

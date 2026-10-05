@@ -1,0 +1,70 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": true, "score": 0.97, "wtok": 19774, "out_tok": 966, "turns": 6, "secs": 8, "timed_out": false, "curl": false, "answer": "5 one-star ratings out of 26 books total in the Historical Fiction category"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category_4_historical/page_1.html"; agent-browser wait "h1"; agent-browser get text "h1"
+-> [110 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category_4_historical/page_1.html
+✓ Done
+404 Not Found
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait "h1"; agent-browser find text "Historical" click; agent-browser wait "h1"; agent-browser get text "h1"
+-> [113 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+✓ Done
+✓ Done
+Historical Fiction
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const items = [...document.querySelectorAll('article.product_pod')];
+  const one = items.filter(i => /star-rating One/.test(i.innerHTML)).length;
+  const pags = [...document.querySelectorAll('select option')].map(o => o.textContent.trim());
+  const cur = [...document.querySelectorAll('.pagination.active a')].map(a => a.textContent.trim());
+  return JSON.stringify({total: items.length, one, pags, cur, url: location.pathname});
+})()
+JS
+-> [120 chars] "{\"total\":20,\"one\":5,\"pags\":[],\"cur\":[],\"url\":\"/catalogue/category/books/historical-fiction_4/index.html\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('a')].map(a => a.href).filter(h => /page/.test(h));
+  const items = [...document.querySelectorAll('article.product_pod')].map(i => {
+    const m = i.innerHTML.match(/star-rating (\w+)/);
+    return m ? m[1] : '?';
+  });
+  const counts = {};
+  items.forEach(r => counts[r] = (counts[r]||0)+1);
+  return JSON.stringify({pageLinks: links, ratingCounts: counts, total: items.length});
+})()
+JS
+-> [195 chars] "{\"pageLinks\":[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"],\"ratingCounts\":{\"One\":5,\"Three\":3,\"Five\":5,\"Four\":3,\"Two\":4},\"total\":20}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"; agent-browser wait "article.product_pod"; agent-browser eval --stdin <<'JS'
+(() => {
+  const items = [...document.querySelectorAll('article.product_pod')];
+  const counts = {};
+  items.forEach(i => {
+    const m = i.innerHTML.match(/star-rating (\w+)/);
+    const r = m ? m[1] : '?';
+    counts[r] = (counts[r]||0)+1;
+  });
+  const pageLinks = [...document.querySelectorAll('a')].map(a => a.href).filter(h => /page/.test(h));
+  return JSON.stringify({total: items.length, ratingCounts: counts, pageLinks});
+})()
+JS
+-> [317 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+✓ Done
+"{\"total\":6,\"ratingCounts\":{\"Five\":3,\"Three\":2,\"Four\":1},\"pageLinks\":[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1.html\"]}"
+
+SAY: Done. The Historical Fiction category has 2 pages:
+
+- **Page 1:** 20 books — rating breakdown: One×5, Two×4, Three×3, Four×3, Five×5
+- **Page 2:** 6 books — rating breakdown: Three×2, Four×1, Five×3 (no one-star books)
+
+**Total books: 26**
+**One-star books: 5**
+
+ANSWER: 5 one-star ratings out of 26 books total in the Historical Fiction category

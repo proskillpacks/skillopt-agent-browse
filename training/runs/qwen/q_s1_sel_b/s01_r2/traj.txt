@@ -1,0 +1,54 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r2", "correct": true, "score": 0.957, "wtok": 28857, "out_tok": 1400, "turns": 8, "secs": 36, "timed_out": false, "curl": false, "answer": "user3, href=/users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover div.hover-state:nth-child(3); agent-browser eval "JSON.stringify({name: document.querySelector('div.hover-state:nth-child(3) .hover-div a').textContent.trim(), href: document.querySelector('div.hover-state:nth-child(3) .hover-div a').getAttribute('href')})"
+-> [455 chars] /bin/bash: -c: line 1: syntax error near unexpected token `('
+/bin/bash: -c: line 1: `agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover div.hover-state:nth-child(3); agent-browser eval "JSON.stringify({name: document.querySelector('div.hover-state:nth-child(3) .hover-div a').textContent.trim(), href: document.querySelector('div.hover-state:nth-child(3) .hover-div a').getAttribute('href')})"'
+
+
+Command exited with code 2
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover div.hover-state:nth-child(3); agent-browser eval 'JSON.stringify({name: document.querySelector("div.hover-state:nth-child(3) .hover-div a").textContent.trim(), href: document.querySelector("div.hover-state:nth-child(3) .hover-div a").getAttribute("href")})'
+-> [455 chars] /bin/bash: -c: line 1: syntax error near unexpected token `('
+/bin/bash: -c: line 1: `agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover div.hover-state:nth-child(3); agent-browser eval 'JSON.stringify({name: document.querySelector("div.hover-state:nth-child(3) .hover-div a").textContent.trim(), href: document.querySelector("div.hover-state:nth-child(3) .hover-div a").getAttribute("href")})''
+
+
+Command exited with code 2
+SAY: The parentheses in the unquoted selector were breaking bash. Quoting the selector:
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover 'div.hover-state:nth-child(3)'; agent-browser eval 'JSON.stringify({name: document.querySelector("div.hover-state:nth-child(3) .hover-div a").textContent.trim(), href: document.querySelector("div.hover-state:nth-child(3) .hover-div a").getAttribute("href")})'
+-> [353 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: div.hover-state:nth-child(3). Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:90
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser eval 'document.querySelectorAll("div.hover-state").length + " | " + document.title'; agent-browser hover 'div.hover-state:nth-child(3)'; agent-browser eval 'JSON.stringify({name: document.querySelector("div.hover-state:nth-child(3) .hover-div a").textContent.trim(), href: document.querySelector("div.hover-state:nth-child(3) .hover-div a").getAttribute("href")})'
+-> [348 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+"0 | The Internet"
+✗ Element not found: div.hover-state:nth-child(3). Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:90
+
+
+Command exited with code 1
+$ agent-browser eval 'document.querySelector(".example") ? document.querySelector(".example").innerHTML.slice(0,800) : document.body.innerHTML.slice(0,1500)'
+-> [740 chars] "\n  <h3>Hovers</h3>\n  <p>Hover over the image for additional information</p>\n  \n  <div class=\"figure\">\n    <img src=\"/img/avatar-blank.jpg\" alt=\"User Avatar\">\n    <div class=\"figcaption\">\n      <h5>name: user1</h5>\n      <a href=\"/users/1\">View profile</a>\n    </div>\n  </div>\n  \n  <div class=\"figure\">\n    <img src=\"/img/avatar-blank.jpg\" alt=\"User Avatar\">\n    <div class=\"figcaption\">\n      <h5>name: user2</h5>\n      <a href=\"/users/2\">View profile</a>\n    </ …"User Avatar\">\n    <div class=\"figcaption\">\n      <h5>name: user3</h5>\n      <a href=\"/users/3\">View profile</a>\n    </div>\n  </div>\n  \n"
+
+$ agent-browser hover 'div.figure:nth-child(3)'; agent-browser eval 'JSON.stringify({name: document.querySelector("div.figure:nth-child(3) .figcaption h5").textContent.trim(), href: document.querySelector("div.figure:nth-child(3) .figcaption a").getAttribute("href"), visible: getComputedStyle(document.querySelector("div.figure:nth-child(3) .figcaption")).display})'
+-> [80 chars] ✓ Done
+"{\"name\":\"name: user1\",\"href\":\"/users/1\",\"visible\":\"block\"}"
+
+SAY: `.example` contains `h3` and `p`, so `nth-child(3)` matched the first figure. Using `nth-of-type(3)`:
+$ agent-browser hover 'div.figure:nth-of-type(3)'; agent-browser eval 'JSON.stringify({name: document.querySelector("div.figure:nth-of-type(3) .figcaption h5").textContent.trim(), href: document.querySelector("div.figure:nth-of-type(3) .figcaption a").getAttribute("href")})'; agent-browser close
+-> [75 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"/users/3\"}"
+✓ Browser closed
+
+SAY: Hovering over the third avatar on the Hovers page shows the profile caption:
+
+- **Name shown:** `user3` (in the "name: user3" line)
+- **'View profile' href:** `/users/3`
+
+ANSWER: user3, href=/users/3

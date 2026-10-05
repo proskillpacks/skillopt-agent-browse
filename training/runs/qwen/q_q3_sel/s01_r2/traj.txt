@@ -1,0 +1,31 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r2", "correct": true, "score": 0.975, "wtok": 16616, "out_tok": 815, "turns": 5, "secs": 122, "timed_out": false, "curl": false, "answer": "The third avatar shows name \"user3\" and its 'View profile' link has href \"/users/3\""}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers" && agent-browser eval "JSON.stringify([...document.querySelectorAll('.figure')].map(f=>f.className))"
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/hovers" && break; sleep 5; done; agent-browser eval "document.querySelectorAll('.figure').length"
+-> [251 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+3
+
+SAY: The page is loaded (3 figures exist). Now hover over the third avatar:
+$ agent-browser hover ".figure:nth-child(3)" && sleep 1 && agent-browser eval "JSON.stringify([...document.querySelectorAll('.figure')].map(f=>({cls:f.className, name:f.querySelector('h5')?.textContent, href:f.querySelector('a')?.getAttribute('href')})))"
+-> [215 chars] ✓ Done
+"[{\"cls\":\"figure\",\"name\":\"name: user1\",\"href\":\"/users/1\"},{\"cls\":\"figure\",\"name\":\"name: user2\",\"href\":\"/users/2\"},{\"cls\":\"figure\",\"name\":\"name: user3\",\"href\":\"/users/3\"}]"
+
+SAY: The hover succeeded (✓ Done). Let me verify the highlighted figure on hover and capture the third profile's details:
+$ agent-browser hover ".figure:nth-child(3)" && agent-browser eval "const f=document.querySelectorAll('.figure')[2]; JSON.stringify({cls:f.className, name:f.querySelector('h5').textContent, href:f.querySelector('a').getAttribute('href')})"
+-> [77 chars] ✓ Done
+"{\"cls\":\"figure\",\"name\":\"name: user3\",\"href\":\"/users/3\"}"
+
+SAY: The third avatar's details are confirmed. On this page, the profile details are revealed by CSS on hover; hovering the third `.figure` shows:
+
+- **Name shown:** `name: user3`
+- **'View profile' link href:** `/users/3`
+
+ANSWER: The third avatar shows name "user3" and its 'View profile' link has href "/users/3"

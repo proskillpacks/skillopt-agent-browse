@@ -1,0 +1,67 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r2", "correct": true, "score": 0.958, "wtok": 28293, "out_tok": 1303, "turns": 11, "secs": 15, "timed_out": false, "curl": false, "answer": "32 books total, 5 five-star books"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_1/page-1.html"
+-> [92 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/mystery_1/page-1.html
+
+$ agent-browser open "https://books.toscrape.com/"
+-> [73 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+
+$ agent-browser eval "document.querySelector('a[href*=\"mystery\"]')?.href"
+-> [75 chars] "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/"
+-> [103 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/
+
+$ agent-browser eval "document.querySelectorAll('.page > ul > li a').length"
+-> [2 chars] 0
+
+$ agent-browser eval "Array.from(document.querySelectorAll('a')).filter(a=>a.href.includes('page-')).map(a=>a.textContent.trim())"
+-> [13 chars] [
+  "next"
+]
+
+$ agent-browser eval "document.querySelector('a[rel=\"next\"]')?.href || Array.from(document.querySelectorAll('a')).find(a=>a.textContent.trim()==='next').href"
+-> [76 chars] "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html"
+
+$ agent-browser eval "const arts=document.querySelectorAll('article.product_pod'); const total=arts.length; const five=Array.from(arts).filter(a=>a.querySelector('.star-rating.Three, .star-rating.Five') && a.querySelector('.star-rating.Five')).length; total+','+Array.from(arts).filter(a=>a.querySelector('p.star-rating.Five')).length"
+-> [7 chars] "20,3"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html" && agent-browser eval "const arts=document.querySelectorAll('article.product_pod'); const five=Array.from(arts).filter(a=>a.querySelector('p.star-rating.Five')).length; const next=document.querySelector('a[rel=\"next\"]')||Array.from(document.querySelectorAll('a')).find(a=>a.textContent.trim()==='next'); total=arts.length+', '+five+', next: '+(next?'yes':'no')"
+-> [132 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+"12, 2, next: no"
+
+SAY: Done. The Mystery category has 2 pages:
+
+- **Page 1**: 20 books, 3 five-star
+- **Page 2**: 12 books, 2 five-star (no "next" link, so that's the last page)
+
+Totals: 20 + 12 = **32 books**, with 3 + 2 = **5** five-star rated books.
+
+ANSWER: 32 books total, 5 five-star books

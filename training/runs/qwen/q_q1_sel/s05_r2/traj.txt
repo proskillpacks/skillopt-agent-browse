@@ -1,0 +1,72 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r2", "correct": true, "score": 0.947, "wtok": 35635, "out_tok": 1662, "turns": 9, "secs": 13, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; Receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser wait "body"; agent-browser snapshot -i
+-> [426 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✓ Done
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('tbody tr')].map((tr,i)=>i+': '+tr.textContent.trim().replace(/\s+/g,' ')))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('h1 ~ *')].slice(0,5).map(e=>e.outerHTML.slice(0,400)))
+JS
+-> [1209 chars] "[\"<p id=\\\"count\\\">Showing 24 of 60</p>\",\"<div id=\\\"list\\\"><div class=\\\"row\\\"><span class=\\\"from\\\">Alex A.</span><span class=\\\"subj\\\">Invoice #100</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Femi H.</span><span class=\\\"subj\\\">Lunch order #113</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Kai C.</span><span class=\\\"subj\\\">On-call swap #126</span><button>Archive</button></div><div class=\\\ …\\"Retro actions\\\"];\\nconst msgs=[];for(let i=0;i<60;i++){msgs.push({from:first[(i*5)%12]+\\\" \\\"+last[(i*7)%12]+\\\".\\\",subj:topics[(i*3)\"]"
+
+$ agent-browser eval --stdin <<'JS'
+const t=document.body.textContent; JSON.stringify({hasPriya:t.includes("Priya"), rows:document.querySelectorAll('#list .row').length})
+JS
+-> [34 chars] "{\"hasPriya\":true,\"rows\":24}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#list .row')].filter(r=>r.textContent.includes("Priya")).map(r=>r.textContent.trim()))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval "window.scrollTo(0,document.body.scrollHeight); 'ok'"; sleep 1; agent-browser eval "window.scrollTo(0,document.body.scrollHeight); 'ok'"; sleep 1; agent-browser eval "window.scrollTo(0,document.body.scrollHeight); 'ok'"; sleep 1; agent-browser eval --stdin <<'JS'
+const rows=[...document.querySelectorAll('#list .row')];
+JSON.stringify({total:rows.length, priya:rows.filter(r=>r.textContent.includes("Priya")).map((r,i)=>r.textContent.trim())})
+JS
+-> [105 chars] "ok"
+"ok"
+"ok"
+"{\"total\":60,\"priya\":[\"Priya N.Q3 vendor audit — rescheduled to the 19thArchive\"]}"
+
+SAY: Found it: subject is "Q3 vendor audit — rescheduled to the 19th". Now archive it.
+$ agent-browser eval --stdin <<'JS'
+window.__c=[]; const orig=window.confirm; window.confirm=m=>{window.__c.push(String(m)); return true;};
+const r=[...document.querySelectorAll('#list .row')].find(r=>r.textContent.includes("Priya"));
+r.querySelector('button').click(); 'clicked'
+JS
+-> [10 chars] "clicked"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({confirmations:window.__c, toast:document.getElementById('toast').textContent})
+JS
+-> [90 chars] "{\"confirmations\":[\"Archive this message?\"],\"toast\":\"Archived. Receipt #A-7028\"}"
+
+SAY: Done.
+
+- **From:** Priya N.
+- **Subject:** Q3 vendor audit — rescheduled to the 19th
+- Archived with confirmation ("Archive this message?" → confirmed)
+- **Receipt shown:** #A-7028
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; Receipt #A-7028

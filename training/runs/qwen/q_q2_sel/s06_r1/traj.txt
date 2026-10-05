@@ -1,0 +1,75 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r1", "correct": true, "score": 0.944, "wtok": 37068, "out_tok": 1505, "turns": 10, "secs": 89, "timed_out": false, "curl": false, "answer": "After Remove, the message was \"It's gone!\". After Enable, the message was \"It's enabled!\" and the input's value was \"hello\"."}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+SAY: The open timed out; retrying with a wait before snapshotting.
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "text=Remove"; agent-browser snapshot -i
+-> [424 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+SAY: Page is loaded (snapshot works). Now click Remove and wait for the checkbox to disappear.
+$ agent-browser click @e5; agent-browser wait --fn "document.querySelector('.active-remain') === null"; agent-browser get text .flash
+-> [150 chars] ✓ Done
+true
+✗ Element not found: .flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({flash: document.querySelector('.flash')?.textContent, html: document.querySelector('#content')?.innerText})"
+-> [282 chars] "{\"html\":\"Dynamic Controls\\n\\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\\n\\nRemove/add\\n\\n\\n A checkbox\\nRemove\\nWait for it... \\n\\n\\n\\n\\nEnable/disable\\n\\n\\nEnable\\nPowered by Elemental Selenium\"}"
+
+SAY: The flash message already faded. I'll click Remove again and capture the message immediately.
+$ agent-browser click @e5; agent-browser wait --fn "document.querySelector('.flash')"; agent-browser get text .flash
+-> [176 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: .flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser snapshot -i; agent-browser eval "document.body.innerText"
+-> [518 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+"Dynamic Controls\n\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\n\nRemove/add\n\n\nAdd\n\nIt's gone!\n\n\n\n\n\nEnable/disable\n\n\nEnable\nPowered by Elemental Selenium"
+
+SAY: The message "It's gone!" is visible. Now handle the Enable part.
+$ agent-browser click @e7; agent-browser wait --fn "!document.querySelector('input[type=text]')?.disabled"; agent-browser get text .flash; agent-browser get value input[type=text]
+-> [123 chars] ✓ Done
+true
+✗ Element not found: .flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+$ agent-browser eval "document.querySelector('#content').innerText"
+-> [255 chars] "Dynamic Controls\n\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\n\nRemove/add\n\n\nAdd\n\n\n\nEnable/disable\n\n\nDisable\n\nIt's enabled!\n\nWait for it... \n\n\nPowered by Elemental Selenium"
+
+SAY: The message "It's enabled!" is showing. Now type into the enabled input.
+$ agent-browser fill input[type=text] "hello"; agent-browser get value input[type=text]
+-> [13 chars] ✓ Done
+hello
+
+SAY: All done. Summary of what happened on the page:
+
+1. **Remove**: Clicked "Remove"; the checkbox was removed and the flash message shown was **"It's gone!"** (the checkbox later re-appeared, reverting the button to "Add").
+2. **Enable**: Clicked "Enable"; once the text input became enabled, the flash message shown was **"It's enabled!"** (the button flipped to "Disable").
+3. **Typing**: Typed `hello` into the enabled input; its value read back as **`hello`**.
+
+ANSWER: After Remove, the message was

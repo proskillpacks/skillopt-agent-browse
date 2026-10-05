@@ -1,0 +1,64 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r3", "correct": true, "score": 0.96, "wtok": 26936, "out_tok": 1384, "turns": 8, "secs": 12, "timed_out": false, "curl": false, "answer": "5 five-star books out of 32 total books"}
+
+$ echo "PI_... envs:"; env | grep -i agent | sed 's/=.*TOKEN.*/=.../' | head -30; agent-browser --help 2>&1 | head -60
+-> [3400 chars] PI_... envs:
+PI_CODING_AGENT=true
+AI_AGENT=pi
+PWD=/home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_train/t06_r3
+AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_train-t06_r3
+AGENT_BROWSER_SESSION=so-q_noskill_train-t06_r3
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_train-t06_r3
+PATH=<scrubbed> …l
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+
+$ agent-browser open "https://books.toscrape.com/" 2>&1 | tail -5; agent-browser get url
+-> [101 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+https://books.toscrape.com/
+
+$ agent-browser eval "Array.from(document.querySelectorAll('.nav li a')).map(a=>a.getAttribute('href')).slice(0,10).join('\n')" 2>&1 | head -15
+-> [492 chars] "catalogue/category/books_1/index.html\ncatalogue/category/books/travel_2/index.html\ncatalogue/category/books/mystery_3/index.html\ncatalogue/category/books/historical-fiction_4/index.html\ncatalogue/category/books/sequential-art_5/index.html\ncatalogue/category/books/classics_6/index.html\ncatalogue/category/books/philosophy_7/index.html\ncatalogue/category/books/romance_8/index.html\ncatalogue/category/books/womens-fiction_9/index.html\ncatalogue/category/books/fiction_10/index.html"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html" 2>&1 | tail -2
+agent-browser eval "(() => { const total = document.querySelector('.pager li.next a'); const p = document.querySelectorAll('.active-page, .pager li'); return JSON.stringify({url: location.href, hasNext: !!total, pagerHTML: document.querySelector('.pager')?.innerHTML}); })()" 2>&1 | head -20
+-> [498 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"hasNext\":true,\"pagerHTML\":\"\\n            \\n            <li class=\\\"current\\\">\\n            \\n                Page 1 of 2\\n            \\n            </li>\\n            \\n                <li class=\\\"next\\\"><a href=\\\"page-2.html\\\">next</a></li>\\n            \\n        \"}"
+
+$ agent-browser eval "JSON.stringify({total: document.querySelectorAll('article.product_pod').length, five: document.querySelectorAll('article.product_pod p.star-rating.FIVE').length})"
+agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html" 2>&1 | tail -1
+agent-browser eval "JSON.stringify({total: document.querySelectorAll('article.product_pod').length, five: document.querySelectorAll('article.product_pod p.star-rating.FIVE').length})"
+-> [132 chars] "{\"total\":20,\"five\":0}"
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+"{\"total\":12,\"five\":0}"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article.product_pod p.star-rating')).map(p=>p.className).reduce((a,c)=>{a[c]=(a[c]||0)+1;return a},{}))"
+-> [118 chars] "{\"star-rating Four\":2,\"star-rating Two\":2,\"star-rating Five\":2,\"star-rating Three\":4,\"star-rating One\":2}"
+
+SAY: The class is `Five`, not `FIVE`. Recounting both pages:
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html" 2>&1 | tail -1
+agent-browser eval "JSON.stringify({total: document.querySelectorAll('article.product_pod').length, five: document.querySelectorAll('article.product_pod p.star-rating.Five').length})"
+agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html" 2>&1 | tail -1
+agent-browser eval "JSON.stringify({total: document.querySelectorAll('article.product_pod').length, five: document.querySelectorAll('article.product_pod p.star-rating.Five').length})"
+-> [207 chars]   https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+"{\"total\":20,\"five\":3}"
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+"{\"total\":12,\"five\":2}"
+
+SAY: Done. The Mystery category spans 2 pages (20 + 12 books):
+
+- **Page 1:** 20 books, 3 five-star
+- **Page 2:** 12 books, 2 five-star
+
+**Total: 32 books in the Mystery category, of which 5 are five-star rated.**
+
+ANSWER: 5 five-star books out of 32 total books

@@ -1,0 +1,28 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r1", "correct": true, "score": 0.988, "wtok": 7823, "out_tok": 300, "turns": 3, "secs": 113, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser snapshot -i
+-> [305 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+- button "Start" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+$ agent-browser click "e4"; agent-browser wait --fn "document.getElementById('loading').style.display==='none' && document.getElementById('content').textContent.trim()!=='Timeout!'" --timeout 20000; agent-browser get text "#content"
+-> [104 chars] ✓ Done
+true
+Dynamically Loaded Page Elements
+Example 2: Element rendered after the fact
+
+
+Hello World!
+
+
+SAY: The page's Start button triggered an async load (spinner visible), and after waiting for the content to render, the text that appears is:
+
+**"Hello World!"**
+
+ANSWER: Hello World!

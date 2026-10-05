@@ -1,0 +1,81 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r3", "correct": true, "score": 0.929, "wtok": 47412, "out_tok": 1693, "turns": 14, "secs": 16, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open "https://quotes.toscrape.com/login"
+-> [55 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+
+$ agent-browser fill '#username' "test" ; agent-browser fill '#password' "123456" ; agent-browser click '#login_body' ; agent-browser get text 'h2' ; agent-browser close
+-> [252 chars] ✓ Done
+✓ Done
+✗ Element not found: #login_body. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: h2. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open "https://quotes.toscrape.com/login" ; agent-browser snapshot -i
+-> [302 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill @e5 "tester" ; agent-browser fill @e6 "123456" ; agent-browser click @e2 ; agent-browser get text 'form'
+-> [39 chars] ✓ Done
+✓ Done
+✓ Done
+Username
+Password
+
+$ agent-browser open "https://quotes.toscrape.com/login" ; agent-browser fill 'input#username' "tester" ; agent-browser fill 'input#password' "123456" ; agent-browser click 'button' ; agent-browser get url
+-> [213 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+✓ Done
+✗ Element not found: button. Verify the selector, role, or name is correct and the element exists in the DOM.
+https://quotes.toscrape.com/login
+
+$ agent-browser eval "document.querySelector('form').innerHTML"
+-> [750 chars] "\n        <input type=\"hidden\" name=\"csrf_token\" value=\"ekVmaEJyQfSuxoglPzRdMLhFIZsYNGpcjWTrBviAbDqUwtKHOCXn\">\n        <div class=\"row\">\n            <div class=\"form-group col-xs-3\">\n                <label for=\"username\">Username</label>\n                <input type=\"text\" class=\"form-control\" id=\"username\" name=\"username\">\n            </div>\n        </div>\n        <div class=\"row\">\n            <div class=\"form-group col-xs-3\">\n                <label for=\"userna …\" name=\"password\">\n            </div>\n        </div>\n        <input type=\"submit\" value=\"Login\" class=\"btn btn-primary\">\n        \n    "
+
+$ agent-browser fill '#username' "tester" ; agent-browser fill '#password' "123456" ; agent-browser click 'input[type=submit]' ; agent-browser get url
+-> [55 chars] ✓ Done
+✓ Done
+✓ Done
+https://quotes.toscrape.com/login
+
+$ agent-browser eval "JSON.stringify({u:document.getElementById('username').value,p:document.getElementById('password').value,url:location.href, loggedIn: !!document.querySelector('.login-logo') })"
+-> [132 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'value')
+    at <anonymous>:1:54
+
+
+Command exited with code 1
+$ agent-browser get url ; agent-browser get text 'a.navbar-brand'
+-> [175 chars] https://quotes.toscrape.com/
+✗ Element not found: a.navbar-brand. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({logout: document.querySelector('a.logout') ? 'logged-in' : 'anonymous', goodreads: document.querySelector('.quote .goodreads_link')?.href || null})"
+-> [48 chars] "{\"logout\":\"anonymous\",\"goodreads\":null}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('nav a')].map(a=>a.textContent.trim()))"
+-> [15 chars] "[\"Next →\"]"
+
+$ agent-browser eval "document.querySelector('.quote').outerHTML.slice(0,600)"
+-> [635 chars] "<div class=\"quote\" itemscope=\"\" itemtype=\"http://schema.org/CreativeWork\">\n        <span class=\"text\" itemprop=\"text\">“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”</span>\n        <span>by <small class=\"author\" itemprop=\"author\">Albert Einstein</small>\n        <a href=\"/author/Albert-Einstein\">(about)</a> - <a href=\"http://goodreads.com/author/show/9810.Albert_Einstein\">(Goodreads page)</a>\n        </span>\n        <div class=\"tags\">\n            Tags:\n            <meta class=\"keywords\" itemprop=\"keywords\" content=\"change,deep-"
+
+$ agent-browser eval "JSON.stringify({href: document.querySelector('.quote a[href*=goodreads]').href, user: document.getElementById('user') ? document.getElementById('user').textContent : null})" ; agent-browser close
+-> [102 chars] "{\"href\":\"http://goodreads.com/author/show/9810.Albert_Einstein\",\"user\":null}"
+✓ Browser closed
+
+SAY: Logged in on https://quotes.toscrape.com/login (any credentials accepted) and navigated to the first page. The first quote is Albert Einstein's ("The world as we have created it is a process of our thinking…"), and its "(Goodreads page)" link points to:
+
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

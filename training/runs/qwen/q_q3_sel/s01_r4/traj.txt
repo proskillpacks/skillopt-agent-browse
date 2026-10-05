@@ -1,0 +1,109 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r4", "correct": true, "score": 0.93, "wtok": 46341, "out_tok": 1886, "turns": 11, "secs": 105, "timed_out": false, "curl": false, "answer": "name: user3, View profile link href = https://the-internet.herokuapp.com/users/3"}
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/hovers" && break; sleep 5; done; agent-browser snapshot -i
+-> [231 chars] ✗ CDP command timed out: Page.navigate
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser eval "document.title + ' | ' + document.body.innerText.slice(0,300)"; agent-browser snapshot -i
+-> [218 chars] "The Internet | Hovers\n\nHover over the image for additional information\n\nPowered by Elemental Selenium"
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+SAY: The page loaded. Now let me find the avatar images and hover the third one.
+$ agent-browser eval "document.querySelectorAll('li.overlib').length"
+-> [2 chars] 0
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const ex = document.querySelector('#example, main');
+  const imgs = [...document.querySelectorAll('img')].map(i => i.className + ' ' + i.alt);
+  return JSON.stringify({count: document.querySelectorAll('li').length, imgs, html: ex ? ex.innerHTML.slice(0, 800) : document.body.innerHTML.slice(0, 800)});
+})()
+JS
+-> [1079 chars] "{\"count\":0,\"imgs\":[\" Fork me on GitHub\",\" User Avatar\",\" User Avatar\",\" User Avatar\"],\"html\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_ …iv class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>n\"}"
+
+$ agent-browser hover ".figure:nth-child(3)"; agent-browser eval --stdin <<'JS'
+(() => {
+  const figs = [...document.querySelectorAll('.figure')];
+  const f = figs[2];
+  const cap = f.querySelector('.figcaption');
+  const a = cap ? cap.querySelector('a') : null;
+  return JSON.stringify({
+    name: cap ? cap.querySelector('h5') ? cap.querySelector('h5').textContent : null : null,
+    text: cap ? cap.innerText : null,
+    href: a ? a.href : null,
+    linkText: a ? a.textContent : null
+  });
+})()
+JS
+-> [184 chars] ✓ Done
+"{\"name\":\"name: user3\",\"text\":\"\\n      name: user3\\n      View profile\\n    \",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"linkText\":\"View profile\"}"
+
+$ agent-browser eval "getComputedStyle(document.querySelectorAll('.figure')[2].querySelector('.figcaption')).display"
+-> [7 chars] "none"
+
+SAY: The hover state isn't maintained, so I'll simulate the hover using mouse positioning.
+$ agent-browser get box ".figure:nth-child(3)"; agent-browser mouse move 0 0 2>/dev/null; B=$(agent-browser get box ".figure:nth-child(3)"); X=$(echo "$B" | grep -oP 'x=\K\d+' || true); echo "$B"
+-> [119 chars] x:      15
+y:      134.28125
+width:  180
+height: 213.78125
+✓ Done
+x:      15
+y:      134.28125
+width:  180
+height: 160
+
+$ agent-browser mouse move 105 214; agent-browser eval --stdin <<'JS'
+(() => {
+  const f = document.querySelectorAll('.figure')[2];
+  const cap = f.querySelector('.figcaption');
+  const a = cap.querySelector('a');
+  return JSON.stringify({
+    display: getComputedStyle(cap).display,
+    name: cap.querySelector('h5') ? cap.querySelector('h5').textContent : null,
+    href: a.href
+  });
+})()
+JS
+-> [113 chars] ✓ Done
+"{\"display\":\"none\",\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const f = document.querySelectorAll('.figure')[2];
+  const r = f.getBoundingClientRect();
+  return JSON.stringify({rect: {x: r.x, y: r.y, w: r.width, h: r.height},
+    at105: document.elementFromPoint(105, 214) ? document.elementFromPoint(105, 214).className : null,
+    innerWidth: innerWidth, innerHeight: innerHeight, scrollY: scrollY});
+})()
+JS
+-> [129 chars] "{\"rect\":{\"x\":375,\"y\":134.28125,\"w\":180,\"h\":160},\"at105\":\"\",\"innerWidth\":945,\"innerHeight\":973,\"scrollY\":0}"
+
+SAY: The rect is at viewport x=375 (sidebar offset). Moving the mouse to the actual center:
+$ agent-browser mouse move 465 214; agent-browser eval --stdin <<'JS'
+(() => {
+  const f = document.querySelectorAll('.figure')[2];
+  const cap = f.querySelector('.figcaption');
+  const a = cap.querySelector('a');
+  return JSON.stringify({
+    display: getComputedStyle(cap).display,
+    name: cap.querySelector('h5').textContent,
+    href: a.href
+  });
+})()
+JS
+-> [114 chars] ✓ Done
+"{\"display\":\"block\",\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+SAY: The hover is now active — the caption switched to `display: block`, showing:
+
+- **Name shown:** `user3` (rendered as `name: user3`)
+- **'View profile' link href:** `https://the-internet.herokuapp.com/users/3`
+
+ANSWER: name: user3, View profile link href = https://the-internet.herokuapp.com/users/3

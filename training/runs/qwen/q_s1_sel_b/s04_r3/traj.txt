@@ -1,0 +1,50 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r3", "correct": true, "score": 0.948, "wtok": 34732, "out_tok": 1209, "turns": 12, "secs": 38, "timed_out": false, "curl": false, "answer": "2011 Boston Bruins: 49 wins, 269 GF"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser wait "form"
+-> [165 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+
+$ agent-browser fill "input[name='query']" "Bruins"; agent-browser press Enter
+-> [130 chars] ✗ Element not found: input[name='query']. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('form')].map(f=>({action:f.action, inputs:[...f.querySelectorAll('input')].map(i=>({name:i.name,type:i.type}))}))"
+-> [91 chars] ✗ Evaluation error: SyntaxError: missing ) after argument list
+
+
+Command exited with code 1
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("form")].map(f=>({action:f.action, inputs:[...f.querySelectorAll("input")].map(i=>({name:i.name,type:i.type}))})))'
+-> [149 chars] "[{\"action\":\"https://www.scrapethissite.com/pages/forms/\",\"inputs\":[{\"name\":\"q\",\"type\":\"text\"},{\"name\":\"\",\"type\":\"submit\"}]}]"
+
+$ agent-browser fill "input[name='q']" "Bruins"; agent-browser press Enter
+-> [14 chars] ✓ Done
+✓ Done
+
+$ agent-browser get text h1; agent-browser eval 'JSON.stringify(location.href)'
+-> [114 chars] Hockey Teams: Forms, Searching and Pagination 21 items
+"\"https://www.scrapethissite.com/pages/forms/?q=Bruins\""
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("table.results tr")].filter(r=>{const c=r.querySelectorAll("td");return c.length&&c[0].textContent.includes("Bruins")&&c[1]&&c[1].textContent.includes("2011")}).map(r=>{const c=[...r.querySelectorAll("td")].map(x=>x.textContent.trim());return c}))'
+-> [5 chars] "[]"
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("table.results tr").slice(0,3)].map(r=>[...r.children].map(c=>c.tagName+":"+c.textContent.trim().slice(0,30))))'
+-> [169 chars] ✗ Evaluation error: TypeError: document.querySelectorAll.slice is not a function or its return value is not iterable
+    at <anonymous>:1:66
+
+
+Command exited with code 1
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("table")].map(t=>({cls:t.className, rows:t.rows.length})))'
+-> [36 chars] "[{\"cls\":\"table\",\"rows\":22}]"
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("table.table tr")].slice(1).filter(r=>{const c=[...r.querySelectorAll("td")];return c.length&&c[0].textContent.includes("Bruins")&&c[1].textContent.trim()==="2011"}).map(r=>[...r.querySelectorAll("td")].map(x=>x.textContent.trim())))'
+-> [86 chars] "[[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll("table.table tr")[0].querySelectorAll("th")].map(x=>x.textContent.trim()))'
+-> [123 chars] "[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"]"
+
+SAY: The 2011 Boston Bruins row shows: Team Name "Boston Bruins", Year "2011", Wins **49**, Goals For (GF) **269** (header order confirmed: Team Name, Year, Wins, Losses, OT Losses, Win %, GF, GA, +/-).
+
+ANSWER: 2011 Boston Bruins: 49 wins, 269 GF

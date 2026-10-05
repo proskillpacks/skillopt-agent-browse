@@ -1,0 +1,213 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r4", "correct": true, "score": 0.884, "wtok": 77647, "out_tok": 2920, "turns": 11, "secs": 33, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ for i in 1 2 3; do agent-browser open "https://books.toscrape.com/" && break; sleep 5; done; agent-browser snapshot -i | head -50
+-> [1537 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfiction" [r …ref=e47]
+- link "Suspense" [ref=e48]
+- link "Short Stories" [ref=e49]
+- link "Novels" [ref=e50]
+- link "Health" [ref=e51]
+- link "Politics" [ref=e52]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const articles = document.querySelectorAll('article');
+  const first = articles[0];
+  const pager = document.querySelector('.pagination');
+  return JSON.stringify({
+    count: articles.length,
+    sample: first ? first.innerHTML : null,
+    pager: pager ? pager.textContent : null
+  });
+})()
+JS
+-> [1596 chars] "{\"count\":20,\"sample\":\"\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"catalogue/a-light-in-the-attic_1000/index.html\\\"><img src=\\\"media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\\\" alt=\\\"A Light in the Attic\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n                <p class=\\\"star-rating Thr …oading-text=\\\"Adding...\\\">Add to basket</button>\\n    </form>\\n\\n\\n                \\n            </div>\\n        \\n    \",\"pager\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('a')].map(a => [a.textContent.trim(), a.href]);
+  const pageLinks = links.filter(([t]) => t === '»' || /^Next$/.test(t));
+  const results = document.querySelector('#default-results') || document.querySelector('.results');
+  return JSON.stringify({results: results ? results.textContent : null, pageLinks: pageLinks});
+})()
+JS
+-> [38 chars] "{\"results\":null,\"pageLinks\":[]}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const pag = document.querySelector('.pagination');
+  const body = document.body;
+  return JSON.stringify({
+    pag: pag ? pag.outerHTML : 'none',
+    footer: body.innerHTML.match(/class="pagination"[^<]*/g) || null
+  });
+})()
+JS
+-> [37 chars] "{\"pag\":\"none\",\"footer\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const t = document.body.innerText;
+  const m = t.match(/\d+ results/);
+  const next = t.match(/next/i);
+  return JSON.stringify({results: m ? m[0] : null, hasNext: !!next, bodyLen: t.length, tail: t.slice(-500)});
+})()
+JS
+-> [733 chars] "{\"results\":\"1000 results\",\"hasNext\":true,\"bodyLen\":2029,\"tail\":\".46\\n\\n In stock\\n\\nAdd to basket\\n\\n    \\n\\nScott Pilgrim's Precious Little ...\\n\\n£52.29\\n\\n In stock\\n\\nAdd to basket\\n\\n    \\n\\nRip it Up and ...\\n\\n£35.02\\n\\n In stock\\n\\nAdd to basket\\n\\n    \\n\\nOur Band Could Be ...\\n\\n£57.25\\n\\n In stock\\n\\nAdd to basket\\n\\n    \\n\\nOlio\\n\\n£23.88\\n\\n In stock\\n\\nAdd to basket\\n\\n    \\n\\nMesaerion: The Best Science ...\\n\\n£37.59\\n …1.33\\n\\n In stock\\n\\nAdd to basket\\n\\n    \\n\\nIt's Only the Himalayas\\n\\n£45.17\\n\\n In stock\\n\\nAdd to basket\\nPage 1 of 50\\nnext\"}"
+
+SAY: 50 pages, 1000 books total. Let me walk all pages:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const a = [...document.querySelectorAll('a')].filter(x => /next/i.test(x.textContent)).map(x => x.href);
+  return JSON.stringify(a);
+})()
+JS
+-> [57 chars] "[\"https://books.toscrape.com/catalogue/page-2.html\"]"
+
+$ mkdir -p /tmp/books && : > /tmp/books/all.tsv
+# Page 1 (current)
+agent-browser eval --stdin <<'JS' > /tmp/books/p1.tsv
+(() => {
+  const rows = [...document.querySelectorAll('article')].map(a => {
+    const t = a.querySelector('h3 a');
+    const p = a.querySelector('.price_color');
+    return [t ? t.title : '', p ? p.textContent.trim() : ''].join('\t');
+  });
+  return JSON.stringify(rows);
+})()
+JS
+jq -c '.[]' /tmp/books/p1.tsv >> /tmp/books/all.tsv
+for i in $(seq 2 50); do
+  ok=""
+  for try in 1 2 3; do
+    agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" && { ok=1; break; }
+    sleep 3
+  done
+  [ -n "$ok" ] || { echo "FAILED page $i"; break; }
+  agent-browser eval --stdin <<'JS' > /tmp/books/p.tsv
+(() => {
+  const rows = [...document.querySelectorAll('article')].map(a => {
+    const t = a.querySelector('h3 a');
+    const p = a.querySelector('.price_color');
+    retu
+-> [9640 chars] jq: error (at /tmp/books/p1.tsv:1): Cannot iterate over string ("[\"A Light...)
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-2.html
+jq: error (at /tmp/books/p.tsv:1): Cannot iterate over string ("[\"In Her ...)
+page 2 done: 0 rows
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-3.html
+jq: error (at /tmp/books/p.tsv:1): Cannot iterate over string ("[\"Slow St...)
+page 3 done: 0 rows
+✓ All products | Books to Scrape - …e.com/catalogue/page-50.html
+jq: error (at /tmp/books/p.tsv:1): Cannot iterate over string ("[\"Franken...)
+page 50 done: 0 rows
+0 /tmp/books/all.tsv
+
+SAY: The eval output is a JSON-quoted string, and I used one fixed filename — so I'll redo the loop with per-page files and proper parsing:
+$ : > /tmp/books/all.tsv
+agent-browser open "https://books.toscrape.com/" >/dev/null
+agent-browser eval --stdin <<'JS' > /tmp/books/p1.json
+(() => {
+  const rows = [...document.querySelectorAll('article')].map(a => {
+    const t = a.querySelector('h3 a');
+    const p = a.querySelector('.price_color');
+    return [t ? t.title : '', p ? p.textContent.trim() : ''];
+  });
+  return JSON.stringify(rows);
+})()
+JS
+jq -r 'fromjson | .[] | @tsv' /tmp/books/p1.json >> /tmp/books/all.tsv
+for i in $(seq 2 50); do
+  ok=""
+  for try in 1 2 3; do
+    agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null && { ok=1; break; }
+    sleep 3
+  done
+  [ -n "$ok" ] || { echo "FAILED page $i"; break; }
+  agent-browser eval --stdin <<'JS' > /tmp/books/p$i.json
+(() => {
+  const rows = [...document.querySelectorAll('article')].map(a => {
+    const t = a.querySelector('h3 a');
+    const p = 
+-> [921 chars] page 2: total 40
+page 3: total 60
+page 4: total 80
+page 5: total 100
+page 6: total 120
+page 7: total 140
+page 8: total 160
+page 9: total 180
+page 10: total 200
+page 11: total 220
+page 12: total 240
+page 13: total 260
+page 14: total 280
+page 15: total 300
+page 16: total 320
+page 17: total 340
+page 18: total 360
+page 19: total 380
+page 20: total 400
+page 21: total 420
+page 22: total 440
+page 23: total 460
+page 24: total 480
+page 25: total 500
+page 26: total 520
+page 27: total 540
+page 28: total 56 …e 43: total 860
+page 44: total 880
+page 45: total 900
+page 46: total 920
+page 47: total 940
+page 48: total 960
+page 49: total 980
+page 50: total 1000
+
+SAY: All 1000 books collected (matches the site's "1000 results"). Now analyze:
+$ cd /tmp/books
+echo "Total books: $(wc -l < all.tsv)"
+echo "Missing prices: $(awk -F'\t' '$2==""' all.tsv | wc -l)"
+# Count books priced below 12.00
+awk -F'\t' '{p=$2; sub(/^£/,"",p); if (p+0 < 12) c++} END {print "Books under £12.00:", c}' all.tsv
+# Cheapest book
+awk -F'\t' '{p=$2; sub(/^£/,"",p); printf "%.2f\t%s\n", p, $1}' all.tsv | sort -n | head -3
+-> [189 chars] Total books: 1000
+Missing prices: 0
+Books under £12.00: 44
+10.00	An Abundance of Katherines
+10.01	The Origin of Species
+10.02	The Tipping Point: How Little Things Can Make a Big Difference
+
+$ cd /tmp/books && awk -F'\t' '{p=$2; sub(/^£/,"",p); printf "%.2f\n", p}' all.tsv | sort -n | head -1 && grep -c "10.00" all.tsv; grep "10.00" all.tsv
+-> [77 chars] 10.00
+2
+An Abundance of Katherines	£10.00
+The Land of 10,000 Madonnas	£29.64
+
+SAY: Done. I walked all 50 catalogue pages (1000 books, 20 per page) in the real browser and extracted every title/price via `agent-browser eval`.
+
+**Results:**
+- Total books checked: 1000 (matches the site's "1000 results", all prices present)
+- Books costing less than £12.00: **44**
+- Single cheapest book: **An Abundance of Katherines** at **£10.00** (next cheapest are £10.01 and £10.02, so it's a unique minimum)
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of 

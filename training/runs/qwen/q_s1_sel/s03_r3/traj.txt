@@ -1,0 +1,74 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r3", "correct": true, "score": 0.969, "wtok": 20407, "out_tok": 1257, "turns": 5, "secs": 111, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the category contains 26 books in total."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction/index.html"; agent-browser wait "article.product_pod"; agent-browser snapshot -i | head -50
+-> [169 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction/index.html
+✗ Wait timed out after 25000ms
+- heading "404 Not Found" [level=1, ref=e1]
+
+SAY: The direct guess 404'd. Let me open the site and find the actual category link.
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait ".side_categories"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.side_categories a')).map(a=>a.href))"
+-> [4162 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"[\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\",\"https://books.toscrape …s://books.toscrape.com/catalogue/category/books/erotica_50/index.html\",\"https://books.toscrape.com/catalogue/category/books/crime_51/index.html\"]"
+
+SAY: Found it: `historical-fiction_4`. Now I'll walk all pagination pages and collect ratings.
+$ base="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"
+agent-browser open "$base"; agent-browser wait "article.product_pod"
+for p in 2 3 4; do
+  agent-browser open "$base/../historical-fiction_4/page-$p.html"; agent-browser wait "article.product_pod"
+  out=$(agent-browser eval "JSON.stringify({count: document.querySelectorAll('article.product_pod').length, one: document.querySelectorAll('article.product_pod .star-rating.One').length})")
+  echo "page $p: $out"
+  if ! echo "$out" | grep -q '"count":0'; then
+    # check for next page button
+    hasnext=$(agent-browser eval "document.querySelector('.btn-next') ? 'yes' : 'no'")
+    if [ "$hasnext" != "yes" ]; then break; fi
+  else
+    break
+  fi
+done
+agent-browser close
+-> [348 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/historical-fiction_4/page-2.html
+✗ Wait timed out after 25000ms
+page 2: "{\"count\":0,\"one\":0}"
+✓ Browser closed
+
+SAY: My page-N URL was mangled. Let me redo it with correct URLs, in one call.
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser wait "article.product_pod"
+agent-browser eval "JSON.stringify({p:1,count: document.querySelectorAll('article.product_pod').length, one: document.querySelectorAll('article.product_pod .star-rating.One').length})"
+for p in 2 3 4; do
+  url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"
+  out=$(agent-browser open "$url" | grep -o '404 Not Found'); agent-browser wait "article.product_pod"
+  out=$(agent-browser eval "JSON.stringify({count: document.querySelectorAll('article.product_pod').length, one: document.querySelectorAll('article.product_pod .star-rating.One').length})")
+  echo "page $p: $out"
+  case "$out" in *'"count":0'*) break;; esac
+done
+agent-browser close
+-> [365 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+"{\"p\":1,\"count\":20,\"one\":5}"
+✓ Done
+page 2: "{\"count\":6,\"one\":0}"
+✗ Wait timed out after 25000ms
+page 3: "{\"count\":0,\"one\":0}"
+✗ Wait timed out after 25000ms
+page 4: "{\"count\":0,\"one\":0}"
+✓ Browser closed
+
+SAY: Done. Results from the browser:
+
+- **Page 1** (`historical-fiction_4/index.html`): 20 books, 5 with a one-star rating
+- **Page 2** (`page-2.html`): 6 books, 0 one-star
+- **Page 3**: 404 (category ends at page 2)
+
+Totals: 20 + 6 = **26 books** in the Historical Fiction category, of which **5** have a one-star rating.
+
+ANSWER: 5 books have a one-star rating; the category contains 26 books in total.

@@ -1,0 +1,121 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r2", "correct": true, "score": 0.839, "wtok": 107277, "out_tok": 4661, "turns": 20, "secs": 158, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser snapshot -i
+-> [57 chars] ✗ CDP command timed out: Page.navigate
+- Iframe [ref=e1]
+
+$ agent-browser eval "JSON.stringify({url: location.href, body: document.body ? document.body.innerText.slice(0,300) : 'nobody'})"
+-> [83 chars] "{\"url\":\"https://the-internet.herokuapp.com/dynamic_loading/2\",\"body\":\"\"}"
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start" ; agent-browser eval "JSON.stringify({body: document.body ? document.body.innerText.slice(0,300) : 'nobody', hasStart: !!document.querySelector('#start')})"
+-> [255 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+"{\"body\":\"Dynamically Loaded Page Elements\\nExample 2: Element rendered after the fact\\n\\n\\nStart\\n\\n\\nPowered by Elemental Selenium\",\"hasStart\":true}"
+
+$ agent-browser click "#start"; agent-browser eval "JSON.stringify({msg: document.querySelector('#message') ? document.querySelector('#message').textContent.trim() : 'none'})"
+-> [28 chars] ✓ Done
+"{\"msg\":\"none\"}"
+
+$ agent-browser wait --text "Hello!" ; agent-browser eval "JSON.stringify(document.querySelector('#message').textContent.trim())"
+-> [169 chars] ✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:50
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({url: location.href, body: document.body.innerText.slice(0,300), msg: document.querySelector('#message') ? 'present' : 'absent'})"
+-> [231 chars] "{\"url\":\"https://the-internet.herokuapp.com/dynamic_loading/2\",\"body\":\"Dynamically Loaded Page Elements\\nExample 2: Element rendered after the fact\\n\\n\\nStart\\n\\n\\nPowered by Elemental Selenium\",\"msg\":\"absent\"}"
+
+$ agent-browser click "#start"; sleep 5; agent-browser eval "JSON.stringify(document.querySelector('#message') ? document.querySelector('#message').textContent.trim() : 'absent')"
+-> [20 chars] ✓ Done
+"\"absent\""
+
+$ agent-browser eval "var b=document.querySelector('#start'); b.click(); JSON.stringify({clicked: true})"; agent-browser eval "JSON.stringify(document.querySelector('#message') ? document.querySelector('#message').textContent.trim() : 'absent')"
+-> [34 chars] "{\"clicked\":true}"
+"\"absent\""
+
+$ agent-browser eval "JSON.stringify({readyState: document.readyState, hasJq: !!window.jQuery, startTag: document.querySelector('#start').tagName})"; agent-browser eval --stdin <<'JS'
+var r;
+try {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/the-internet.herokuapp.com/messages', false);
+  r = 'err ' + xhr.status;
+} catch(e) { r = String(e); }
+JSON.stringify(r)
+JS
+-> [81 chars] "{\"readyState\":\"complete\",\"hasJq\":false,\"startTag\":\"DIV\"}"
+"\"err 0\""
+
+$ agent-browser eval --stdin <<'JS'
+var scripts = [...document.querySelectorAll('script[src]')].map(s=>s.src);
+JSON.stringify(scripts)
+JS
+-> [356 chars] "[\"https://the-internet.herokuapp.com/js/vendor/298279967.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js\",\"https://the-internet.herokuapp.com/js/foundation/foundation.js\",\"https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js\"]"
+
+$ agent-browser eval "JSON.stringify({jq: typeof window.jQuery, dollar: typeof window.$, foundation: typeof window.Foundation})"
+-> [79 chars] "{\"jq\":\"undefined\",\"dollar\":\"undefined\",\"foundation\":\"undefined\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(performance.getEntriesByType('resource').filter(e=>e.name.includes('js/')).map(e=>({n:e.name.split('/').pop(), dur: Math.round(e.responseEnd-e.startTime), status: e.responseStatus})))
+JS
+-> [291 chars] "[{\"n\":\"298279967.js\",\"dur\":30109,\"status\":503},{\"n\":\"jquery-1.11.3.min.js\",\"dur\":30108,\"status\":503},{\"n\":\"jquery-ui.js\",\"dur\":30113,\"status\":503},{\"n\":\"foundation.js\",\"dur\":30108,\"status\":503},{\"n\":\"foundation.alerts.js\",\"dur\":30108,\"status\":503}]"
+
+SAY: The page's JS files are currently returning 503, so the click handler didn't attach. Let me reload and retry.
+$ sleep 20; agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser eval "JSON.stringify({jq: typeof window.jQuery})"
+-> [94 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+"{\"jq\":\"function\"}"
+
+$ agent-browser click "#start"; sleep 4; agent-browser eval "JSON.stringify(document.querySelector('#message') ? document.querySelector('#message').textContent.trim() : 'absent')"
+-> [20 chars] ✓ Done
+"\"absent\""
+
+$ agent-browser eval "document.querySelector('#start').click(); 'clicked'"; sleep 4; agent-browser eval "JSON.stringify(document.querySelector('#message') ? document.querySelector('#message').textContent.trim() : 'absent')"
+-> [23 chars] "clicked"
+"\"absent\""
+
+$ agent-browser eval --stdin <<'JS'
+var out = {};
+var d = document.createElement('div');
+out.html = d.outerHTML;
+var cont = document.querySelector('#message');
+out.msgEl = cont ? cont.textContent : 'absent';
+// test the ajax target
+try {
+  var x = new XMLHttpRequest();
+  x.open('GET', '/messages/', false);
+  x.send();
+  out.msgStatus = x.status;
+  out.msgBody = x.responseText.slice(0,120);
+} catch(e) { out.msgErr = String(e); }
+JSON.stringify(out)
+JS
+-> [103 chars] "{\"html\":\"<div></div>\",\"msgEl\":\"absent\",\"msgStatus\":404,\"msgBody\":\"<h1>Not Found</h1>\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('script:not([src])').map(s=>s.textContent).join('\n').slice(0, 2000))
+JS
+-> [82 chars] ✗ Evaluation error: SyntaxError: Unexpected token ')'
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+var out = [];
+var ss = document.querySelectorAll('script:not([src])');
+for (var i = 0; i < ss.length; i++) out.push(ss[i].textContent);
+JSON.stringify(out.join('\n').slice(0, 2000))
+JS
+-> [487 chars] "\"\\n      $(document).foundation();\\n    \\n\\n  $(function(){\\n    $('#start button').click(function(){\\n      $('#start').hide();\\n      $('#start').before(\\\"<div id='loading'>Loading... <img src='/img/ajax-loader.gif'></div>\\\");\\n      setTimeout(function() {\\n        $('#loading').hide();\\n        $('#loading').before(\\\"<div id='finish' style='display:none'><h4>Hello World!</h4></div>\\\")\\n        $('#finish').show();\\n      } , 5000 );\\n    });\\n  });\\n\""
+
+SAY: The handler is on the button inside `#start`, and the result appears in `#finish` after a 5-second delay.
+$ agent-browser eval "document.querySelector('#start button').click(); 'clicked'"; sleep 7; agent-browser eval "document.querySelector('#finish') ? document.querySelector('#finish').textContent.trim() : 'absent'"
+-> [25 chars] "clicked"
+"Hello World!"
+
+SAY: I opened the page, clicked the **Start** button, and after the "Loading..." indicator the message rendered.
+
+The text that eventually appears is **"Hello World!"** (shown in a `<div id="finish">` after ~5 seconds of "Loading...").
+
+ANSWER: Hello World!

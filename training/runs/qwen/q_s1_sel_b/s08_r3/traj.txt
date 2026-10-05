@@ -1,0 +1,101 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r3", "correct": true, "score": 0.922, "wtok": 52300, "out_tok": 2978, "turns": 11, "secs": 35, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is *An Abundance of Katherines* at \u00a310.00."}
+
+$ agent-browser open https://books.toscrape.com/; agent-browser wait "ul.pager"; agent-browser eval "JSON.stringify({pages: Array.from(document.querySelectorAll('.pager li > label a')).map(a=>a.textContent), total: document.querySelectorAll('ol.row > li').length})"
+-> [110 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"{\"pages\":[],\"total\":20}"
+
+SAY: No explicit page list, so I'll loop over all 50 pages (20 books each) and extract title+price:
+$ out=/tmp/books.jsonl; : > $out; for i in $(seq 1 50); do url=https://books.toscrape.com/catalogue/page-$i.html; agent-browser open "$url" >/dev/null; agent-browser wait "article.product_pod" >/dev/null; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article.product_pod')).map(a=>({t:a.querySelector('h4 a').title,p:a.querySelector('.price_color').textContent})))" >> $out 2>/dev/null; done; wc -l $out
+-> [19 chars] 0 /tmp/books.jsonl
+
+$ agent-browser open "https://books.toscrape.com/catalogue/page-1.html" && agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article.product_pod')).map(a=>({t:a.querySelector('h4 a').title,p:a.querySelector('.price_color').textContent})))" | head -c 500
+-> [254 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-1.html
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'title')
+    at <anonymous>:1:111
+    at Array.map (<anonymous>)
+    at <anonymous>:1:77
+
+$ agent-browser eval "const a=document.querySelector('article.product_pod');JSON.stringify({html:a?a.outerHTML.slice(0,300):'none',count:document.querySelectorAll('article.product_pod').length})"
+-> [377 chars] "{\"html\":\"<article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"a-light-in-the-attic_1000/index.html\\\"><img src=\\\"../media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\\\" alt=\\\"A Light in the Attic\\\" class=\\\"thumbnail\\\">\",\"count\":20}"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article.product_pod')).map(a=>!!a.querySelector('h4 a')))"
+-> [124 chars] "[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]"
+
+$ agent-browser eval "document.querySelector('article.product_pod').outerHTML"
+-> [1431 chars] "<article class=\"product_pod\">\n        \n            <div class=\"image_container\">\n                \n                    \n                    <a href=\"a-light-in-the-attic_1000/index.html\"><img src=\"../media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\" alt=\"A Light in the Attic\" class=\"thumbnail\"></a>\n                    \n                \n            </div>\n        \n\n        \n            \n                <p class=\"star-rating Three\">\n                    <i class=\" … btn-block\" data-loading-text=\"Adding...\">Add to basket</button>\n    </form>\n\n\n                \n            </div>\n        \n    </article>"
+
+SAY: The title is in `h3`, not `h4`. Rerunning the full loop:
+$ out=/tmp/books.jsonl; : > $out; for i in $(seq 1 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1; agent-browser wait "article.product_pod" >/dev/null 2>&1; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article.product_pod')).map(a=>({t:a.querySelector('h3 a').title,p:parseFloat(a.querySelector('.price_color').textContent.slice(1))})))" >> $out 2>/dev/null; done; wc -l $out; head -c 300 $out
+-> [320 chars] 50 /tmp/books.jsonl
+"[{\"t\":\"A Light in the Attic\",\"p\":51.77},{\"t\":\"Tipping the Velvet\",\"p\":53.74},{\"t\":\"Soumission\",\"p\":50.1},{\"t\":\"Sharp Objects\",\"p\":47.82},{\"t\":\"Sapiens: A Brief History of Humankind\",\"p\":54.23},{\"t\":\"The Requiem Red\",\"p\":22.65},{\"t\":\"The Dirty Little Secrets of
+SAY: All 50 pages captured. Now count books under £12.00 and find the cheapest:
+$ python3 - <<'EOF'
+import json
+books=[]
+for line in open('/tmp/books.jsonl'):
+    for b in json.loads(line):
+        books.append(b)
+print("total books:", len(books))
+under = [b for b in books if b['p'] < 12.00]
+print("under 12.00:", len(under))
+cheapest = min(books, key=lambda b: b['p'])
+print("cheapest:", cheapest)
+print("count check:", sum(1 for b in books if b['p']>=12.00))
+EOF
+$ agent-browser close
+-> [174 chars] total books: 58029
+Traceback (most recent call last):
+  File "<stdin>", line 7, in <module>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+-> [17 chars] ✓ Browser closed
+
+$ awk '{print length($0)}' /tmp/books.jsonl | sort | uniq -c | head; grep -c '^\[' /tmp/books.jsonl
+-> [160 chars]       1 1076
+      1 1110
+      1 1114
+      1 1117
+      1 1122
+      1 1133
+      1 1140
+      1 1167
+      2 1193
+      1 1197
+0
+
+
+Command exited with code 1
+SAY: Each line is double-encoded (the CLI JSON-quotes the eval string). Parsing twice:
+$ python3 - <<'EOF'
+import json
+books=[]
+for line in open('/tmp/books.jsonl'):
+    line=line.strip()
+    v=json.loads(line)
+    if isinstance(v,str): v=json.loads(v)
+    books.extend(v)
+print("total books:", len(books))
+under=[b for b in books if b['p']<12.00]
+print("under 12.00:", len(under))
+print("cheapest:", min(books,key=lambda b:b['p']))
+print("lowest 5 prices:", sorted(b['p'] for b in books)[:5])
+EOF
+-> [139 chars] total books: 1000
+under 12.00: 44
+cheapest: {'t': 'An Abundance of Katherines', 'p': 10}
+lowest 5 prices: [10, 10.01, 10.02, 10.16, 10.23]
+
+SAY: Done. Verified all 50 catalogue pages (1,000 books) in the real browser session.
+
+**Results:**
+- **Books priced less than £12.00: 44**
+- **Cheapest book: *An Abundance of Katherines* at £10.00** (unique minimum — the next cheapest is £10.01)
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is *An Abundance of Katherines* at £10.00.

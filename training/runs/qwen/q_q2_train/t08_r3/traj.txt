@@ -1,0 +1,67 @@
+TASK t08: On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?
+EXPECT: ['gravity', '\\b7\\b', '12 years a slave']
+RESULT: {"id": "t08_r3", "correct": true, "score": 0.959, "wtok": 27068, "out_tok": 1339, "turns": 7, "secs": 13, "timed_out": false, "curl": false, "answer": "Gravity won the most awards in 2013 with 7 awards; 12 Years a Slave was marked as Best Picture."}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/ajax-javascript/" ; agent-browser snapshot -i
+-> [660 chars] ✓ Oscar Winning Films: AJAX and Javascript | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/ajax-javascript/
+- link "Sandbox" [ref=e9]
+- link "Lessons" [ref=e10]
+- link "FAQ" [ref=e11]
+- link "Login" [ref=e12]
+- heading "Oscar Winning Films: AJAX and Javascript 87 items" [level=1, ref=e1]
+- link "3 video lessons" [ref=e13]
+- link "https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films" [ref=e14]
+- heading "Choose a Year to View Films" [level=3, ref=e2]
+- link "2015" [ref=e3]
+- link "2014" [ref=e4]
+- link "2013" [ref=e5]
+- link "2012" [ref=e6]
+- link "2011" [ref=e7]
+- link "2010" [ref=e8]
+
+$ agent-browser click @e5; agent-browser wait "table"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tbody tr, table#film-data tbody tr')].slice(0,5).map(r => r.innerText))
+JS
+-> [162 chars] ✓ Done
+✓ Done
+"[\"12 Years a Slave\\t9\\t3\\t\",\"Gravity\\t10\\t7\\t\",\"Dallas Buyers Club\\t6\\t3\\t\",\"Frozen\\t2\\t2\\t\",\"The Great Gatsby\\t2\\t2\\t\"]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tbody tr')].map(r => r.innerText.replace(/\n|\t/g,' | ')))
+JS
+-> [367 chars] "[\"12 Years a Slave | 9 | 3 | \",\"Gravity | 10 | 7 | \",\"Dallas Buyers Club | 6 | 3 | \",\"Frozen | 2 | 2 | \",\"The Great Gatsby | 2 | 2 | \",\"Her | 5 | 1 | \",\"Blue Jasmine | 3 | 1 | \",\"Mr Hublot | 1 | 1 | \",\"The Lady in Number 6: Music Saved My Life | 1 | 1 | \",\"Helium | 1 | 1 | \",\"The Great Beauty | 1 | 1 | \",\"20 Feet from Stardom | 1 | 1 | \"]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table')].map(t => t.innerText.slice(0, 400)))
+JS
+-> [391 chars] "[\"Title\\tNominations\\tAwards\\tBest Picture\\n12 Years a Slave\\t9\\t3\\t\\nGravity\\t10\\t7\\t\\nDallas Buyers Club\\t6\\t3\\t\\nFrozen\\t2\\t2\\t\\nThe Great Gatsby\\t2\\t2\\t\\nHer\\t5\\t1\\t\\nBlue Jasmine\\t3\\t1\\t\\nMr Hublot\\t1\\t1\\t\\nThe Lady in Number 6: Music Saved My Life\\t1\\t1\\t\\nHelium\\t1\\t1\\t\\nThe Great Beauty\\t1\\t1\\t\\n20 Feet from Stardom\\t1\\t1\\t\"]"
+
+SAY: The 2013 table's Best Picture column is empty. Let me check the main page table.
+$ agent-browser open "https://www.scrapethissite.com/pages/ajax-javascript/"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table')].map(t => t.innerText.slice(0,600)))
+JS
+-> [586 chars] ✓ Oscar Winning Films: AJAX and Javascript | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/ajax-javascript/
+"[\"\\n                            \\n                                \\n                                    Title\\n                                    Nominations\\n                                    Awards\\n                                    Best Picture\\n                                \\n                            \\n                            \\n\\n                            \\n                        \"]"
+
+$ agent-browser click "link:has-text(\"2013\")" 2>/dev/null || agent-browser eval "document.querySelectorAll('a').forEach(a=>{if(a.textContent.trim()==='2013')a.click()})"; agent-browser wait "table"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tbody tr')].map(r => [...r.querySelectorAll('td')].map(td => JSON.stringify(td.innerHTML.slice(0,120)))))
+JS
+-> [913 chars] null
+✓ Done
+"[[\"\\\"12 Years a Slave\\\"\",\"\\\"9\\\"\",\"\\\"3\\\"\",\"\\\"<i class=\\\\\\\"glyphicon glyphicon-flag\\\\\\\"></i>\\\"\"],[\"\\\"Gravity\\\"\",\"\\\"10\\\"\",\"\\\"7\\\"\",\"\\\"\\\"\"],[\"\\\"Dallas Buyers Club\\\"\",\"\\\"6\\\"\",\"\\\"3\\\"\",\"\\\"\\\"\"],[\"\\\"Frozen\\\"\",\"\\\"2\\\"\",\"\\\"2\\\"\",\"\\\"\\\"\"],[\"\\\"The Great Gatsby\\\"\",\"\\\"2\\\"\",\"\\\"2\\\"\",\"\\\"\\\"\"],[\"\\\"Her\\\"\",\"\\\"5\\\"\",\"\\\"1\\\"\",\"\\\"\\\"\"],[\"\\\"Blue Jasmine\\\"\",\"\ …[\"\\\"The Great Beauty\\\"\",\"\\\"1\\\"\",\"\\\"1\\\"\",\"\\\"\\\"\"],[\"\\\"20 Feet from Stardom\\\"\",\"\\\"1\\\"\",\"\\\"1\\\"\",\"\\\"\\\"\"]]"
+
+SAY: I've got the complete 2013 data from the site:
+
+**2013 films (Title / Nominations / Awards / Best Picture flag):**
+- 12 Years a Slave — 9 nom, 3 awards, **Best Picture** (flag icon)
+- **Gravity — 10 nom, 7 awards** (most awards)
+- Dallas Buyers Club — 6 nom, 3 awards
+- Her — 5 nom, 1 award
+- Frozen — 2 nom, 2 awards
+- The Great Gatsby — 2 nom, 2 awards
+- Blue Jasmine — 3 nom, 1 award
+- Mr Hublot, The Lady in Number 6, Helium, The Great Beauty, 20 Feet from Stardom — 1 nom, 1 award each
+
+- Most a

@@ -1,0 +1,59 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r5", "correct": true, "score": 0.951, "wtok": 32530, "out_tok": 1857, "turns": 7, "secs": 14, "timed_out": false, "curl": false, "answer": "5 one-star books out of 26 total books in the Historical Fiction category."}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "JSON.stringify([...document.querySelectorAll('ul > li a')].slice(0,30).map(a => a.href))"
+-> [2440 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/index.html\",\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/in …toscrape.com/catalogue/category/books/parenting_28/index.html\",\"https://books.toscrape.com/catalogue/category/books/adult-fiction_29/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval "JSON.stringify({count: document.querySelector('.implicit') ? document.querySelector('.implicit').textContent : null, books: document.querySelectorAll('article.product_pod').length, next: (document.querySelector('li.next a') || {}).href || null})"
+-> [265 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"count\":null,\"books\":20,\"next\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => a.querySelector('.star-rating').className))"; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].filter(a => /star-rating\.One$/.test(a.querySelector('.star-rating').className)).length)"
+-> [422 chars] "[\"star-rating One\",\"star-rating Three\",\"star-rating Five\",\"star-rating One\",\"star-rating Five\",\"star-rating Four\",\"star-rating Three\",\"star-rating Two\",\"star-rating Four\",\"star-rating Two\",\"star-rating Three\",\"star-rating One\",\"star-rating Four\",\"star-rating Five\",\"star-rating One\",\"star-rating Five\",\"star-rating Five\",\"star-rating Two\",\"star-rating One\",\"star-rating Two\"]"
+"0"
+
+SAY: The className is `"star-rating One"` (space-separated), so my regex was wrong. Let me count properly and walk all pages:
+$ for p in 2 3 4; do
+  agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"
+  agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].filter(a => a.querySelector('.star-rating').classList.contains('One')).length)"
+done
+agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"
+agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].filter(a => a.querySelector('.star-rating').classList.contains('One')).length)"
+-> [494 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"0"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-3.html
+"0"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-4.html
+"0"
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"0"
+
+SAY: Pages 3–4 are 404, so the category has 2 pages. Let me count totals and one-star ratings on both pages:
+$ agent-browser eval "JSON.stringify({books: document.querySelectorAll('article.product_pod').length, oneStar: [...document.querySelectorAll('article.product_pod')].filter(a => a.querySelector('.star-rating').classList.contains('One')).length})"
+agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"
+agent-browser eval "JSON.stringify({books: document.querySelectorAll('article.product_pod').length, oneStar: [...document.querySelectorAll('article.product_pod')].filter(a => a.querySelector('.star-rating').classList.contains('One')).length, hasNext: (document.querySelector('li.next a')||{}).href||null})"
+-> [213 chars] "{\"books\":6,\"oneStar\":0}"
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"books\":6,\"oneStar\":0,\"hasNext\":null}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"
+agent-browser eval "JSON.stringify({books: document.querySelectorAll('article.product_pod').length, oneStar: [...document.querySelectorAll('article.product_pod')].filter(a => a.querySelector('.star-rating').classList.contains('One')).length, next: (document.querySelector('li.next a')||{}).href||null})"
+-> [264 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"books\":20,\"oneStar\":5,\"next\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"}"
+
+SAY: **Result:**
+- Page 1: 20 books, 5 with one-star ratings
+- Page 2: 6 books, 0 with one-star ratings (no "next" link after it, so the category ends there)
+- **Total: 26 books in the Historical Fiction category, of which 5 have a one-star rating**
+
+ANSWER: 5 one-star books out of 26 total books in the Historical Fiction category.

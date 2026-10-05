@@ -1,0 +1,42 @@
+TASK t04: Start at https://quotes.toscrape.com/js/ and use the Next link to go to the third page. Report the author of the first quote on page 3.
+EXPECT: ['pablo neruda']
+RESULT: {"id": "t04_r2", "correct": true, "score": 0.983, "wtok": 11137, "out_tok": 385, "turns": 4, "secs": 4, "timed_out": false, "curl": false, "answer": "Pablo Neruda"}
+
+$ agent-browser open https://quotes.toscrape.com/js/; agent-browser wait "nav"; agent-browser snapshot -i
+-> [247 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/js/
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e2]
+- link "Login" [ref=e3]
+- link "Next " [ref=e6]
+- link "GoodReads.com" [ref=e4]
+- link "Zyte" [ref=e5]
+
+$ agent-browser click @e6; agent-browser wait ".quote"; agent-browser snapshot -i; agent-browser click --text="Next"; agent-browser wait ".quote"; agent-browser eval --stdin <<'JS'
+JSON.stringify({url: location.href, firstQuote: document.querySelector('.quote')?.textContent.trim().slice(0,200), author: document.querySelector('.quote .author')?.textContent.trim()})
+JS
+-> [660 chars] ✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e7]
+  - link "Quotes to Scrape" [ref=e8]
+- link "Login" [ref=e9]
+- link " Previous" [ref=e12]
+- link "Next " [ref=e13]
+- link "GoodReads.com" [ref=e10]
+- link "Zyte" [ref=e11]
+✗ Element not found: --text=Next. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+"{\"url\":\"https://quotes.toscrape.com/js/page/2/\",\"firstQuote\":\"“This life is what you make it. No matter what, you're going to mess up sometimes, it's a universal truth. But the good part is you get to decide how you're going to mess it up. Girls will be your fri\",\"author\":\"Marilyn Monroe\"}"
+
+SAY: On page 2. Click Next to reach page 3:
+$ agent-browser click @e13; agent-browser wait ".quote"; agent-browser eval --stdin <<'JS'
+JSON.stringify({url: location.href, author: document.querySelector('.quote .author')?.textContent.trim()})
+JS
+-> [97 chars] ✓ Done
+✓ Done
+"{\"url\":\"https://quotes.toscrape.com/js/page/3/\",\"author\":\"Pablo Neruda\"}"
+
+SAY: On page 3 (https://quotes.toscrape.com/js/page/3/), the author of the first quote is **Pablo Neruda**.
+
+ANSWER: Pablo Neruda

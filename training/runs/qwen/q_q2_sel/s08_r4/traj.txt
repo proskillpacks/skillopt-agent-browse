@@ -1,0 +1,80 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r4", "correct": true, "score": 0.953, "wtok": 31214, "out_tok": 1606, "turns": 7, "secs": 52, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait "ol.posting" ; agent-browser eval "document.querySelector('ol.posting').outerHTML.slice(0,1500)"
+-> [240 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'outerHTML')
+    at <anonymous>:1:37
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({title: document.title, url: location.href, html: document.body.innerHTML.slice(0,1000)})"
+-> [1297 chars] "{\"title\":\"All products | Books to Scrape - Sandbox\",\"url\":\"https://books.toscrape.com/\",\"html\":\"\\n        \\n        \\n    \\n    \\n    <header class=\\\"header container-fluid\\\">\\n        <div class=\\\"page_inner\\\">\\n            <div class=\\\"row\\\">\\n                <div class=\\\"col-sm-8 h1\\\"><a href=\\\"index.html\\\">Books to Scrape</a><small> We love being scraped!</small>\\n</div>\\n\\n                \\n            </div>\\n        </div>\\n    </header>\\n\\n …            \\n                    <li>\\n                        <a href=\\\"catalogue/category/books_1/index.html\\\">\\n                      \"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  articles: document.querySelectorAll('article').length,
+  first: document.querySelector('article') ? document.querySelector('article').outerHTML.slice(0,1200) : null,
+  pager: document.querySelector('ul.pager') ? document.querySelector('ul.pager').outerHTML : null
+})
+JS
+-> [1781 chars] "{\"articles\":20,\"first\":\"<article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"catalogue/a-light-in-the-attic_1000/index.html\\\"><img src=\\\"media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\\\" alt=\\\"A Light in the Attic\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n        … </li>\\n            \\n                <li class=\\\"next\\\"><a href=\\\"catalogue/page-2.html\\\">next</a></li>\\n            \\n        </ul>\"}"
+
+SAY: The catalog has 50 pages with 20 books each (1000 total). Prices are in `p.price_color`, and full titles in `h3 a[title]`. Let me walk all pages and collect data.
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q2_sel/s08_r4
+for p in $(seq 1 50); do
+  if [ "$p" = "1" ]; then url="https://books.toscrape.com/"; else url="https://books.toscrape.com/catalogue/page-$p.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1
+  agent-browser wait "article.product_pod" >/dev/null 2>&1
+  agent-browser eval --stdin >> books.jsonl 2>/dev/null <<'JS'
+JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => {
+  const t = a.querySelector('h3 a');
+  const p = a.querySelector('p.price_color');
+  return { title: t ? t.title : null, price: p ? p.textContent.trim() : null };
+}))
+JS
+done
+wc -l books.jsonl; head -c 300 books.jsonl
+-> [310 chars] 50 books.jsonl
+"[{\"title\":\"A Light in the Attic\",\"price\":\"£51.77\"},{\"title\":\"Tipping the Velvet\",\"price\":\"£53.74\"},{\"title\":\"Soumission\",\"price\":\"£50.10\"},{\"title\":\"Sharp Objects\",\"price\":\"£47.82\"},{\"title\":\"Sapiens: A Brief History of Humankind\",\"price\":\"£54.23\"},{\"ti
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q2_sel/s08_r4
+python3 <<'PY'
+import json
+books=[]
+for line in open('books.jsonl'):
+    books += json.loads(json.loads(line))
+print("total books:", len(books))
+missing = [b for b in books if not b['price']]
+print("missing prices:", len(missing))
+for b in books:
+    b['num'] = float(b['price'].replace('£','').replace(',','').replace('.','') ) / 100.0
+under = [b for b in books if b['num'] < 12.00]
+print("under £12.00:", len(under))
+cheapest = min(books, key=lambda b: b['num'])
+print("cheapest:", cheapest['title'], cheapest['price'])
+PY
+-> [97 chars] total books: 1000
+missing prices: 0
+under £12.00: 44
+cheapest: An Abundance of Katherines £10.00
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q2_sel/s08_r4
+python3 -c "
+import json
+books=[]
+for line in open('books.jsonl'):
+    books += json.loads(json.loads(line))
+ties=[b for b in books if b['price']=='£10.00']
+print(len(ties), [b['title'] for b in ties])
+"
+-> [33 chars] 1 ['An Abundance of Katherines']
+
+SAY: Done. I walked all 50 catalogue pages (1000 books, 20 per page) in the browser, extracting each book's title and price.
+
+- **Books priced less than £12.00: 44**
+- **Cheapest book (unique): "An Abundance of Katherines" at £10.00**
+
+ANSWER: 44 books cost less than £12.00; the cheapest book is "An Abundance of Katherines" at £10.00.

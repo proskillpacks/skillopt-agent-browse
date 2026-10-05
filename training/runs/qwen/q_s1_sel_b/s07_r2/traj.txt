@@ -1,0 +1,39 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r2", "correct": true, "score": 0.971, "wtok": 19549, "out_tok": 1024, "turns": 6, "secs": 84, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#drag-box"; agent-browser get text "#header"; agent-browser get box "#drag-block-A"; agent-browser get box "#drag-block-B"; agent-browser close
+-> [476 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #header. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drag-block-A. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drag-block-B. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+SAY: The page load stalled and the elements weren't attached. Retrying per the slow-load guidance.
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait --selector "#drag-block-A" --timeout 30; agent-browser get box "#drag-block-A"; agent-browser get box "#drag-block-B"
+-> [373 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 30ms
+✗ Element not found: #drag-block-A. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #drag-block-B. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser eval "JSON.stringify({hasA: !!document.getElementById('drag-block-A'), title: document.title, bodyLen: document.body ? document.body.innerHTML.length : 0})"
+-> [129 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+"{\"hasA\":false,\"title\":\"The Internet\",\"bodyLen\":2550}"
+
+$ agent-browser eval "JSON.stringify({ids: [...document.querySelectorAll('#drag-and-drop *')].map(e=>e.id).filter(Boolean), html: document.getElementById('drag-and-drop') ? document.getElementById('drag-and-drop').outerHTML.slice(0,800) : document.body.innerHTML.slice(0,1000)})"
+-> [1227 chars] "{\"ids\":[],\"html\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\ …b\\\" draggable=\\\"true\\\"><header>B</header></div>\\n  </div>\\n</div>\\n\\n<script>\\nvar dragSrcEl = null;\\n\\nfunction handleDragStart(e) \"}"
+
+SAY: The boxes are `#column-a` and `#column-b`. Let me drag A onto B.
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify({a: document.getElementById('column-a').querySelector('header').textContent, b: document.getElementById('column-b').querySelector('header').textContent, posA: document.getElementById('column-a').getBoundingClientRect().left, posB: document.getElementById('column-b').getBoundingClientRect().left})"
+-> [60 chars] ✓ Done
+"{\"a\":\"B\",\"b\":\"A\",\"posA\":15,\"posB\":230}"
+
+SAY: The drag worked. After the drop, the left box (column-a) shows header **B** and the right box (column-b) shows header **A** — the headers swapped with the drag.
+
+Left to right: **B, A**
+
+ANSWER: B, A

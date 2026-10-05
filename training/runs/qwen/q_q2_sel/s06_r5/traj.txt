@@ -1,0 +1,55 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r5", "correct": true, "score": 0.944, "wtok": 37598, "out_tok": 1352, "turns": 10, "secs": 141, "timed_out": false, "curl": false, "answer": "After Remove, the checkbox is gone and the message \"It's gone!\" is shown; after Enable, the text input is enabled, typing \"hello\" sets the input value to \"hello\" and the message \"It's enabled!\" is shown."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "#remove"; agent-browser click "#remove"; agent-browser wait "#banner"; agent-browser get text "#banner"
+-> [395 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #remove. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: #banner. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get attr "body" id; agent-browser eval "document.title + ' | ' + location.href + ' | ' + document.body.innerText.slice(0,500)"
+-> [304 chars] ✓ Done
+"The Internet | https://the-internet.herokuapp.com/dynamic_controls | Dynamic Controls\n\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\n\nRemove/add\n\n\n A checkbox\nRemove\n\n\nEnable/disable\n\n\nEnable\nPowered by Elemental Selenium"
+
+$ agent-browser find text "Remove" click; agent-browser wait "#banner"; agent-browser get text "#banner"
+-> [424 chars] ✗ Element '[data-agent-browser-located='true']' is covered by <div#flash-messages> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).
+✗ Wait timed out after 25000ms
+✗ Element not found: #banner. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({banner: !!document.querySelector('#banner'), flash: document.querySelector('#flash-messages')?.textContent, text: document.body.innerText})"
+-> [368 chars] "{\"banner\":false,\"flash\":\"\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      \",\"text\":\"Dynamic Controls\\n\\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\\n\\nRemove/add\\n\\n\\n A checkbox\\nRemove\\n\\n\\nEnable/disable\\n\\n\\nEnable\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('span, div')].filter(e=>e.textContent.trim()==='Remove').map(e=>({tag:e.tagName, id:e.id, cls:e.className})))"
+-> [5 chars] "[]"
+
+$ agent-browser eval "document.body.innerHTML" 2>/dev/null | head -c 3000
+-> [3000 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <script src=\"https://ajax.googlea …</h4>\n  <p>This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.</p>\n\n  <h4 class=\"subheader\">R
+$ agent-browser click "#checkbox-example button"; agent-browser wait "#message"; agent-browser get text "#message"
+-> [25 chars] ✓ Done
+✓ Done
+It's gone!
+
+SAY: The checkbox is gone and the message shown is **"It's gone!"** Now the Enable part:
+$ agent-browser click "#input-example button"; agent-browser wait --fn "!document.querySelector('#input-example input').disabled"; agent-browser fill "#input-example input" "hello"; agent-browser get text "#message"; agent-browser eval "document.querySelector('#input-example input').value"
+-> [41 chars] ✓ Done
+true
+✓ Done
+It's enabled!
+"hello"
+
+SAY: Done. Summary of what happened in the browser session:
+
+1. **Remove**: Clicked the Remove button; after the 3s delay the checkbox disappeared and the message shown was **"It's gone!"**
+2. **Enable**: Clicked Enable; waited until `#input-example input` was no longer disabled, typed `hello` into it; the message shown was **"It's enabled!"** and the input's value was **"hello"**
+
+ANSWER: After Remove, the checkbox is gone and the message "It's gone!" is shown; after Enable, the text input is enable

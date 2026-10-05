@@ -1,0 +1,146 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r1", "correct": true, "score": 0.942, "wtok": 38406, "out_tok": 1481, "turns": 13, "secs": 71, "timed_out": false, "curl": false, "answer": "Remove \u2192 checkbox gone, message \"It's gone!\"; Enable \u2192 input enabled, message \"It's enabled!\", input value \"hello\""}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -40
+-> [13 chars] (empty page)
+
+$ agent-browser eval "location.href" 2>&1; agent-browser read 2>&1 | head -20
+-> [55 chars] "https://the-internet.herokuapp.com/dynamic_controls"
+
+
+$ agent-browser read 2>&1
+-> [1 chars] 
+
+$ agent-browser eval "document.body.innerText" 2>&1
+-> [136 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:15
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({ready:document.readyState, href:location.href, body: !!document.body})" 2>&1; sleep 2; agent-browser eval "JSON.stringify({ready:document.readyState, href:location.href, body: !!document.body})" 2>&1
+-> [212 chars] "{\"ready\":\"loading\",\"href\":\"https://the-internet.herokuapp.com/dynamic_controls\",\"body\":false}"
+"{\"ready\":\"complete\",\"href\":\"https://the-internet.herokuapp.com/dynamic_controls\",\"body\":true}"
+
+SAY: The page loaded (the initial open timed out but navigation completed). Now let's proceed:
+$ agent-browser snapshot 2>&1 | head -40
+-> [802 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - generic
+    - heading "Dynamic Controls" [level=4, ref=e2]
+    - paragraph
+      - StaticText "This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously."
+    - heading "Remove/add" [level=4, ref=e3]
+    - LineBreak "\n"
+    - form
+      - generic
+        - checkbox [checked=false, ref=e8]
+        - StaticText " A checkbox"
+      - button "Remove" [ref=e5]
+    - separa …ton "Enable" [ref=e7]
+    - generic
+      - separator
+      - generic
+        - StaticText "Powered by "
+        - link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click e5 && agent-browser wait 6000 && agent-browser snapshot 2>&1 | head -30
+-> [794 chars] ✓ Done
+✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - generic
+    - heading "Dynamic Controls" [level=4, ref=e2]
+    - paragraph
+      - StaticText "This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously."
+    - heading "Remove/add" [level=4, ref=e3]
+    - LineBreak "\n"
+    - form
+      - button "Add" [ref=e5]
+      - paragraph
+        - StaticText "It's gone!"
+      - LineBreak "\n"
+    - separator
+     …ton "Enable" [ref=e7]
+    - generic
+      - separator
+      - generic
+        - StaticText "Powered by "
+        - link "Elemental Selenium" [ref=e9]
+
+SAY: Checkbox removed, message is **"It's gone!"**. Now the Enable part:
+$ agent-browser click e7 && agent-browser wait "#fb-text-input:not(:disabled)" 10000 2>&1; agent-browser type e6 "hello" && agent-browser snapshot 2>&1 | head -35
+-> [949 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - generic
+    - heading "Dynamic Controls" [level=4, ref=e2]
+    - paragraph
+      - StaticText "This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously."
+    - heading "Remove/add" [level=4, ref=e3]
+    - LineBreak "\n"
+    - form
+      - button "Add" [ref=e5]
+      - LineBreak "\n"
+    - separator
+    - LineBreak "\n"
+     …     - LineBreak "\n"
+    - generic
+      - separator
+      - generic
+        - StaticText "Powered by "
+        - link "Elemental Selenium" [ref=e9]
+
+$ agent-browser eval "JSON.stringify({value:document.querySelector('#fb-text-input').value, disabled:document.querySelector('#fb-text-input').disabled})"
+-> [132 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'value')
+    at <anonymous>:1:63
+
+
+Command exited with code 1
+$ agent-browser eval "(()=>{const i=[...document.querySelectorAll('input[type=text],input:not([type])')][0]||document.querySelector('form input, input');return i?JSON.stringify({id:i.id,value:i.value,disabled:i.disabled}):'no input'})()"
+-> [55 chars] "{\"id\":\"\",\"value\":\"hello\",\"disabled\":false}"
+
+SAY: Both parts are complete. Summary of results:
+
+**Part 1 — Remove:**
+- Clicked **Remove** → after the delay, the checkbox was removed from the DOM
+- Message shown: **"It's gone!"**
+
+**Part 2 — Enable + type:**
+- Clicked **Enable** → after the delay, the text input became enabled
+- Typed **hello** into the input
+- Message shown: **"It's enabled!"**
+- Input's value (verified via JS): `hello` (and `disabled: false`)
+
+ANSWER: Remove → checkbox gone, message "It's gone!"; Enable → input enabled, messag

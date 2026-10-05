@@ -1,0 +1,80 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r1", "correct": true, "score": 0.904, "wtok": 64291, "out_tok": 3576, "turns": 12, "secs": 32, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; Receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('body *')).slice(0,200).map(e=>e.textContent).filter(t=>t.includes('Priya')).slice(0,3))"
+-> [1572 chars] "[\"\\nconst first=[\\\"Alex\\\",\\\"Bo\\\",\\\"Chen\\\",\\\"Dana\\\",\\\"Elif\\\",\\\"Femi\\\",\\\"Gus\\\",\\\"Hana\\\",\\\"Ivo\\\",\\\"Jude\\\",\\\"Kai\\\",\\\"Lena\\\"],last=\\\"ABCDEFGHJKLM\\\";\\nconst topics=[\\\"Invoice\\\",\\\"Standup notes\\\",\\\"Release checklist\\\",\\\"Lunch order\\\",\\\"Travel booking\\\",\\\"Design review\\\",\\\"On-call swap\\\",\\\"Budget draft\\\",\\\"Hiring loop\\\",\\\"Retro actions\\\"];\\nconst msgs=[];for(let i=0;i<60;i++){msgs.push({from:first[(i*5)%12]+ …of inbox';}\\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\\n\"]"
+
+SAY: Priya N.'s message subject is "Q3 vendor audit — rescheduled to the 19th" (row index 44). Now find that row's Archive button and click it, accepting the confirm dialog in the same call:
+$ agent-browser eval "(function(){const rows=[...document.querySelectorAll('.row')];const r=rows.find(r=>r.querySelector('.from').textContent==='Priya N.');if(!r)return 'not-found';r.scrollIntoView();return r.querySelector('button').getBoundingClientRect().top.toFixed(0);})()"
+-> [12 chars] "not-found"
+
+$ for i in $(seq 1 10); do
+  agent-browser eval "(function(){const s=document.getElementById('sentinel');s.scrollIntoView();return s.textContent;})()"
+  sleep 0.7
+done
+agent-browser eval "(function(){const rows=[...document.querySelectorAll('.row')];const r=rows.find(r=>r.querySelector('.from').textContent==='Priya N.');return r?('idx='+rows.indexOf(r)):('count='+rows.length);})()"
+-> [162 chars] "Loading more…"
+"Loading more…"
+"Loading more…"
+"End of inbox"
+"End of inbox"
+"End of inbox"
+"End of inbox"
+"End of inbox"
+"End of inbox"
+"End of inbox"
+"idx=44"
+
+SAY: Found it at index 44. Clicking its Archive button and accepting the confirm dialog in the same call:
+$ agent-browser eval "(function(){const rows=[...document.querySelectorAll('.row')];const r=rows.find(r=>r.querySelector('.from').textContent==='Priya N.');r.querySelector('button').click();return 'clicked';})"; agent-browser dialog accept; sleep 0.5; agent-browser eval "document.getElementById('toast').textContent"
+-> [70 chars] {}
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+""
+
+$ agent-browser eval "(function(){const rows=[...document.querySelectorAll('.row')];const r=rows.find(r=>r.querySelector('.from').textContent==='Priya N.');return JSON.stringify({stillThere:!!r, toast:document.getElementById('toast').textContent, toastVisible:getComputedStyle(document.getElementById('toast')).display});})()"
+-> [65 chars] "{\"stillThere\":true,\"toast\":\"\",\"toastVisible\":\"none\"}"
+
+SAY: The dialog was dismissed before accept ran. Let me try clicking in the background so the dialog stays open while I accept it:
+$ agent-browser eval "(function(){const rows=[...document.querySelectorAll('.row')];const r=rows.find(r=>r.querySelector('.from').textContent==='Priya N.');r.querySelector('button').click();return 'clicked';})" & CLICKPID=$!; sleep 1; agent-browser dialog accept; wait $CLICKPID; sleep 0.5; agent-browser eval "JSON.stringify({toast:document.getElementById('toast').textContent, visible:getComputedStyle(document.getElementById('toast')).display})"
+-> [107 chars] {}
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+"{\"toast\":\"\",\"visible\":\"none\"}"
+
+SAY: The real dialog isn't staying open for a second CDP connection. I'll confirm programmatically by hooking `window.confirm` to return true, then click:
+$ agent-browser eval "window.confirm=(m)=>{window.__lastConfirm=m;return true;};'confirm-hooked'" && agent-browser eval "(function(){const rows=[...document.querySelectorAll('.row')];const r=rows.find(r=>r.querySelector('.from').textContent==='Priya N.');r.querySelector('button').click();return window.__lastConfirm;})"; agent-browser eval "JSON.stringify({toast:document.getElementById('toast').textContent, visible:getComputedStyle(document.getElementById('toast')).display})"
+-> [60 chars] "confirm-hooked"
+{}
+"{\"toast\":\"\",\"visible\":\"none\"}"
+
+$ agent-browser eval "JSON.stringify({rows:document.querySelectorAll('.row').length, hasPriya:[...document.querySelectorAll('.row .from')].some(e=>e.textContent==='Priya N.'), toast:document.getElementById('toast').textContent, confirmHooked:String(window.confirm).slice(0,80)})"
+-> [114 chars] "{\"rows\":60,\"hasPriya\":true,\"toast\":\"\",\"confirmHooked\":\"(m)=>{window.__lastConfirm=m;return true;}\"}"
+
+$ agent-browser eval "(()=>{const rows=[...document.querySelectorAll('.row')];const r=rows.find(r=>r.querySelector('.from').textContent==='Priya N.');try{r.querySelector('button').click();return 'clicked;confirmWas:'+window.__lastConfirm;}catch(e){return 'err:'+e.message;}})()"
+-> [43 chars] "clicked;confirmWas:Archive this message?"
+
+$ agent-browser eval "JSON.stringify({toast:document.getElementById('toast').textContent, visible:getComputedStyle(document.getElementById('toast')).display, hasPriya:[...document.querySelectorAll('.row .from')].some(e=>e.textContent==='Priya N.'), rows:document.querySelectorAll('.row').length})"
+-> [97 chars] "{\"toast\":\"Archived. Receipt #A-7028\",\"visible\":\"block\",\"hasPriya\":false,\"rows\":59}"
+
+SAY: Done. The real browser flow worked:
+
+- **Message from Priya N.:** subject **"Q3 vendor audit — rescheduled to the 19th"** (row 44 of the inbox, loaded via the page's infinite scroll).
+- **Archive:** clicked its Archive button; the dialog "Archive this message?" was confirmed (since headless CDP wouldn't keep the dialog open for a second connection, I hooked `window.confirm` to answer "yes", which is exactly the confirmation the page asked for).
+- **Result:** the message was removed from the list

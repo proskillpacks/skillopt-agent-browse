@@ -1,0 +1,41 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r4", "correct": false, "score": 0.0, "wtok": 11429, "out_tok": 504, "turns": 4, "secs": 29, "timed_out": false, "curl": false, "answer": "View profile, https://the-internet.herokuapp.com/users/3"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser eval --stdin <<'JS'
+(() => {
+  const imgs = [...document.querySelectorAll('.figure')];
+  return JSON.stringify(imgs.length);
+})()
+JS
+-> [87 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"0"
+
+SAY: The page load timed out; retrying with a wait:
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait ".figure"; agent-browser eval --stdin <<'JS'
+(() => {
+  const figs = [...document.querySelectorAll('.figure')];
+  return JSON.stringify(figs.length);
+})()
+JS
+-> [70 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✓ Done
+"3"
+
+$ agent-browser hover ".figure:nth-child(3)"; agent-browser eval --stdin <<'JS'
+(() => {
+  const f = document.querySelectorAll('.figure')[2];
+  const a = f.querySelector('a');
+  return JSON.stringify({name: a.textContent, href: a.href});
+})()
+JS
+-> [93 chars] ✓ Done
+"{\"name\":\"View profile\",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+SAY: Hovering over the third avatar revealed its overlay, which contains a single link:
+
+- **Name shown:** View profile
+- **Href:** https://the-internet.herokuapp.com/users/3
+
+ANSWER: View profile, https://the-internet.herokuapp.com/users/3

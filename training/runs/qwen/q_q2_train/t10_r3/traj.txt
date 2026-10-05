@@ -1,0 +1,52 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r3", "correct": true, "score": 0.968, "wtok": 21085, "out_tok": 724, "turns": 7, "secs": 61, "timed_out": false, "curl": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu; agent-browser wait "#menu"; agent-browser snapshot -i
+-> [469 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "JQueryUI - Menu" [level=3, ref=e2]
+- link "JQuery UI Menus" [ref=e3]
+- link "Disabled" [ref=e4]
+- link "Should not see this" [ref=e7]
+- link "Enabled" [ref=e5]
+- link "Downloads" [ref=e8]
+- link "PDF" [ref=e10]
+- link "CSV" [ref=e11]
+- link "Excel" [ref=e12]
+- link "Back to JQuery UI" [ref=e9]
+- link "Elemental Selenium" [ref=e6]
+
+$ agent-browser click @e5; agent-browser click @e8; agent-browser eval "JSON.stringify([...document.querySelectorAll('#menu .ui-menu-item')].map(li => ({text: li.querySelector('a') ? li.querySelector('a').textContent.trim() : null, visible: li.offsetParent !== null, sub: li.classList.contains('ui-menu-submenu')}))"
+-> [105 chars] ✓ Done
+✓ Done
+✗ Evaluation error: SyntaxError: missing ) after argument list
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#menu li.ui-menu-item')].map(li => ({text: (li.querySelector(':scope > a')||{}).textContent, sub: li.classList.contains('ui-menu-submenu'), visible: li.offsetParent !== null})))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+document.getElementById('menu').outerHTML.slice(0, 2500)
+JS
+-> [671 chars] "<ul id=\"menu\">\n    <li class=\"ui-state-disabled\">\n        <a href=\"#\">Disabled</a>\n        <ul>\n            <li><a href=\"#\">Should not see this</a></li>\n        </ul>\n    </li>\n    <li>\n      <a href=\"#\">Enabled</a>\n      <ul>\n        <li>\n          <a href=\"#\">Downloads</a>\n          <ul>\n            <li><a href=\"/download/jqueryui/menu/menu.pdf\">PDF</a></li>\n            <li><a href=\"/download/jqueryui/menu/menu.csv\">CSV</a></li>\n            <li><a href=\"/download/jqueryui/menu/menu.xls\">Excel</a></li>\n          </ul>\n        </li>\n        <li><a href=\"/jqueryui\">Back to JQuery UI</a></li>\n      </ul>\n    </li>\n  </ul>"
+
+$ agent-browser eval --stdin <<'JS'
+const dl = [...document.querySelectorAll('#menu li')].find(li => li.querySelector(':scope > a')?.textContent.trim() === 'Downloads');
+const items = [...dl.querySelectorAll(':scope > ul > li > a')].map(a => a.textContent.trim());
+const visible = dl.offsetParent !== null;
+JSON.stringify({downloadsVisible: visible, items, classes: dl.className})
+JS
+-> [85 chars] "{\"downloadsVisible\":true,\"items\":[\"PDF\",\"CSV\",\"Excel\"],\"classes\":\"\"}"
+
+SAY: The Downloads submenu is open and visible, containing three items: **PDF**, **CSV**, and **Excel** (linking to the PDF/CSV/Excel downloads on the site).
+
+ANSWER: PDF, CSV, Excel

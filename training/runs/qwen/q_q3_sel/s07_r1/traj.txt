@@ -1,0 +1,33 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r1", "correct": true, "score": 0.975, "wtok": 16648, "out_tok": 542, "turns": 5, "secs": 64, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" && break; sleep 5; done; agent-browser snapshot -i
+-> [349 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser get text "#origin"; agent-browser get text "#target"; agent-browser eval --stdin <<'JS'
+JSON.stringify({o: document.querySelector('#origin').getBoundingClientRect(), t: document.querySelector('#target').getBoundingClientRect()})
+JS
+-> [370 chars] ✗ Element not found: #origin. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #target. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')
+    at <anonymous>:1:53
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify(document.querySelector('main,body').innerHTML.slice(0,1500))"
+-> [1763 chars] "\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\" class=\\\"large-12  … handleDragLeave(e) {\\n  this.classList.remove('over');\\n}\\n\\nfunction handleDrop(e) {\\n  if (e.stopPropagation) {\\n    e.stopPropagation();\""
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns header')].map(h=>h.textContent))"
+-> [23 chars] ✓ Done
+"[\"B\",\"A\"]"
+
+SAY: The drag completed successfully. After dropping box A onto box B, the boxes in the `#columns` container now read (left to right): **B, A** — box B moved to the left and box A to the right.
+
+ANSWER: B, A

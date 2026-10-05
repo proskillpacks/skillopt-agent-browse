@@ -1,0 +1,90 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r1", "correct": true, "score": 0.941, "wtok": 39489, "out_tok": 1926, "turns": 10, "secs": 14, "timed_out": false, "curl": false, "answer": "5 books have a five-star rating out of 32 total books in the Mystery category."}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_2/index.html" && agent-browser read | head -30
+-> [121 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/mystery_2/index.html
+# 404 Not Found
+
+nginx/1.21.6
+
+$ agent-browser open "https://books.toscrape.com/" && agent-browser eval "Array.from(document.querySelectorAll('.sidebar .btn-primary, .sidebar a')).map(a=>a.href).join('\n')" 2>&1 | head -30
+-> [3999 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"https://books.toscrape.com/catalogue/category/books_1/index.html\nhttps://books.toscrape.com/catalogue/category/books/travel_2/index.html\nhttps://books.toscrape.com/catalogue/category/books/mystery_3/index.html\nhttps://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\nhttps://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\nhttps://books.toscrape.com/catalogue/category/b …\nhttps://books.toscrape.com/catalogue/category/books/erotica_50/index.html\nhttps://books.toscrape.com/catalogue/category/books/crime_51/index.html"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html" && agent-browser eval "const a=document.querySelector('.pagination'); JSON.stringify({last: document.querySelector('.pagination li:last-child a')?.textContent || 'only 1 page', current: a ? Array.from(a.querySelectorAll('li')).length : 0, books: document.querySelectorAll('.book_wrap').length})"
+-> [168 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+"{\"last\":\"only 1 page\",\"current\":0,\"books\":0}"
+
+$ agent-browser eval "JSON.stringify({pod: document.querySelectorAll('.pod').length, article: document.querySelectorAll('article').length, pag: document.querySelector('.pagination')?.outerHTML, results: document.querySelector('#content_outer_container h1')?.textContent})"
+-> [29 chars] "{\"pod\":0,\"article\":20}"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('a')).map(a=>({t:a.textContent.trim(), h:a.href})).filter(x=>/mystery/.test(x.h)))"
+-> [482 chars] "[{\"t\":\"Mystery\",\"h\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\"},{\"t\":\"\",\"h\":\"https://books.toscrape.com/catalogue/delivering-the-truth-quaker-midwife-mystery-1_464/index.html\"},{\"t\":\"Delivering the Truth (Quaker ...\",\"h\":\"https://books.toscrape.com/catalogue/delivering-the-truth-quaker-midwife-mystery-1_464/index.html\"},{\"t\":\"next\",\"h\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html\"}]"
+
+$ agent-browser eval "
+const page=(n)=>n===1?'https://books.toscrape.com/catalogue/category/books/mystery_3/index.html':'https://books.toscrape.com/catalogue/category/books/mystery_3/page-'+n+'.html';
+let n=1,total=0,five=0;
+while(true){
+  const r=await fetch(page(n));
+  const doc=new DOMParser().parseFromString(r.text(),'text/html');
+  const arts=doc.querySelectorAll('article.product_pod');
+  total+=arts.length;
+  five+=Array.from(arts).filter(a=>a.querySelector('p.star-rating').classList.contains('Five')).length;
+  if(arts.length<20) break;
+  n++;
+}
+JSON.stringify({pages:n,total,five});
+"
+-> [136 chars] ✗ Evaluation error: SyntaxError: await is only valid in async functions and the top level bodies of modules
+
+
+Command exited with code 1
+$ for p in 1 2 3 4 5; do
+  if [ "$p" = "1" ]; then url="https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; else url="https://books.toscrape.com/catalogue/category/books/mystery_3/page-$p.html"; fi
+  out=$(agent-browser open "$url")
+  if echo "$out" | grep -q "404"; then echo "page $p: STOP (404)"; break; fi
+  agent-browser eval "JSON.stringify({n: document.querySelectorAll('article.product_pod').length, five: Array.from(document.querySelectorAll('article.product_pod p.star-rating.Five')).length, next: !!Array.from(document.querySelectorAll('a')).find(a=>a.textContent.trim()==='Next')})"
+done
+-> [97 chars] "{\"n\":20,\"five\":3,\"next\":false}"
+"{\"n\":12,\"five\":2,\"next\":false}"
+page 3: STOP (404)
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html" && agent-browser eval "JSON.stringify({arts: document.querySelectorAll('article.product_pod').length, nexts: Array.from(document.querySelectorAll('a')).filter(a=>a.textContent.trim().toLowerCase()==='next').map(a=>a.href)})"
+-> [143 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+"{\"arts\":12,\"nexts\":[]}"
+
+SAY: I navigated the Mystery category (`/catalogue/category/books/mystery_3/`) in the browser:
+
+- **Page 1:** 20 books, 3 with a five-star rating
+- **Page 2:** 12 books (last page, no "Next" link), 2 with a five-star rating
+- Page 3: 404, confirming the category ends at page 2
+
+**Totals: 32 books in the Mystery category, of which 5 have a five-star rating.**
+
+ANSWER: 5 books have a five-star rating out of 32 total books in the Mystery category.

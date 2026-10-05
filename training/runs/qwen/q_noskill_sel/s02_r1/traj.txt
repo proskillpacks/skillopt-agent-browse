@@ -1,0 +1,73 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r1", "correct": true, "score": 0.969, "wtok": 20940, "out_tok": 769, "turns": 9, "secs": 7, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://quotes.toscrape.com/login
+-> [55 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+
+$ agent-browser fill 'input[name=username]' testuser; agent-browser fill 'input[name=password]' testpass; agent-browser click 'button[type=submit]'
+-> [165 chars] ✓ Done
+✓ Done
+✗ Element not found: button[type=submit]. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval 'document.querySelector("form") ? [...document.querySelectorAll("form [type=submit], form button, form .btn")].map(e=>e.outerHTML).join("\n") : "no form"'
+-> [68 chars] "<input type=\"submit\" value=\"Login\" class=\"btn btn-primary\">"
+
+$ agent-browser click 'input[type=submit]' && agent-browser read
+-> [100 chars] ✓ Done
+#
+Quotes to Scrape
+
+Login
+
+Username
+
+Password
+
+Quotes by: GoodReads.com
+
+Made with ❤ by Zyte
+
+$ agent-browser eval 'location.href'
+-> [31 chars] "https://quotes.toscrape.com/"
+
+$ agent-browser eval '(() => { const a = document.querySelector("div.quote a[title=Author]") && document.querySelector("div.quote span").textContent; const links = [...document.querySelectorAll("div.quote:first-of-type a")].map(x => x.href + " | " + (x.title||"")); return links; })()'
+-> [352 chars] [
+  "https://quotes.toscrape.com/author/Albert-Einstein | ",
+  "http://goodreads.com/author/show/9810.Albert_Einstein | ",
+  "https://quotes.toscrape.com/tag/change/page/1/ | ",
+  "https://quotes.toscrape.com/tag/deep-thoughts/page/1/ | ",
+  "https://quotes.toscrape.com/tag/thinking/page/1/ | ",
+  "https://quotes.toscrape.com/tag/world/page/1/ | "
+]
+
+$ agent-browser eval '[...document.querySelectorAll("div.quote:first-of-type a")].map(x => x.textContent + " => " + x.href).join("\n")'
+-> [387 chars] "(about) => https://quotes.toscrape.com/author/Albert-Einstein\n(Goodreads page) => http://goodreads.com/author/show/9810.Albert_Einstein\nchange => https://quotes.toscrape.com/tag/change/page/1/\ndeep-thoughts => https://quotes.toscrape.com/tag/deep-thoughts/page/1/\nthinking => https://quotes.toscrape.com/tag/thinking/page/1/\nworld => https://quotes.toscrape.com/tag/world/page/1/"
+
+SAY: Logged in and on the first page, the first quote is Albert Einstein's. The "(Goodreads page)" link next to it points to:
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

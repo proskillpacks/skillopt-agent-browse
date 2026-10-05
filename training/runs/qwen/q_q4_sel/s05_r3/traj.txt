@@ -1,0 +1,115 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r3", "correct": true, "score": 0.905, "wtok": 63218, "out_tok": 2656, "turns": 11, "secs": 35, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt number: A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser wait "body"; agent-browser snapshot -i
+-> [426 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✓ Done
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('li, [class*="msg"], .message, tr')].map(el => el.textContent.trim()).slice(0, 30);
+  return JSON.stringify(rows);
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  return document.querySelector('main') ? 'has main' : 'no main';
+})()
+JS
+agent-browser eval "document.body.innerHTML.slice(0, 3000)"
+-> [3162 chars] "no main"
+"\n<h1>Inbox</h1><p id=\"count\">Showing 24 of 60</p><div id=\"list\"><div class=\"row\"><span class=\"from\">Alex A.</span><span class=\"subj\">Invoice #100</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Femi H.</span><span class=\"subj\">Lunch order #113</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Kai C.</span><span class=\"subj\">On-call swap #126</span><button>Archive</button></div><div class=\"row\"><span class=\"from\"> …on>Archive</button></div><div class=\"row\"><span class=\"from\">Hana F.</span><span class=\"subj\">Retro actions #399</span><button>Archive</button"
+
+SAY: Priya N. isn't on this page (24 of 60 shown). Let me find pagination.
+$ agent-browser eval "document.body.innerHTML.slice(3000, 8000)"
+-> [1571 chars] "></div></div><div id=\"sentinel\" style=\"height:40px\">Loading more…</div><div id=\"toast\" role=\"status\"></div>\n<script>\nconst first=[\"Alex\",\"Bo\",\"Chen\",\"Dana\",\"Elif\",\"Femi\",\"Gus\",\"Hana\",\"Ivo\",\"Jude\",\"Kai\",\"Lena\"],last=\"ABCDEFGHJKLM\";\nconst topics=[\"Invoice\",\"Standup notes\",\"Release checklist\",\"Lunch order\",\"Travel booking\",\"Design review\",\"On-call swap\",\"Budget draft\",\"Hiring loop\",\"Retro actions\"];\nconst msgs=[];for(let i=0;i<60;i++){msgs. …ox';}\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\n</script>\n"
+
+SAY: Found the structure — Priya N. is message #44, loaded via infinite scroll. Let me load all pages and locate it.
+$ for i in 1 2 3 4 5 6; do agent-browser scroll bottom; sleep 0.9; done; agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('#list .row')];
+  const idx = rows.findIndex(r => r.querySelector('.from').textContent === 'Priya N.');
+  return JSON.stringify({total: rows.length, idx, subject: idx >= 0 ? rows[idx].querySelector('.subj').textContent : null, count: document.getElementById('count').textContent});
+})()
+JS
+-> [118 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+"{\"total\":24,\"idx\":-1,\"subject\":null,\"count\":\"Showing 24 of 60\"}"
+
+$ agent-browser scroll bottom; sleep 1; agent-browser get text "#count"; agent-browser scroll bottom; sleep 1.2; agent-browser get text "#count"; agent-browser scroll bottom; sleep 1.2; agent-browser get text "#count"; agent-browser scroll bottom; sleep 1.2; agent-browser get text "#count"
+-> [96 chars] ✓ Done
+Showing 24 of 60
+✓ Done
+Showing 24 of 60
+✓ Done
+Showing 24 of 60
+✓ Done
+Showing 24 of 60
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  window.scrollTo(0, document.body.scrollHeight);
+  const s = document.getElementById('sentinel');
+  const r = s.getBoundingClientRect();
+  return JSON.stringify({top: r.top, vh: window.innerHeight, scrollY: window.scrollY, docH: document.body.scrollHeight});
+})()
+JS
+sleep 1; agent-browser get text "#count"
+-> [78 chars] "{\"top\":912.875,\"vh\":973,\"scrollY\":785,\"docH\":1716}"
+Showing 36 of 60
+
+$ for i in 1 2 3 4 5; do agent-browser eval "window.scrollTo(0, document.body.scrollHeight); 'ok'"; sleep 1; agent-browser get text "#count"; done
+-> [110 chars] "ok"
+Showing 48 of 60
+"ok"
+Showing 60 of 60
+"ok"
+Showing 60 of 60
+"ok"
+Showing 60 of 60
+"ok"
+Showing 60 of 60
+
+SAY: All 60 loaded. Now locate Priya N.'s row and archive it.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('#list .row')];
+  const idx = rows.findIndex(r => r.querySelector('.from').textContent === 'Priya N.');
+  return JSON.stringify({total: rows.length, idx, subject: rows[idx].querySelector('.subj').textContent});
+})()
+JS
+-> [86 chars] "{\"total\":60,\"idx\":44,\"subject\":\"Q3 vendor audit — rescheduled to the 19th\"}"
+
+$ agent-browser click "#list .row:nth-of-type(45) button"; agent-browser dialog accept; agent-browser get text "#toast"
+-> [172 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+Archived. Receipt #A-7028
+
+SAY: Done. Report:
+
+- **Message from Priya N.** — subject: **"Q3 vendor audit — rescheduled to the 19th"** (it was on the loaded list at position 44, only visible after scrolling the infinite-scroll inbox to load all 60 messages).
+- Clicked its **Archive** button, confirmed the "Archive this message?" dialog, and the toast showed: **"Archived. Receipt #A-7028"**.
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; receipt number: A-7028

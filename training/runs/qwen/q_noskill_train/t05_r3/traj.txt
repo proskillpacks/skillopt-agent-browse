@@ -1,0 +1,181 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r3", "correct": true, "score": 0.968, "wtok": 21470, "out_tok": 444, "turns": 6, "secs": 5, "timed_out": false, "curl": false, "answer": "\u201cA day without sunshine is like, you know, night.\u201d"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open "https://quotes.toscrape.com/search.aspx" && agent-browser snapshot
+-> [2930 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- paragraph
+  - link "Login" [ref=e4]
+- separator
+- form
+  - generic
+    - LabelText
+      - StaticText "Author"
+    - combobox "Author" [expanded=false, ref=e5]: ----------
+      - MenuListPopup
+        - option "----------" [selected, ref=e9]
+        - option "Albert Einstein" [ref=e10]
+        - option "J.K. Rowling" [ref=e11]
+        - option "Jane  …agraph
+    - StaticText "Quotes by: "
+    - link "GoodReads.com" [ref=e7]
+  - paragraph
+    - StaticText "Made with ❤ by "
+    - link "Zyte" [ref=e8]
+
+$ agent-browser select e5 "Steve Martin" && agent-browser snapshot
+-> [2842 chars] ✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e60]
+  - link "Quotes to Scrape" [ref=e61]
+- paragraph
+  - link "Login" [ref=e62]
+- separator
+- form
+  - generic
+    - LabelText
+      - StaticText "Author"
+    - combobox "Author" [expanded=false, ref=e64]: Steve Martin
+      - MenuListPopup
+        - option "----------" [ref=e66]
+        - option "Albert Einstein" [ref=e67]
+        - option "J.K. Rowling" [ref=e68]
+        - option "Jane Austen" [ref=e69]
+        - option "Marilyn Monroe" [ref= …ef=e116]
+        - option "humor" [ref=e117]
+        - option "obvious" [ref=e118]
+        - option "simile" [ref=e119]
+  - button "Search" [ref=e63]
+
+$ agent-browser select e65 "humor" && agent-browser click e63 && agent-browser snapshot
+-> [3019 chars] ✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e60]
+  - link "Quotes to Scrape" [ref=e61]
+- paragraph
+  - link "Login" [ref=e62]
+- separator
+- form
+  - generic
+    - LabelText
+      - StaticText "Author"
+    - combobox "Author" [expanded=false, ref=e64]: Steve Martin
+      - MenuListPopup
+        - option "----------" [ref=e66]
+        - option "Albert Einstein" [ref=e67]
+        - option "J.K. Rowling" [ref=e68]
+        - option "Jane Austen" [ref=e69]
+        - option "Marilyn Monroe …ph
+    - StaticText "Quotes by: "
+    - link "GoodReads.com" [ref=e120]
+  - paragraph
+    - StaticText "Made with ❤ by "
+    - link "Zyte" [ref=e121]
+
+$ agent-browser read
+-> [1007 chars] #
+Quotes to Scrape
+
+Login
+
+Author
+
+----------
+
+Albert Einstein
+
+J.K. Rowling
+
+Jane Austen
+
+Marilyn Monroe
+
+André Gide
+
+Thomas A. Edison
+
+Eleanor Roosevelt
+
+Steve Martin
+
+Bob Marley
+
+Dr. Seuss
+
+Douglas Adams
+
+Elie Wiesel
+
+Friedrich Nietzsche
+
+Mark Twain
+
+Allen Saunders
+
+Pablo Neruda
+
+Ralph Waldo Emerson
+
+Mother Teresa
+
+Garrison Keillor
+
+Jim Henson
+
+Charles M. Schulz
+
+William Nicholson
+
+Jorge Luis Borges
+
+George Eliot
+
+George R.R. Martin
+
+C.S. Lewis
+
+Martin Luther King Jr.
+
+James Baldwin
+
+Haruki M …bvious
+
+simile
+
+### Results
+
+“A day without sunshine is like, you know, night.” -
+Steve Martin (humor)
+
+Quotes by: GoodReads.com
+
+Made with ❤ by Zyte
+
+SAY: Search results on quotes.toscrape.com (author = Steve Martin, tag = humor):
+
+**Quote text:** “A day without sunshine is like, you know, night.” — Steve Martin (tagged *humor*)
+
+ANSWER: “A day without sunshine is like, you know, night.”

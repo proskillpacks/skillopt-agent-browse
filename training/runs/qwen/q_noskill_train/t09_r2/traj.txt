@@ -1,0 +1,116 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09_r2", "correct": true, "score": 0.961, "wtok": 25978, "out_tok": 966, "turns": 9, "secs": 11, "timed_out": false, "curl": false, "answer": "Quote ref NOR-2087, total \u20ac1470.00"}
+
+$ agent-browser --help 2>&1 | head -50
+$ ls /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_train/t09_r2 2>/dev/null
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+-> [21 chars] raw.jsonl
+stderr.txt
+
+$ agent-browser open http://localhost:8791/shop.html && agent-browser snapshot
+-> [667 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+- heading "We value your privacy" [level=2, ref=e4]
+- paragraph
+  - StaticText "We use cookies to improve your experience."
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Choose region…"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 1
+      - StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click @e6 && agent-browser click @e2 && agent-browser snapshot
+-> [434 chars] ✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Choose region…"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 1
+      - StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser eval "document.querySelector('.dropdown, .options, [class*=option], [class*=menu]')?.outerHTML" 2>&1 | head -20
+-> [5 chars] null
+
+$ agent-browser click @e2 && agent-browser eval "Array.from(document.querySelectorAll('li, [role=option], [class*=opt]')).map(e=>e.textContent).join('|')"
+-> [10 chars] ✓ Done
+""
+
+$ agent-browser eval "document.querySelector('form, #app, main, body')?.innerHTML.length" && agent-browser eval "document.body.innerHTML" | head -c 3000
+-> [1828 chars] 1742
+"\n\n<h1>Request a quote</h1>\n<p>Region</p>\n<div class=\"dd\" id=\"dd\">Choose region…</div><div class=\"opts open\" id=\"opts\"><div class=\"opt\">Benelux</div><div class=\"opt\">Nordics</div><div class=\"opt\">Iberia</div><div class=\"opt\">DACH</div><div class=\"opt\">Baltics</div></div>\n<p><label>Quantity <input id=\"qty\" type=\"number\" min=\"1\" value=\"1\"></label></p>\n<p><label><input type=\"radio\" name=\"plan\" value=\"basic\" checked=\"\"> Basic</label>\n<label><input type=\ …ion.length*104729+(pro?31337:0))%9973);\nout.innerHTML='<p>Quote ref: <b>'+ref+'</b></p><p>Total: €'+total.toFixed(2)+'</p>';},2500);};\n</script>\n"
+
+$ agent-browser eval "const o=[...document.querySelectorAll('.opt')].find(e=>e.textContent==='Nordics'); o && o.click(); o?'clicked':'notfound'"
+-> [10 chars] "clicked"
+
+$ agent-browser fill "#qty" "7" && agent-browser check "input[name=plan][value=pro]" && agent-browser click "#go" && agent-browser wait "#out b" && agent-browser snapshot
+-> [543 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Nordics"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 7
+      - StaticText "7"
+- paragraph
+  - radio "Basic" [checked=false, ref=e7]
+  - radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [ref=e3]
+- generic
+  - paragraph
+    - StaticText "Quote ref: NOR-2087"
+  - paragraph
+    - StaticText "Total: €1470.00"
+
+SAY: Quote completed successfully via the browser:
+
+- Region: Nordics, Quantity: 7, Plan: Pro
+- **Quote ref: NOR-2087**
+- **Total: €1470.00**
+
+ANSWER: Quote ref NOR-2087, total €1470.00

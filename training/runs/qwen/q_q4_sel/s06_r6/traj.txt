@@ -1,0 +1,58 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r6", "correct": true, "score": 0.963, "wtok": 24542, "out_tok": 857, "turns": 7, "secs": 138, "timed_out": false, "curl": false, "answer": "After clicking Remove, the message is \"It's gone!\". After clicking Enable and typing hello into the now-enabled input, the message is \"It's enabled!\" and the input's value is \"hello\"."}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "#remove-button"; agent-browser click "#remove-button"; agent-browser wait "#message"; agent-browser get text "#message"
+-> [403 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: #message. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+SAY: The initial load timed out; let me retry the open and wait.
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser wait "#remove-button"; agent-browser click "#remove-button"; agent-browser wait "#message"; agent-browser get text "#message"
+-> [389 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+✗ Wait timed out after 25000ms
+✗ Element not found: #remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: #message. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser snapshot -i; agent-browser eval "document.querySelector('main, body').innerHTML.slice(0,1500)"
+-> [1929 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+"\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div> …     } else if (target === \"input\") {\n        toggleInputControls();\n      }\n    }, 3000 );\n  };\n\n  function toggleCheckboxControls() {\n   "
+
+$ agent-browser click @e5; agent-browser wait "#message"; agent-browser get text "#message"
+-> [25 chars] ✓ Done
+✓ Done
+It's gone!
+
+SAY: Checkbox removed — message: "It's gone!" Now the Enable part:
+$ agent-browser click @e7; agent-browser wait --fn "document.querySelector('#input-example input').disabled === false"; agent-browser fill "input" "hello"; agent-browser get text "#message"; agent-browser get attr "input" "value"
+-> [40 chars] ✓ Done
+true
+✓ Done
+It's enabled!
+✓ Done
+
+$ agent-browser eval "document.querySelector('#input-example input').value"
+-> [8 chars] "hello"
+
+SAY: Done. Here's the full sequence:
+
+1. **Remove** — after clicking "Remove" (waited ~3s delay), the checkbox disappeared and the message div showed: **It's gone!**
+2. **Enable** — after clicking "Enable" and waiting for the input to be enabled, I typed "hello" into it. The message div showed: **It's enabled!** and the input's value was: **hello**
+
+ANSWER: After clicking Remove, the message is "It's gone!". After clicking Enable and typing hello into the now-enabled input, the message is "It's enabl

@@ -1,0 +1,198 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r4", "correct": true, "score": 0.946, "wtok": 35957, "out_tok": 1303, "turns": 9, "secs": 13, "timed_out": false, "curl": false, "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"}
+
+$ for i in 1 2 3; do agent-browser open "http://localhost:8791/inbox.html" && break; sleep 2; done; agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('tr, li, .message, article')].map(r => r.textContent.trim()).filter(Boolean);
+  return JSON.stringify(rows.slice(0, 30));
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser get text body
+-> [846 chars] Inbox
+
+Showing 24 of 60
+
+Alex A.
+Invoice #100
+Archive
+Femi H.
+Lunch order #113
+Archive
+Kai C.
+On-call swap #126
+Archive
+Dana K.
+Retro actions #139
+Archive
+Ivo E.
+Release checklist #152
+Archive
+Bo M.
+Design review #165
+Archive
+Gus G.
+Hiring loop #178
+Archive
+Lena B.
+Standup notes #191
+Archive
+Elif J.
+Travel booking #204
+Archive
+Jude D.
+Budget draft #217
+Archive
+Chen L.
+Invoice #230
+Archive
+Hana F.
+Lunch order #243
+Archive
+Alex A.
+On-call swap #256
+Archive
+Femi H.
+Retro actions #269
+Archive
+Kai C. …hive
+Elif J.
+Invoice #360
+Archive
+Jude D.
+Lunch order #373
+Archive
+Chen L.
+On-call swap #386
+Archive
+Hana F.
+Retro actions #399
+Archive
+Loading more…
+
+SAY: 24 of 60 loaded; Priya N. isn't here. Let me scroll to load more.
+$ agent-browser press End; sleep 1; agent-browser eval "window.scrollBy(0, document.body.scrollHeight)"; sleep 2; agent-browser get text body | tail -30
+-> [399 chars] ✓ Done
+{
+  "interrupted": false
+}
+Travel booking #594
+Archive
+Dana K.
+Budget draft #607
+Archive
+Ivo E.
+Invoice #620
+Archive
+Bo M.
+Lunch order #633
+Archive
+Gus G.
+On-call swap #646
+Archive
+Lena B.
+Retro actions #659
+Archive
+Priya N.
+Q3 vendor audit — rescheduled to the 19th
+Archive
+Jude D.
+Design review #685
+Archive
+Chen L.
+Hiring loop #698
+Archive
+Hana F.
+Standup notes #711
+Archive
+Loading more…
+
+SAY: Found it: **Priya N. — "Q3 vendor audit — rescheduled to the 19th"**. Now archiving it.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const nodes = [...document.querySelectorAll('*')].filter(el => el.textContent.includes('Priya N.') && el.querySelector && [...el.children].some(c => c.textContent.includes('Priya N.')));
+  const row = nodes.length ? nodes[nodes.length-1] : null;
+  if (!row) return JSON.stringify({error: 'not found'});
+  const btn = [...row.querySelectorAll('button')].find(b => /archive/i.test(b.textContent));
+  return JSON.stringify({rowTag: row.tagName, rowClass: row.className, hasBtn: !!btn, btnText: btn ? btn.textContent.trim() : null});
+})()
+JS
+-> [84 chars] "{\"rowTag\":\"DIV\",\"rowClass\":\"row\",\"hasBtn\":true,\"btnText\":\"Archive\"}"
+
+$ agent-browser eval "document.querySelector('div.row:has(> * )') && [...document.querySelectorAll('.row')].find(r => r.textContent.includes('Priya N.')).querySelector('button').setAttribute('id','priya-archive'); 'ok'"; agent-browser click "#priya-archive"; sleep 1; agent-browser snapshot -i
+-> [325 chars] "ok"
+✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✗ A JavaScript confirm dialog is blocking the page: "Archive this message?". Resolve it with `dialog accept` or `dialog dismiss`, then retry `snapshot`.
+
+
+Command exited with code 1
+SAY: A confirm dialog appeared — accepting it.
+$ agent-browser dialog accept; sleep 1; agent-browser get text body | head -30
+-> [328 chars] ✓ Done
+Inbox
+
+Showing 60 of 60
+
+Alex A.
+Invoice #100
+Archive
+Femi H.
+Lunch order #113
+Archive
+Kai C.
+On-call swap #126
+Archive
+Dana K.
+Retro actions #139
+Archive
+Ivo E.
+Release checklist #152
+Archive
+Bo M.
+Design review #165
+Archive
+Gus G.
+Hiring loop #178
+Archive
+Lena B.
+Standup notes #191
+Archive
+Elif J.
+Travel booking #204
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const m = document.body.innerText.match(/[Rr]eceipt[^\n]*\n?[^\n]*/);
+  const priyaGone = !document.body.innerText.includes('Priya N.');
+  return JSON.stringify({receipt: m ? m[0] : null, priyaGone});
+})()
+JS
+-> [55 chars] "{\"receipt\":\"Receipt #A-7028\",\"priyaGone\":true}"
+
+SAY: Done. Here's the summary:
+
+- **Message from Priya N.** — Subject: **"Q3 vendor audit — rescheduled to the 19th"**
+- Archived it, confirmed the "Archive this message?" dialog, and the message was removed from the list (60 of 60 shown, Priya's row gone)
+- **Receipt shown afterwards: #A-7028**
+
+ANSWER: Subject "Q3 vendor audit — rescheduled to the 19th"; receipt #A-7028

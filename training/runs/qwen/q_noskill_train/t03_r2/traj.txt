@@ -1,0 +1,86 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r2", "correct": true, "score": 0.975, "wtok": 16870, "out_tok": 662, "turns": 5, "secs": 6, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/tables && agent-browser snapshot 2>&1 | head -100
+-> [3647 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/tables
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "Data Tables" [level=3, ref=e2]
+  - paragraph
+    - StaticText "Often times when you see a table it contains data which is sortable -- sometimes with actions that can be taken within each row (e.g. edit, delete). And it can be challenging to automate interaction with sets of data in a table depending on how it is constructed."
+  - heading "Example …onway@earthlink.net" [ref=e49]
+      - cell "$50.00" [ref=e50]
+      - cell "http://www.timconway.com" [ref=e51]
+      - cell "edit delete" [ref=e52]
+
+$ agent-browser click @e71 && agent-browser click @e71 && agent-browser snapshot 2>&1 | sed -n '/Example 2/,/Example 3/p' | head -40
+-> [1349 chars] ✓ Done
+✓ Done
+  - heading "Example 2" [level=4, ref=e4]
+  - paragraph
+    - StaticText "Class and ID attributes to signify groupings of rows and columns"
+  - table
+    - rowgroup
+      - row
+        - columnheader "Last Name" [ref=e68]
+        - columnheader "First Name" [ref=e69]
+        - columnheader "Email" [ref=e70]
+        - columnheader "Due" [ref=e71]
+        - columnheader "Web Site" [ref=e72]
+        - columnheader "Action" [ref=e73]
+    - row
+      - cell "Smith" [ref=e29]
+      - cel …ell "http://www.frank.com" [ref=e39]
+      - cell "edit delete" [ref=e40]
+        - link "edit" [ref=e76]
+        - link "delete" [ref=e77]
+    - row
+
+$ agent-browser snapshot 2>&1 | sed -n '/Example 2/,/Example 3/p' | grep -E 'row|cell' | head -40
+-> [1031 chars]     - StaticText "Class and ID attributes to signify groupings of rows and columns"
+    - rowgroup
+      - row
+    - row
+      - cell "Doe" [ref=e41]
+      - cell "Jason" [ref=e42]
+      - cell "jdoe@hotmail.com" [ref=e43]
+      - cell "$100.00" [ref=e44]
+      - cell "http://www.jdoe.com" [ref=e45]
+      - cell "edit delete" [ref=e46]
+    - row
+      - cell "Bach" [ref=e35]
+      - cell "Frank" [ref=e36]
+      - cell "fbach@yahoo.com" [ref=e37]
+      - cell "$51.00" [ref=e38]
+      - cell "http …onway@earthlink.net" [ref=e49]
+      - cell "$50.00" [ref=e50]
+      - cell "http://www.timconway.com" [ref=e51]
+      - cell "edit delete" [ref=e52]
+
+SAY: The Example 2 table is now sorted by Due descending: Doe ($100.00), Bach ($51.00), Smith ($50.00), Conway ($50.00). The first data row is Jason Doe with email jdoe@hotmail.com.
+
+ANSWER: jdoe@hotmail.com

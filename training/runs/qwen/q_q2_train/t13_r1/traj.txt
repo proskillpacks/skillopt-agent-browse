@@ -1,0 +1,233 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13_r1", "correct": true, "score": 0.877, "wtok": 82229, "out_tok": 4412, "turns": 12, "secs": 30, "timed_out": false, "curl": false, "answer": "Albert Einstein, with 10 quotes"}
+
+$ agent-browser open "https://quotes.toscrape.com/"; agent-browser eval "JSON.stringify({next: [...document.querySelectorAll('a')].map(a=>a.textContent.trim()).filter(t=>/next/i.test(t)), quotes: document.querySelectorAll('.quote').length})"
+-> [90 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+"{\"next\":[\"Next →\"],\"quotes\":10}"
+
+$ agent-browser eval --stdin <<'JS'
+JS
+agent-browser eval '
+(async () => {
+  const counts = {};
+  let url = "https://quotes.toscrape.com/";
+  while (url) {
+    await (window.__pg = document.title);
+    for (const a of document.querySelectorAll(".quote .author, .quote a.author")) {
+      const name = a.textContent.trim();
+      counts[name] = (counts[name] || 0) + 1;
+    }
+    const next = [...document.querySelectorAll("a")].find(a => /next/i.test(a.textContent));
+    url = next ? next.href : null;
+    if (url && url !== document.URL) await fetch ? 0 : 0;
+    // navigate via location
+    if (url) { window.location.href = url; await new Promise(r => setTimeout(r, 1500)); }
+  }
+  return JSON.stringify(counts);
+})()' 2>/dev/null; echo "---sync fallback---"
+-> [25 chars] null
+---sync fallback---
+
+SAY: Async in-page navigation is awkward; I'll do it with a shell loop instead.
+$ python3 - <<'EOF'
+import json, subprocess, re
+
+def run(cmd, inp=None):
+    p = subprocess.run(cmd, shell=True, input=inp, capture_output=True, text=True)
+    return p.stdout, p.stderr
+
+url = "https://quotes.toscrape.com/"
+counts = {}
+for i in range(50):
+    out, err = run(f'agent-browser open "{url}"; agent-browser wait "h3"' if False else f'agent-browser open "{url}"')
+    js = '''
+    JSON.stringify({
+      authors: [...document.querySelectorAll(".quote")].map(q => q.querySelector(".author").textContent.trim()),
+      next: (() => { const a = [...document.querySelectorAll("a")].find(a => /next/i.test(a.textContent)); return a ? a.getAttribute("href") : null; })()
+    })
+    '''
+    out, err = run('agent-browser eval --stdin', js)
+    m = out.find('{')
+    data = json.loads(out[m:])
+    for name in data["authors"]:
+        counts[name] = counts.get(name, 0) + 1
+    nxt = data["next"]
+  
+-> [670 chars] Traceback (most recent call last):
+  File "<stdin>", line 19, in <module>
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+
+
+Command exited with code 1
+$ agent-browser open "https://quotes.toscrape.com/"; agent-browser eval 'JSON.stringify([...document.querySelectorAll(".quote")].map(q => q.querySelector(".author").textContent.trim()))' | cat -A | head -5
+-> [247 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+"[\"Albert Einstein\",\"J.K. Rowling\",\"Albert Einstein\",\"Jane Austen\",\"Marilyn Monroe\",\"Albert Einstein\",\"AndrM-CM-) Gide\",\"Thomas A. Edison\",\"Eleanor Roosevelt\",\"Steve Martin\"]"$
+
+SAY: The eval output is a quoted JSON string. Let me just accumulate per-page results in bash and count at the end.
+$ cd /tmp && rm -f authors.txt
+url="https://quotes.toscrape.com/"
+for i in $(seq 1 30); do
+  agent-browser open "$url" >/dev/null
+  js=$(agent-browser eval 'JSON.stringify([...document.querySelectorAll(".quote")].map(q => q.querySelector(".author").textContent.trim()))' | tail -1)
+  echo "$js" | tr -d '"' | tr ',' '\n' >> authors.txt
+  nxt=$(agent-browser eval '(() => { const a = [...document.querySelectorAll("a")].find(a => /next/i.test(a.textContent)); return a ? a.getAttribute("href") : ""; })()')
+  nxt=$(echo "$nxt" | tail -1 | tr -d '"')
+  [ -z "$nxt" ] && break
+  url="https://quotes.toscrape.com$nxt"
+  echo "page $i done -> $url"
+done
+sort authors.txt | uniq -c | sort -rn
+-> [1979 chars] page 1 done -> https://quotes.toscrape.com/page/2/
+page 2 done -> https://quotes.toscrape.com/page/3/
+page 3 done -> https://quotes.toscrape.com/page/4/
+page 4 done -> https://quotes.toscrape.com/page/5/
+page 5 done -> https://quotes.toscrape.com/page/6/
+page 6 done -> https://quotes.toscrape.com/page/7/
+page 7 done -> https://quotes.toscrape.com/page/8/
+page 8 done -> https://quotes.toscrape.com/page/9/
+page 9 done -> https://quotes.toscrape.com/page/10/
+      8 \J.K. Rowling\
+      8 \Albert E …ki\
+      1 \Bob Marley\]
+      1 \Ayn Rand\
+      1 \André Gide\
+      1 \Allen Saunders\]
+      1 [\Alfred Tennyson\
+      1 \Alexandre Dumas fils\
+
+SAY: All 10 pages collected; just need to strip the stray JSON brackets from the first/last entries of each page:
+$ cd /tmp && sed 's/[[\]]//g' authors.txt | sort | uniq -c | sort -rn | head -5; echo "TOTAL: $(sed 's/[[\]]//g' authors.txt | grep -v '^$' | wc -l)"
+-> [128 chars]       8 \J.K. Rowling\
+      8 \Albert Einstein\
+      6 \Marilyn Monroe\
+      5 \Mark Twain\
+      4 \Jane Austen\
+TOTAL: 100
+
+SAY: There's a tie at 8 (Albert Einstein and J.K. Rowling). Let me verify carefully with a clean recount:
+$ cd /tmp && sed 's/[[\]]//g' authors.txt | sed 's/\\\\//g' | grep -v '^ *$' | sort | uniq -c | sort -rn
+-> [1499 chars]       8 \J.K. Rowling\
+      8 \Albert Einstein\
+      6 \Marilyn Monroe\
+      5 \Mark Twain\
+      4 \Jane Austen\
+      4 \Dr. Seuss\
+      4 \C.S. Lewis\
+      2 \Suzanne Collins\
+      2 \Ralph Waldo Emerson\
+      2 \Mother Teresa\
+      2 \Ernest Hemingway\
+      2 \Eleanor Roosevelt\
+      2 \Bob Marley\
+      2 [\Albert Einstein\
+      1 \William Nicholson\
+      1 \W.C. Fields\
+      1 \Thomas A. Edison\
+      1 \Terry Pratchett\
+      1 \Steve Martin
+      1 \Stephenie Meyer\
+      1  …kowski\
+      1 \Bob Marley
+      1 \Ayn Rand\
+      1 \André Gide\
+      1 \Allen Saunders
+      1 [\Alfred Tennyson\
+      1 \Alexandre Dumas fils\
+
+SAY: The file still has stray backslashes/commas per page. Clean recount:
+$ cd /tmp && tr -d '\[\]\\, ' < authors.txt | sed '/^$/d' | sort | uniq -c | sort -rn
+-> [1086 chars]      10 AlbertEinstein
+      9 J.K.Rowling
+      7 MarilynMonroe
+      6 MarkTwain
+      6 Dr.Seuss
+      5 JaneAusten
+      5 C.S.Lewis
+      3 BobMarley
+      2 SuzanneCollins
+      2 RalphWaldoEmerson
+      2 MotherTeresa
+      2 GeorgeR.R.Martin
+      2 ErnestHemingway
+      2 EleanorRoosevelt
+      2 CharlesBukowski
+      1 WilliamNicholson
+      1 W.C.Fields
+      1 ThomasA.Edison
+      1 TerryPratchett
+      1 SteveMartin
+      1 StephenieMeyer
+      1 PabloNeruda
+      1 MartinLutherKing …     1 DouglasAdams
+      1 CharlesM.Schulz
+      1 AynRand
+      1 AndréGide
+      1 AllenSaunders
+      1 AlfredTennyson
+      1 AlexandreDumasfils
+
+SAY: Total should be 100; let me verify with a proper parse:
+$ cd /tmp && python3 -c "
+import json, re
+data = open('authors.txt').read()
+# each page contributed a line like: [\"A\",\"B\",...]  (JSON string with escaped quotes, newlines inside from tr)
+entries = re.findall(r'\\\\?\"([^\"\\\\]+)\\\\?\"', data)
+# simpler: names are between escaped quote pairs; strip and count
+cleaned = re.findall(r'\[\\"(.*?)\\"\]', data)  # per page?
+# fallback: split the whole file on backslash-escaped quote delimiters
+names = re.findall(r'\\"([^"]*)\\"', data.replace('\n',''))
+print(len(names))
+from collections import Counter
+print(Counter(names).most_common(5))
+"
+-> [175 chars] /bin/bash: -c: line 7: syntax error near unexpected token `('
+/bin/bash: -c: line 7: `cleaned = re.findall(r'\[\\"(.*?)\\"\]', data)  # per page?'
+
+
+Command exited with code 2
+$ cd /tmp && python3 <<'EOF'
+import re
+from collections import Counter
+data = open('authors.txt').read()
+names = re.findall(r'\\"([^"]*)\\"', data.replace('\n',''))
+print("total:", len(names))
+for name, c in Counter(names).most_common(5):
+    print(c, name)
+print("sum check:", sum(Counter(names).values()))
+EOF
+-> [22 chars] total: 0
+sum check: 0
+
+$ cd /tmp && python3 <<'EOF'
+import re
+from collections import Counter
+data = open('authors.txt').read()
+names = re.findall(r'\\([A-Za-zÉéÀà\'\.\- ]+)\\', data)
+names = [n.strip() for n in names]
+print("total:", len(names))
+print(Counter(names).most_common(5))
+EOF
+-> [118 chars] total: 100
+[('Albert Einstein', 10), ('J.K. Rowling', 9), ('Marilyn Monroe', 7), ('Dr. Seuss', 6), ('Mark Twain', 6)]
+
+SAY: I scraped all 10 pages of https://quotes.toscrape.com/ in the real browser (following the "Next →" links), collecting the author of each quote — 100 quotes total. The clean counts are:
+
+1. **Albert Einstein – 10 quotes**
+2. J.K. Rowling – 9 quotes
+3. Marilyn Monroe – 7 quotes
+
+So Albert Einstein is the top author with 10 quotes (clearly ahead of J.K. Rowling, who has 9).
+
+ANSWER: Albert Einstein, with 10 quotes

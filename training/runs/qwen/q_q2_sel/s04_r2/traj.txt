@@ -1,0 +1,64 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r2", "correct": true, "score": 0.941, "wtok": 39195, "out_tok": 757, "turns": 6, "secs": 7, "timed_out": false, "curl": false, "answer": "2011: 49 wins, 269 Goals For (GF)"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill @e9 "Bruins" && agent-browser click @e10 && agent-browser wait --text "Boston Bruins"; agent-browser snapshot -i
+-> [1738 chars] ✓ Done
+✓ Done
+Boston Bruins
+- link "Sandbox" [ref=e249]
+- link "Lessons" [ref=e250]
+- link "FAQ" [ref=e251]
+- link "Login" [ref=e252]
+- heading "Hockey Teams: Forms, Searching and Pagination 21 items" [level=1, ref=e248]
+- link "8 video lessons" [ref=e253]
+- link "http://www.opensourcesports.com/hockey/" [ref=e254]
+- textbox "Search for Teams:  " [ref=e255]: Bruins
+- button "Search" [ref=e256]
+- columnheader "Team Name" [ref=e257]
+- columnheader "Year" [ref=e258]
+- columnheader "Wins" [ref=e259] …=e299]
+- cell "27" [ref=e300]
+- cell "18" [ref=e301]
+- cell "0.562" [ref=e302]
+- cell "150" [ref=e303]
+- cell "127" [ref=e304]
+- cell "23" [ref=e305]
+
+SAY: Search returned 21 items but only 5 shown per page. Let me set the page size to 100 to see all.
+$ agent-browser select "select" "100" && agent-browser wait "tbody tr" && agent-browser eval "JSON.stringify([...document.querySelectorAll('tbody tr')].filter(r=>r.innerText.includes('2011')).map(r=>r.innerText))"
+-> [19 chars] ✓ Done
+✓ Done
+"[]"
+
+$ agent-browser eval "JSON.stringify({rows: document.querySelectorAll('tr').length, select: document.querySelector('select').value, text: document.body.innerText.slice(0,300)})"
+-> [361 chars] "{\"rows\":22,\"select\":\"100\",\"text\":\"Sandbox\\nLessons\\nFAQ\\nLogin\\nHockey Teams: Forms, Searching and Pagination 21 items\\n\\nBrowse through a database of NHL team stats since 1990. Practice building a scraper that handles common website interface components. Take a look at how pagination and search elements change the URL as your browse. Bui\"}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('tr')].filter(r=>r.innerText.includes('2011')).map(r=>r.innerText))"
+-> [68 chars] "[\"Boston Bruins\\t2011\\t49\\t29\\t4\\t0.598\\t269\\t202\\t67\"]"
+
+SAY: Found it. For the 2011 season, the Boston Bruins row shows:
+
+- **Wins: 49**
+- **Goals For (GF): 269**
+
+(Full row: Boston Bruins, 2011, 49 wins, 29 losses, 4 OT losses, .598 win %, GF 269, GA 202, +67)
+
+ANSWER: 2011: 49 wins, 269 Goals For (GF)

@@ -1,0 +1,125 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": true, "score": 0.919, "wtok": 53703, "out_tok": 2492, "turns": 11, "secs": 28, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open https://books.toscrape.com/; agent-browser eval "JSON.stringify({title:document.title, pages:document.querySelectorAll('.pagination ul li').length, last:document.querySelector('.pagination li:last-child a')?.textContent})"
+-> [144 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"{\"title\":\"All products | Books to Scrape - Sandbox\",\"pages\":0}"
+
+$ agent-browser eval "JSON.stringify({li:document.querySelectorAll('.pagination li').length, html:document.querySelector('.pagination').innerHTML.slice(0,500), books:document.querySelectorAll('.book_wrapper').length})"
+-> [137 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:114
+
+
+Command exited with code 1
+$ agent-browser open https://books.toscrape.com/; agent-browser wait "body"; agent-browser eval "JSON.stringify({url:location.href, books:document.querySelectorAll('.book_wrapper').length, pag:!!document.querySelector('.pagination'), bodyLen:document.body.innerHTML.length})"
+-> [168 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"{\"url\":\"https://books.toscrape.com/\",\"books\":0,\"pag\":false,\"bodyLen\":49830}"
+
+$ agent-browser eval "JSON.stringify(document.body.innerHTML.slice(0,2000))"
+-> [2273 chars] "\"\\n        \\n        \\n    \\n    \\n    <header class=\\\"header container-fluid\\\">\\n        <div class=\\\"page_inner\\\">\\n            <div class=\\\"row\\\">\\n                <div class=\\\"col-sm-8 h1\\\"><a href=\\\"index.html\\\">Books to Scrape</a><small> We love being scraped!</small>\\n</div>\\n\\n                \\n            </div>\\n        </div>\\n    </header>\\n\\n    \\n    \\n<div class=\\\"container-fluid page\\\">\\n    <div class=\\\"page_inner\\\">\\n        \\n …ooks/historical-fiction_4/index.html\\\">\\n                            \\n                                Historical Fiction\\n                  \""
+
+$ agent-browser eval "JSON.stringify({art:document.querySelectorAll('article').length, bw:document.querySelectorAll('div[class*=book]').length, cls:document.querySelector('article')?.className, next:document.querySelector('.pagination a')?.href})"
+-> [48 chars] "{\"art\":20,\"bw\":0,\"cls\":\"product_pod\"}"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('li.next a, .next a, [class*=next] a')).map(a=>a.href))"
+-> [57 chars] "[\"https://books.toscrape.com/catalogue/page-2.html\"]"
+
+SAY: The catalog uses `product_pod` articles with a "next" link. Now I'll loop through all pages:
+$ mkdir -p /tmp/bts && rm -f /tmp/bts/*.json
+for i in $(seq 1 50); do
+  if [ "$i" = "1" ]; then url="https://books.toscrape.com/"; else url="https://books.toscrape.com/catalogue/page-$i.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1
+  agent-browser wait ".product_pod" >/dev/null 2>&1
+  agent-browser eval --stdin <<'JS' > /tmp/bts/p$i.json 2>/dev/null
+JSON.stringify(Array.from(document.querySelectorAll('.product_pod')).map(a=>({
+  t: a.querySelector('h3 a')?.getAttribute('title'),
+  p: parseFloat(a.querySelector('.price_color').textContent.replace('£',''))
+})))
+JS
+  n=$(wc -c < /tmp/bts/p$i.json)
+  if [ "$n" -lt 20 ]; then echo "stopped at page $i"; break; fi
+  echo "page $i: $(head -c 60 /tmp/bts/p$i.json)"
+done
+-> [3491 chars] page 1: "[{\"t\":\"A Light in the Attic\",\"p\":51.77},{\"t\":\"Tipp
+page 2: "[{\"t\":\"In Her Wake\",\"p\":12.84},{\"t\":\"How Music Wor
+page 3: "[{\"t\":\"Slow States of Collapse: Poems\",\"p\":57.31},{\"
+page 4: "[{\"t\":\"The Nameless City (The Nameless City #1)\",\"p\":
+page 5: "[{\"t\":\"Princess Jellyfish 2-in-1 Omnibus, Vol. 01 (Princ
+page 6: "[{\"t\":\"Immunity: How Elie Metchnikoff Changed the Course
+page 7: "[{\"t\":\"Algorithms to Live By: The Computer Science of Hu
+page 8: "[{\"t\": …\"The Bet
+page 49: "[{\"t\":\"On the Road (Duluoz Legend)\",\"p\":32.36},{\"t\"
+page 50: "[{\"t\":\"Frankenstein\",\"p\":38},{\"t\":\"Forever Rockers
+
+SAY: All 50 pages scraped. Now computing the results:
+$ python3 - <<'EOF'
+import json, glob
+books=[]
+for f in sorted(glob.glob('/tmp/bts/p*.json'), key=lambda x:int(x.split('p')[1].split('.json')[0])):
+    books+=json.load(open(f))
+print("total books:", len(books))
+lt12=[b for b in books if b['p']<12.0]
+print("less than £12:", len(lt12))
+mn=min(books, key=lambda b:b['p'])
+print("cheapest:", mn)
+ties=[b for b in books if b['p']==mn['p']]
+print("ties at min:", len(ties))
+EOF
+-> [199 chars] Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "<stdin>", line 3, in <lambda>
+ValueError: invalid literal for int() with base 10: '/bts/'
+
+
+Command exited with code 1
+$ python3 - <<'EOF'
+import json, glob, os
+books=[]
+for f in sorted(glob.glob('/tmp/bts/p*.json'), key=lambda x:int(os.path.basename(x)[1:-5])):
+    books+=json.load(open(f))
+print("total books:", len(books))
+lt12=[b for b in books if b['p']<12.0]
+print("less than £12:", len(lt12))
+mn=min(books, key=lambda b:b['p'])
+print("cheapest:", mn)
+print("ties at min:", sum(1 for b in books if b['p']==mn['p']))
+EOF
+-> [174 chars] total books: 58029
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+$ python3 - <<'EOF'
+import json, glob, os
+books=[]
+for f in sorted(glob.glob('/tmp/bts/p*.json'), key=lambda x:int(os.path.basename(x)[1:-5])):
+    d=json.load(open(f))
+    if isinstance(d,str): d=json.loads(d)
+    books+=d
+print("total books:", len(books))
+lt12=[b for b in books if b['p']<12.0]
+print("less than £12:", len(lt12))
+mn=min(books, key=lambda b:b['p'])
+print("cheapest:", mn)
+print("ties at min:", sum(1 for b in books if b['p']==mn['p']))
+print("price range:", min(b['p'] for b in books), "-", max(b['p'] for b in books))
+EOF
+-> [130 chars] total books: 1000
+less than £12: 44
+cheapest: {'t': 'An Abundance of Katherines', 'p': 10}
+ties at min: 1
+price range: 10 - 59.99
+
+SAY: Done. Scraped all 50 pages (1,000 books) in the live browser using `agent-browser`.
+
+Results:
+- **Books priced under £12.00: 44** (out of 1,000)
+- **Cheapest book (unique minimum):** *An Abundance of Katherines* — **£10.00** (price range across the catalog: £10.00–£59.99)
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of Katherines" at £10.00.

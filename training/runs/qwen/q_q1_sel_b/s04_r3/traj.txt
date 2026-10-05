@@ -1,0 +1,58 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r3", "correct": true, "score": 0.938, "wtok": 41341, "out_tok": 1354, "turns": 6, "secs": 11, "timed_out": false, "curl": false, "answer": "Wins: 49, GF: 269"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/" && agent-browser wait "form" ; agent-browser snapshot -i
+-> [6589 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill 'textbox[ref=e9]' "Bruins"; agent-browser click @e10; agent-browser wait 'table'; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tr')].map(r => [...r.cells].map(c => c.textContent.trim())).filter(c => c.length > 1))
+JS
+-> [474 chars] ✗ Element not found: textbox[ref=e9]. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+✓ Done
+"[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Buffalo Sabres\",\"1990\",\"31\",\"30\",\"\",\"0.388\",\"292\",\"278\",\"14\"],[\"Calgary Flames\",\"1990\",\"46\",\"26\",\"\",\"\"]]"
+
+SAY: The fill used an invalid selector, so the search submitted empty. Let me fill correctly and search:
+$ agent-browser fill @e9 "Bruins"; agent-browser click @e10; agent-browser wait 'table'; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tr')].map(r => [...r.cells].map(c => c.textContent.trim())).filter(c => c.length > 1))
+JS
+-> [354 chars] ✓ Done
+✓ Done
+✓ Done
+"[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\"]]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({rows: document.querySelectorAll('table tr').length, heading: (document.querySelector('h1')||{}).textContent, pager: (document.querySelector('.pagination, nav')||{}).textContent})
+JS
+-> [1302 chars] "{\"rows\":22,\"heading\":\"\\n                            Hockey Teams: Forms, Searching and Pagination\\n                            21 items\\n                        \",\"pager\":\"\\n            \\n                \\n                    \\n                        \\n                            \\n                                \\n                                Scrape This Site\\n                            \\n                        \\n                        \\n                           …                       \\n                        \\n                        \\n                    \\n                \\n            \\n        \"}"
+
+SAY: The page now shows 21 Bruins items (one page). Reading the full table:
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tr')].map(r => [...r.cells].map(c => c.textContent.trim())).filter(c => c.length > 1 && c[0] !== 'Team Name'))
+JS
+-> [1718 chars] "[[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\",\"0.607\",\"332\",\"268\",\"64\"],[\"Boston Bruins\",\"1993\",\"42\",\"29\",\"\",\"0.5\",\"289\",\"252\",\"37\"],[\"Boston Bruins\",\"1994\",\"27\",\"18\",\"\",\"0.562\",\"150\",\"127\",\"23\"],[\"Boston Bruins\",\"1995\",\"40\",\"31\",\"\",\"0.488\",\"282\",\"269\",\"13\"],[\"Boston Bruins …",\"2010\",\"46\",\"25\",\"11\",\"0.561\",\"246\",\"195\",\"51\"],[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+
+SAY: The search for "Bruins" returned 21 rows of Boston Bruins data. For the **2011** season row:
+
+- **Wins:** 49
+- **Goals For (GF):** 269
+
+(Also for context: 29 losses, 4 OT losses, Win % 0.598, GA 202, +67)
+
+ANSWER: Wins: 49, GF: 269

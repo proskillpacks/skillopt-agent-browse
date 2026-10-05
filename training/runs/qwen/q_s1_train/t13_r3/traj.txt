@@ -1,0 +1,166 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13_r3", "correct": true, "score": 0.902, "wtok": 65068, "out_tok": 2454, "turns": 14, "secs": 48, "timed_out": false, "curl": false, "answer": "Albert Einstein, with 10 quotes"}
+
+$ agent-browser open https://quotes.toscrape.com/; agent-browser wait ".quote"; agent-browser eval "JSON.stringify({pages: Array.from(document.querySelectorAll('ul.pagination li a, ul.pagination li span')).map(e=>e.textContent.trim())})"
+-> [74 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✓ Done
+"{\"pages\":[]}"
+
+$ agent-browser eval "JSON.stringify({pagination: Array.from(document.querySelectorAll('ul.pagination li')).map(e=>e.textContent.trim()), authorEls: Array.from(document.querySelectorAll('.quote .author')).slice(0,3).map(e=>e.textContent.trim()), href: location.href})"
+-> [137 chars] "{\"pagination\":[],\"authorEls\":[\"Albert Einstein\",\"J.K. Rowling\",\"Albert Einstein\"],\"href\":\"https://quotes.toscrape.com/\"}"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('ul')).map(u=>u.className+' | '+u.textContent.trim().slice(0,80)))"
+-> [23 chars] "[\"pager | Next →\"]"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('li, .pager *')).map(e=>e.tagName+'.'+e.className+' '+(e.textContent||'').trim().slice(0,40)))"
+-> [49 chars] "[\"LI.next Next →\",\"A. Next →\",\"SPAN. →\"]"
+
+SAY: The pager only exposes "Next". I'll just loop through pages 1–10 directly and collect author names.
+$ for i in 1 2 3 4 5 6 7 8 9 10; do agent-browser open "https://quotes.toscrape.com/page/$i/"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.quote .author')).map(e=>e.textContent.trim()))"; done; agent-browser close
+-> [2451 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/page/1/
+"[\"Albert Einstein\",\"J.K. Rowling\",\"Albert Einstein\",\"Jane Austen\",\"Marilyn Monroe\",\"Albert Einstein\",\"André Gide\",\"Thomas A. Edison\",\"Eleanor Roosevelt\",\"Steve Martin\"]"
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/page/2/
+"[\"Marilyn Monroe\",\"J.K. Rowling\",\"Albert Einstein\",\"Bob Marley\",\"Dr. Seuss\",\"Douglas Adams\",\"Elie Wiesel\",\"Friedrich Nietzsche\",\"Mark Twain\",\"Allen Saunders\"]"
+✓ Quotes to Sc …e\",\"E.E. Cummings\",\"Khaled Hosseini\",\"Harper Lee\",\"Madeleine L'Engle\",\"Mark Twain\",\"Dr. Seuss\",\"George R.R. Martin\"]"
+✓ Browser closed
+
+$ cat <<'EOF' | sort | uniq -c | sort -rn
+Albert Einstein
+J.K. Rowling
+Albert Einstein
+Jane Austen
+Marilyn Monroe
+Albert Einstein
+André Gide
+Thomas A. Edison
+Eleanor Roosevelt
+Steve Martin
+Marilyn Monroe
+J.K. Rowling
+Albert Einstein
+Bob Marley
+Dr. Seuss
+Douglas Adams
+Elie Wiesel
+Friedrich Nietzsche
+Mark Twain
+Allen Saunders
+Pablo Neruda
+Ralph Waldo Emerson
+Mother Teresa
+Garrison Keillor
+Jim Henson
+Dr. Seuss
+Albert Einstein
+J.K. Rowling
+Albert Einstein
+Bob Marley
+Dr. Seuss
+J.K. Rowling
+Bob Marley
+Mother Teresa
+J.K. Rowling
+Charles M. Schulz
+William Nicholson
+Albert Einstein
+Jorge Luis Borges
+George Eliot
+George R.R. Martin
+C.S. Lewis
+Marilyn Monroe
+Marilyn Monroe
+Albert Einstein
+Marilyn Monroe
+Marilyn Monroe
+Martin Luther King Jr.
+J.K. Rowling
+James Baldwin
+Jane Austen
+Eleanor Roosevelt
+Marilyn Monroe
+Albert Einstein
+Haruki Murakami
+Alexandre Dumas fils
+Stephenie Meyer
+Ernest Hemingway
+Hele
+-> [1145 chars]      10 Albert Einstein
+      9 J.K. Rowling
+      7 Marilyn Monroe
+      6 Mark Twain
+      6 Dr. Seuss
+      5 Jane Austen
+      5 C.S. Lewis
+      3 Bob Marley
+      2 Suzanne Collins
+      2 Ralph Waldo Emerson
+      2 Mother Teresa
+      2 George R.R. Martin
+      2 Ernest Hemingway
+      2 Eleanor Roosevelt
+      2 Charles Bukowski
+      1 William Nicholson
+      1 W.C. Fields
+      1 Thomas A. Edison
+      1 Terry Pratchett
+      1 Steve Martin
+      1 Stephenie Meyer
+      1 Pablo Neruda …uglas Adams
+      1 Charles M. Schulz
+      1 Ayn Rand
+      1 André Gide
+      1 Allen Saunders
+      1 Alfred Tennyson
+      1 Alexandre Dumas fils
+
+SAY: Albert Einstein leads with 10. Let me verify against his author page on the site.
+$ agent-browser open "https://quotes.toscrape.com/author/Albert-Einstein/"; agent-browser eval "JSON.stringify({name: document.querySelector('.author h1')?.textContent.trim(), quoteCount: document.querySelector('.author .total')?.textContent.trim()})"; agent-browser close
+-> [95 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/author/Albert-Einstein/
+"{}"
+✓ Browser closed
+
+$ agent-browser open "https://quotes.toscrape.com/"; agent-browser wait ".quote"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.author a')).slice(0,3).map(a=>a.href))"; agent-browser close
+-> [79 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✓ Done
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://quotes.toscrape.com/"; agent-browser wait ".quote"; agent-browser eval "JSON.stringify({inner: document.querySelector('.quote .author').innerHTML, quoteTotal: document.querySelectorAll('.quote').length})"
+-> [109 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✓ Done
+"{\"inner\":\"Albert Einstein\",\"quoteTotal\":10}"
+
+$ agent-browser open "https://quotes.toscrape.com/author/Albert-Einstein/"; agent-browser eval "JSON.stringify({title: document.title, h1: document.querySelector('h1')?.textContent.trim(), body: document.body.innerText.slice(0,300)})"; agent-browser close
+-> [487 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/author/Albert-Einstein/
+"{\"title\":\"Quotes to Scrape\",\"h1\":\"Quotes to Scrape\",\"body\":\"Quotes to Scrape\\n\\nLogin\\n\\nAlbert Einstein\\n\\nBorn: March 14, 1879 in Ulm, Germany\\n\\nDescription:\\n\\nIn 1879, Albert Einstein was born in Ulm, Germany. He completed his Ph.D. at the University of Zurich by 1909. His 1905 paper explaining the photoelectric effect, the basis of electronics, earned him the No\"}"
+✓ Browser closed
+
+$ agent-browser open "https://quotes.toscrape.com/author/Albert-Einstein/"; agent-browser wait ".quote"; agent-browser eval "JSON.stringify({quoteCount: document.querySelectorAll('.quote').length, pageText: document.body.innerText.match(/\d+\s*quotes?/i)})"; agent-browser close
+-> [160 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/author/Albert-Einstein/
+✗ Wait timed out after 25000ms
+"{\"quoteCount\":0,\"pageText\":null}"
+✓ Browser closed
+
+$ agent-browser open "https://quotes.toscrape.com/author/Albert-Einstein/"; agent-browser eval "JSON.stringify(document.body.innerText.slice(300,1500))"
+-> [1292 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/author/Albert-Einstein/
+"\"bel Prize in 1921. His first paper on Special Relativity Theory, also published in 1905, changed the world. After the rise of the Nazi party, Einstein made Princeton his permanent home, becoming a U.S. citizen in 1940. Einstein, a pacifist during World War I, stayed a firm proponent of social justice and responsibility. He chaired the Emergency Committee of Atomic Scientists, which organized to alert the public to the da …y and Religion in their Relation to the Democratic Way of Life, Inc., New York, 1941). In a letter to philosopher Eric Gutkind, dated Jan. 3, 1954\""
+
+SAY: The author pages here show only bios, so my full count across all 10 pages (100 quotes total) stands: **Albert Einstein with 10 quotes**, ahead of J.K. Rowling (9) and Marilyn Monroe (7).
+
+ANSWER: Albert Einstein, 10 quotes
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: I iterated through all 10 pages of quotes.toscrape.com with the agent-browser, collecting every author name, then tallied: 100 total quotes with Albert Einstein at 10 appearances (next: J.K. Rowling with 9, Marilyn Monroe with 7).
+
+ANSWER: Albert Einstein, with 10 quotes

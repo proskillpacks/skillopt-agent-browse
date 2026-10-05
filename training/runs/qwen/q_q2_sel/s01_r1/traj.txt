@@ -1,0 +1,43 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": true, "score": 0.951, "wtok": 32561, "out_tok": 1548, "turns": 9, "secs": 87, "timed_out": false, "curl": false, "answer": "name: user3, View profile href: https://the-internet.herokuapp.com/users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser eval "JSON.stringify([...document.querySelectorAll('#containers > .hover-state > .hoverable')].map((el,i)=>({i, html: el.querySelector('.hover-shadow').textContent})))"
+-> [88 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"[]"
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "#containers"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.hoverable')].map((el,i)=>({i, shadow: el.querySelector('.hover-shadow')?.textContent})))"
+-> [119 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser eval "JSON.stringify({title: document.title, url: location.href, bodyLen: document.body?.innerText.length})"
+-> [100 chars] "{\"title\":\"The Internet\",\"url\":\"https://the-internet.herokuapp.com/hovers\",\"bodyLen\":86}"
+
+$ agent-browser eval "JSON.stringify({text: document.body.innerText, containers: document.querySelectorAll('#containers > div').length})"
+-> [129 chars] "{\"text\":\"Hovers\\n\\nHover over the image for additional information\\n\\nPowered by Elemental Selenium\",\"containers\":0}"
+
+$ agent-browser eval "document.querySelector('#content')?.innerHTML.slice(0,2000)"
+-> [955 chars] "\n        <style>\n.figure {\n  float: left;\n  padding-right: 20px;\n}\n\n.figcaption {\n  display: none;\n}\n\n.figure:hover .figcaption {\n  display: block;\n}\n</style>\n\n<div class=\"example\">\n  <h3>Hovers</h3>\n  <p>Hover over the image for additional information</p>\n  \n  <div class=\"figure\">\n    <img src=\"/img/avatar-blank.jpg\" alt=\"User Avatar\">\n    <div class=\"figcaption\">\n      <h5>name: user1</h5>\n      <a href=\"/users/1\">View profile</a>\n    </div>\n  </div>\n  \ …n    <div class=\"figcaption\">\n      <h5>name: user3</h5>\n      <a href=\"/users/3\">View profile</a>\n    </div>\n  </div>\n  \n</div>\n\n      "
+
+$ agent-browser eval "
+const figs = document.querySelectorAll('.figure');
+const r = figs[2].querySelector('img').getBoundingClientRect();
+JSON.stringify({x: Math.round(r.x + r.width/2), y: Math.round(r.y + r.height/2)})
+"
+-> [24 chars] "{\"x\":394,\"y\":214}"
+
+$ agent-browser hover ".figure:nth-child(3) img"; agent-browser eval "JSON.stringify({name: document.querySelector('.figure:nth-child(3) h5').textContent, link: document.querySelector('.figure:nth-child(3) a').href})"
+-> [92 chars] ✓ Done
+"{\"name\":\"name: user1\",\"link\":\"https://the-internet.herokuapp.com/users/1\"}"
+
+$ agent-browser hover ".figure:last-of-type"; agent-browser eval "JSON.stringify({name: [...document.querySelectorAll('.figure')][2].querySelector('h5').textContent, link: [...document.querySelectorAll('.figure')][2].querySelector('a').href})"
+-> [92 chars] ✓ Done
+"{\"name\":\"name: user3\",\"link\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+SAY: I hovered the third avatar on the hovers page. The overlay shown for it reads:
+
+- **Name:** `name: user3`
+- **View profile link:** `https://the-internet.herokuapp.com/users/3` (relative `href="/users/3"`)
+
+ANSWER: name: user3, View profile href: https://the-internet.herokuapp.com/users/3

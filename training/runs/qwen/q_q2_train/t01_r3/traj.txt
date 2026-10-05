@@ -1,0 +1,132 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r3", "correct": true, "score": 0.848, "wtok": 101619, "out_tok": 5050, "turns": 17, "secs": 277, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2" ; agent-browser wait "text=Start" ; agent-browser click "text=Start" ; agent-browser wait "text=Hello" ; agent-browser get text "h2"
+-> [393 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: text=Start. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: h2. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser snapshot -i
+-> [235 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+- button "Start" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+$ agent-browser click @e4 ; agent-browser wait --fn "document.querySelector('#loading').textContent === ''" ; agent-browser get text "#loading"
+-> [178 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #loading. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval "document.body.innerText"
+-> [125 chars] "Dynamically Loaded Page Elements\nExample 2: Element rendered after the fact\n\n\nStart\n\n\nPowered by Elemental Selenium"
+
+$ agent-browser click @e4 ; agent-browser wait --fn "document.getElementById('loading') && document.getElementById('loading').textContent.trim() !== ''" ; agent-browser get text "#loading"
+-> [178 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #loading. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  url: location.href,
+  hasLoading: !!document.getElementById('loading'),
+  startBtn: !!document.querySelector('#start'),
+  scripts: [...document.scripts].map(s => s.textContent.slice(0,300))
+})
+JS
+-> [521 chars] "{\"url\":\"https://the-internet.herokuapp.com/dynamic_loading/2\",\"hasLoading\":false,\"startBtn\":true,\"scripts\":[\"\",\"\",\"\",\"\",\"\",\"\\n      $(document).foundation();\\n    \",\"\\n  $(function(){\\n    $('#start button').click(function(){\\n      $('#start').hide();\\n      $('#start').before(\\\"<div id='loading'>Loading... <img src='/img/ajax-loader.gif'></div>\\\");\\n      setTimeout(function() {\\n        $('#loading').hide();\\n        $('#loading').before(\\\"<div id='finish' style='displ\"]}"
+
+$ agent-browser eval "jQuery('#start button').trigger('click')"; agent-browser wait --fn "document.getElementById('finish') && document.getElementById('finish').textContent.trim() !== ''" ; agent-browser get text "#finish"
+-> [251 chars] ✗ Evaluation error: ReferenceError: jQuery is not defined
+    at <anonymous>:1:1
+✗ Wait timed out after 25000ms
+✗ Element not found: #finish. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  dollar: typeof window.$,
+  jquery: typeof window.jQuery,
+  click: (function(){ document.querySelector('#start button').click(); return 'clicked'; })(),
+  loadingNow: document.getElementById('loading') ? document.getElementById('loading').outerHTML : null
+})
+JS
+-> [96 chars] "{\"dollar\":\"undefined\",\"jquery\":\"undefined\",\"click\":\"clicked\",\"loadingNow\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  loading: document.getElementById('loading') ? document.getElementById('loading').outerHTML : null,
+  finish: document.getElementById('finish') ? document.getElementById('finish').outerHTML : null,
+  startVisible: document.getElementById('start') ? getComputedStyle(document.getElementById('start')).display : 'no-el'
+})
+JS
+-> [64 chars] "{\"loading\":null,\"finish\":null,\"startVisible\":\"block\"}"
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2" ; agent-browser wait --fn "document.readyState==='complete'" ; agent-browser click "#start button" ; agent-browser wait --fn "document.getElementById('finish') && document.getElementById('finish').textContent.trim() !== ''" ; agent-browser get text "#finish"
+-> [265 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+true
+✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #finish. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  readyState: document.readyState,
+  startHTML: document.getElementById('start') ? document.getElementById('start').outerHTML : null,
+  scriptsLoaded: [...document.scripts].length,
+  jswindow: (function(){ try { return window.eval('typeof jQuery'); } catch(e){ return 'err'; } })()
+})
+JS
+-> [160 chars] "{\"readyState\":\"complete\",\"startHTML\":\"<div id=\\\"start\\\">\\n    <button>Start</button>\\n  </div>\",\"scriptsLoaded\":7,\"jswindow\":\"undefined\"}"
+
+$ agent-browser eval "JSON.stringify([...document.scripts].map(s => s.src || '(inline)'))"
+-> [382 chars] "[\"https://the-internet.herokuapp.com/js/vendor/298279967.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js\",\"https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js\",\"https://the-internet.herokuapp.com/js/foundation/foundation.js\",\"https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js\",\"(inline)\",\"(inline)\"]"
+
+$ agent-browser click "#start button" ; agent-browser wait "#loading" ; agent-browser wait --fn "document.getElementById('loading')===null" ; agent-browser eval "document.getElementById('finish') ? document.getElementById('finish').textContent : 'no finish yet'"
+-> [59 chars] ✓ Done
+✗ Wait timed out after 25000ms
+true
+"no finish yet"
+
+$ agent-browser eval --stdin <<'JS'
+const s = document.createElement('script');
+s.textContent = "window.__probe = 'mainWorld jQuery=' + (typeof window.jQuery) + '; dollar=' + (typeof window.$);";
+document.head.appendChild(s);
+String(window.__probe);
+JS
+-> [47 chars] "mainWorld jQuery=undefined; dollar=undefined"
+
+SAY: The page's own jQuery never loaded, so the Start handler was never registered. Let me reload and check again.
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2" ; agent-browser wait --fn "document.readyState==='complete'" ; sleep 3 ; agent-browser eval --stdin <<'JS'
+const s = document.createElement('script');
+s.textContent = "window.__probe = 'jQuery=' + (typeof window.jQuery);";
+document.head.appendChild(s);
+String(window.__probe);
+JS
+-> [93 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+true
+"jQuery=function"
+
+SAY: jQuery loaded this time. Now click Start and read the result:
+$ agent-browser click "#start button" ; agent-browser wait "#loading" ; agent-browser wait --fn "document.getElementById('finish') && document.getElementById('finish').textContent.trim() !== ''" ; agent-browser get text "#finish"
+-> [32 chars] ✓ Done
+✓ Done
+true
+Hello World!
+
+SAY: After clicking Start, the "Loading..." indicator appeared, and after a few seconds it was replaced by the finished element, which displays the text **Hello World!**
+
+ANSWER: Hello World!

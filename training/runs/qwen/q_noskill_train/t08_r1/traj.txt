@@ -1,0 +1,72 @@
+TASK t08: On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?
+EXPECT: ['gravity', '\\b7\\b', '12 years a slave']
+RESULT: {"id": "t08_r1", "correct": true, "score": 0.968, "wtok": 21459, "out_tok": 848, "turns": 8, "secs": 8, "timed_out": false, "curl": false, "answer": "Most awards in 2013: Gravity with 7 awards; Best Picture: 12 Years a Slave."}
+
+$ which agent-browser && agent-browser --help 2>&1 | head -50
+-> [2342 chars] /home/user/.nvm/versions/node/v24.21.0/bin/agent-browser
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, prote … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://www.scrapethissite.com/pages/ajax-javascript/ 2>&1 | tail -5
+-> [163 chars] ✓ Oscar Winning Films: AJAX and Javascript | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/ajax-javascript/
+
+$ agent-browser eval 'document.querySelector("#year-list") ? document.querySelector("#year-list").innerHTML : "no #year-list"'
+-> [16 chars] "no #year-list"
+
+$ agent-browser snapshot 2>&1 | head -60
+-> [1423 chars] - navigation
+  - list
+    - listitem [level=1]
+    - listitem [level=1]
+      - link "Sandbox" [ref=e9]
+    - listitem [level=1]
+      - link "Lessons" [ref=e10]
+    - listitem [level=1]
+      - link "FAQ" [ref=e11]
+    - listitem [level=1]
+      - link "Login" [ref=e12]
+- generic
+  - heading "Oscar Winning Films: AJAX and Javascript 87 items" [level=1, ref=e1]
+    - StaticText "Oscar Winning Films: AJAX and Javascript 87 items"
+  - separator
+- generic
+  - paragraph
+    - StaticText "Click throu …ink "2013" [ref=e5]
+  - link "2012" [ref=e6]
+  - link "2011" [ref=e7]
+  - link "2010" [ref=e8]
+- StaticText "Lessons and Videos © Hartley Brody 2023"
+
+$ agent-browser click @e5 && agent-browser wait 2000
+-> [14 chars] ✓ Done
+✓ Done
+
+$ agent-browser eval 'Array.from(document.querySelectorAll("#films table tbody tr, table tbody tr")).map(tr => Array.from(tr.cells).map(td => td.textContent.trim().replace(/\s+/g," ")).join(" | ")).join("\n")'
+-> [328 chars] "12 Years a Slave | 9 | 3 | \nGravity | 10 | 7 | \nDallas Buyers Club | 6 | 3 | \nFrozen | 2 | 2 | \nThe Great Gatsby | 2 | 2 | \nHer | 5 | 1 | \nBlue Jasmine | 3 | 1 | \nMr Hublot | 1 | 1 | \nThe Lady in Number 6: Music Saved My Life | 1 | 1 | \nHelium | 1 | 1 | \nThe Great Beauty | 1 | 1 | \n20 Feet from Stardom | 1 | 1 | "
+
+$ agent-browser eval 'Array.from(document.querySelectorAll("table tbody tr")).map(tr => tr.innerHTML).join("\n---\n")' | head -60
+-> [1925 chars] "<td class=\"film-title\">12 Years a Slave</td><td class=\"film-nominations\">9</td><td class=\"film-awards\">3</td><td class=\"film-best-picture\"><i class=\"glyphicon glyphicon-flag\"></i></td>\n---\n<td class=\"film-title\">Gravity</td><td class=\"film-nominations\">10</td><td class=\"film-awards\">7</td><td class=\"film-best-picture\"></td>\n---\n<td class=\"film-title\">Dallas Buyers Club</td><td class=\"film-nominations\">6</td><td class=\"film-awards\">3</td><td class=\"film-best-picture\ …s=\"film-title\">20 Feet from Stardom</td><td class=\"film-nominations\">1</td><td class=\"film-awards\">1</td><td class=\"film-best-picture\"></td>"
+
+SAY: I opened the page in the browser, clicked the **2013** year link, and waited for the films table to load via AJAX. The 2013 films table shows 12 films with their nominations, awards, and Best Picture flag:
+
+- 12 Years a Slave — 3 awards, 🚩 Best Picture
+- Gravity — 7 awards
+- Dallas Buyers Club — 3 awards
+- Frozen — 2, The Great Gatsby — 2, Her — 1, Blue Jasmine — 1, Mr Hublot — 1, The Lady in Number 6 — 1, Helium — 1, The Great Beauty — 1, 20 Feet from Stardom — 1
+
+**Most awards:** *Gravity*, wi

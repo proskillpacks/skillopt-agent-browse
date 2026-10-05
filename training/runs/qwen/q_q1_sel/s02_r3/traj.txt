@@ -1,0 +1,53 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r3", "correct": true, "score": 0.978, "wtok": 14336, "out_tok": 370, "turns": 5, "secs": 3, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login; agent-browser snapshot -i
+-> [302 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill @e5 "user"; agent-browser fill @e6 "pass"; agent-browser click @e2; agent-browser get url
+-> [55 chars] ✓ Done
+✓ Done
+✓ Done
+https://quotes.toscrape.com/login
+
+$ agent-browser wait --text "Quotes" ; agent-browser get url; agent-browser snapshot -i
+-> [2018 chars] Quotes
+https://quotes.toscrape.com/
+- heading "Quotes to Scrape" [level=1, ref=e9]
+  - link "Quotes to Scrape" [ref=e41]
+- link "Logout" [ref=e42]
+- link "(about)" [ref=e10]
+- link "(Goodreads page)" [ref=e11]
+- link "change" [ref=e43]
+- link "deep-thoughts" [ref=e44]
+- link "thinking" [ref=e45]
+- link "world" [ref=e46]
+- link "(about)" [ref=e12]
+- link "(Goodreads page)" [ref=e13]
+- link "abilities" [ref=e47]
+- link "choices" [ref=e48]
+- link "(about)" [ref=e14]
+- link "(Goodreads page)" [ref=e …hip" [ref=e37]
+- link "friends" [ref=e38]
+- link "truth" [ref=e39]
+- link "simile" [ref=e40]
+- link "GoodReads.com" [ref=e73]
+- link "Zyte" [ref=e74]
+
+SAY: Logged in — the first quote's "(Goodreads page)" link is @e11. Let me get its href.
+$ agent-browser get attr @e11 href
+-> [54 chars] http://goodreads.com/author/show/9810.Albert_Einstein
+
+SAY: The "(Goodreads page)" link on the first quote points to:
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

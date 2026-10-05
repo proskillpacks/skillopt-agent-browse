@@ -1,0 +1,70 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r3", "correct": true, "score": 0.97, "wtok": 20160, "out_tok": 577, "turns": 6, "secs": 4, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open "https://quotes.toscrape.com/login" && agent-browser snapshot -i
+-> [302 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill "input#id_username" "user123" && agent-browser fill "input#id_password" "pass" && agent-browser click "button#loginSubmit"; agent-browser snapshot -i
+-> [368 chars] ✗ Element not found: input#id_username. Verify the selector, role, or name is correct and the element exists in the DOM.
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill @e5 "user123"; agent-browser fill @e6 "pass"; agent-browser click @e2; agent-browser snapshot -i
+-> [283 chars] ✓ Done
+✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]: user123
+- textbox [ref=e6]: ••••
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser get url; agent-browser snapshot -i | head -50
+-> [1541 chars] https://quotes.toscrape.com/
+- heading "Quotes to Scrape" [level=1, ref=e9]
+  - link "Quotes to Scrape" [ref=e41]
+- link "Logout" [ref=e42]
+- link "(about)" [ref=e10]
+- link "(Goodreads page)" [ref=e11]
+- link "change" [ref=e43]
+- link "deep-thoughts" [ref=e44]
+- link "thinking" [ref=e45]
+- link "world" [ref=e46]
+- link "(about)" [ref=e12]
+- link "(Goodreads page)" [ref=e13]
+- link "abilities" [ref=e47]
+- link "choices" [ref=e48]
+- link "(about)" [ref=e14]
+- link "(Goodreads page)" [ref=e15]
+- l …- link "(Goodreads page)" [ref=e27]
+- link "misattributed-eleanor-roosevelt" [ref=e69]
+- link "(about)" [ref=e28]
+- link "(Goodreads page)" [ref=e29]
+
+$ agent-browser eval "document.querySelector('.quote a[href*=goodreads]') ? document.querySelector('.quote a[href*=goodreads]').href : JSON.stringify([...document.querySelectorAll('.quote')][0].querySelectorAll('a').map(a=>a.href))"
+-> [56 chars] "http://goodreads.com/author/show/9810.Albert_Einstein"
+
+SAY: Logged in successfully (the page now shows a "Logout" link, and each quote gained a "(Goodreads page)" link). The first quote on the first page is the Albert Einstein quote, and its "(Goodreads page)" link points to:
+
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

@@ -1,0 +1,181 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r6", "correct": true, "score": 0.908, "wtok": 61223, "out_tok": 3084, "turns": 9, "secs": 37, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open "https://books.toscrape.com/" && agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = [...document.querySelectorAll('article.product')];
+  const sample = arts.slice(0,2).map(a => ({
+    title: a.querySelector('h3 a')?.textContent,
+    price: a.querySelector('.price_color')?.textContent,
+    rating: a.querySelectorAll('.star')[0]?.className
+  }));
+  const next = [...document.querySelectorAll('ul.pager li a')].map(a => a.getAttribute('href'));
+  return JSON.stringify({count: arts.length, sample, next, total: document.querySelector('h3').textContent});
+})()
+JS
+-> [173 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"{\"count\":0,\"sample\":[],\"next\":[\"catalogue/page-2.html\"],\"total\":\"A Light in the ...\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const pods = document.querySelectorAll('article.product_pod');
+  const sample = pods.length ? pods[0].outerHTML.slice(0,600) : document.querySelector('main').innerHTML.slice(0,800);
+  return JSON.stringify({pods: pods.length, sample});
+})()
+JS
+-> [726 chars] "{\"pods\":20,\"sample\":\"<article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"catalogue/a-light-in-the-attic_1000/index.html\\\"><img src=\\\"media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\\\" alt=\\\"A Light in the Attic\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n           …"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n               \"}"
+
+$ cd /tmp && rm -f books.jsonl && url="https://books.toscrape.com/" && pages=0
+while [ -n "$url" ]; do
+  for i in 1 2 3; do agent-browser open "$url" && break; sleep 2; done
+  data=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const pods = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const h = a.querySelector('h3');
+    const title = a.querySelector('h3 a')?.getAttribute('title') || h?.textContent.trim();
+    const price = parseFloat(a.querySelector('.price_color').textContent.replace('£',''));
+    return {t: title, p: price};
+  });
+  const next = document.querySelector('ul.pager li.next a')?.getAttribute('href');
+  return JSON.stringify({n: pods.length, next, pods});
+})()
+JS
+)
+  echo "$data" | jq -c '.pods[]' >> books.jsonl
+  next=$(echo "$data" | jq -r .next)
+  pages=$((pages+1))
+  if [ -z "$next" ]; then break; fi
+  case "$next" in http*) url="$next";; *) url="h
+-> [221 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+jq: error (at <stdin>:1): Cannot index string with string "pods"
+jq: error (at <stdin>:1): Cannot index string with string "next"
+pages: 1, rows: 0
+
+$ cd /tmp && rm -f books.jsonl && url="https://books.toscrape.com/" && pages=0
+while [ -n "$url" ]; do
+  for i in 1 2 3; do agent-browser open "$url" && break; sleep 2; done
+  inner=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const pods = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const title = a.querySelector('h3 a')?.getAttribute('title') || a.querySelector('h3')?.textContent.trim();
+    const price = parseFloat(a.querySelector('.price_color').textContent.replace('£',''));
+    return {t: title, p: price};
+  });
+  const next = document.querySelector('ul.pager li.next a')?.getAttribute('href') || null;
+  return JSON.stringify({n: pods.length, next, pods});
+})()
+JS
+)
+  data=$(echo "$inner" | jq -r .)
+  echo "$data" | jq -c '.pods[]' >> books.jsonl
+  next=$(echo "$data" | jq -r .next)
+  pages=$((pages+1))
+  if [ -z "$next" ] || [ "$next" = "null" ]; then break; f
+-> [243 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-2.html
+✓ 404 Not Found
+  https://books.toscrape.com/page-3.html
+pages: 3, rows: 40
+
+SAY: The pager uses relative paths within the catalogue directory. Fixing the URL resolution:
+$ cd /tmp && rm -f books.jsonl && url="https://books.toscrape.com/" && pages=0
+while [ -n "$url" ]; do
+  for i in 1 2 3; do agent-browser open "$url" && break; sleep 2; done
+  inner=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const pods = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const title = a.querySelector('h3 a')?.getAttribute('title') || a.querySelector('h3')?.textContent.trim();
+    const price = parseFloat(a.querySelector('.price_color').textContent.replace('£',''));
+    return {t: title, p: price};
+  });
+  const next = document.querySelector('ul.pager li.next a')?.getAttribute('href') || null;
+  return JSON.stringify({n: pods.length, next, pods});
+})()
+JS
+)
+  data=$(echo "$inner" | jq -r .)
+  n=$(echo "$data" | jq -r .n)
+  [ "$n" -eq 0 ] && { echo "no pods on $url, stopping"; break; }
+  echo "$data" | jq -c '.pods[]' >> books.jsonl
+  next=$(echo "$data
+-> [334 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+sed: -e expression #1, char 12: unknown option to `s'
+✗ Navigation failed: net::ERR_NAME_NOT_RESOLVED
+✗ Navigation failed: net::ERR_NAME_NOT_RESOLVED
+✗ Navigation failed: net::ERR_NAME_NOT_RESOLVED
+no pods on /catalogue/page-2.html, stopping
+pages: 1, rows: 20
+
+$ cd /tmp && rm -f books.jsonl && url="https://books.toscrape.com/" && pages=0
+while [ -n "$url" ]; do
+  for i in 1 2 3; do agent-browser open "$url" && break; sleep 2; done
+  inner=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const pods = [...document.querySelectorAll('article.product_pod')].map(a => {
+    const title = a.querySelector('h3 a')?.getAttribute('title') || a.querySelector('h3')?.textContent.trim();
+    const price = parseFloat(a.querySelector('.price_color').textContent.replace('£',''));
+    return {t: title, p: price};
+  });
+  const next = document.querySelector('ul.pager li.next a')?.getAttribute('href') || null;
+  return JSON.stringify({n: pods.length, next, pods});
+})()
+JS
+)
+  data=$(echo "$inner" | jq -r .)
+  n=$(echo "$data" | jq -r .n)
+  [ "$n" -eq 0 ] && { echo "no pods on $url, stopping"; break; }
+  echo "$data" | jq -c '.pods[]' >> books.jsonl
+  next=$(echo "$data
+-> [4742 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-2.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-3.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-4.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-5.html
+✓ All products | Books to Scrape - Sandbox
+  https: …crape.com/catalogue/page-49.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-50.html
+pages: 50, rows: 1000
+
+SAY: All 50 pages collected (1000 books). Now computing:
+$ cd /tmp && jq -s '[.[] | select(.p < 12.0)]' books.jsonl | jq 'length'
+echo "---cheapest---"
+jq -s 'sort_by(.p) | .[0]' books.jsonl
+echo "---price range / duplicates check---"
+jq -s 'map(.p) | [min, max]' books.jsonl
+jq -s 'length' books.jsonl
+-> [129 chars] 44
+---cheapest---
+{
+  "t": "An Abundance of Katherines",
+  "p": 10
+}
+---price range / duplicates check---
+[
+  10,
+  59.99
+]
+1000
+
+$ cd /tmp && jq -c -s '[.[] | select(.p == 10)]' books.jsonl
+jq -c -s '[.[] | .p] | [unique][]' books.jsonl | head -5
+-> [5348 chars] [{"t":"An Abundance of Katherines","p":10}]
+[10,10.01,10.02,10.16,10.23,10.27,10.29,10.4,10.41,10.56,10.6,10.62,10.64,10.65,10.66,10.69,10.76,10.79,10.9,10.92,10.93,10.97,11.05,11.1,11.11,11.21,11.23,11.33,11.38,11.45,11.48,11.53,11.64,11.68,11.75,11.82,11.83,11.84,11.87,11.88,11.89,12.08,12.16,12.23,12.25,12.29,12.3,12.34,12.36,12.47,12.51,12.55,12.61,12.75,12.84,12.86,12.87,12.91,12.96,13.03,13.12,13.2,13.22,13.33,13.34,13.38,13.47,13.51,13.61,13.66,13.71,13.73,13.76,13.82,13.86,13.9,13.92,13. …58.14,58.32,58.33,58.35,58.54,58.55,58.59,58.63,58.64,58.75,58.79,58.81,58.87,58.99,59.04,59.15,59.45,59.48,59.64,59.71,59.9,59.92,59.95,59.98,59.99]
+
+SAY: Done. I scraped all 50 catalogue pages (1,000 books) using the `agent-browser` CLI, following the pager links and extracting each book's title and price from the DOM.
+
+- **Books under £12.00:** 44
+- **Cheapest book:** *An Abundance of Katherines* at £10.00 (the unique minimum — the next cheapest is £10.01)
+
+ANSWER: 44 books cost less than £12.00; the cheapest book is "An Abundance of Katherines" at £10.00.

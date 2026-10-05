@@ -1,0 +1,102 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r3", "correct": true, "score": 0.95, "wtok": 33052, "out_tok": 1596, "turns": 6, "secs": 29, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ mkdir -p /tmp/books && agent-browser open "https://books.toscrape.com/catalogue/page-1.html" && agent-browser eval "JSON.stringify({count:document.querySelectorAll('.product_pod').length, last: document.querySelector('li.next a span')?.textContent ?? null})" && agent-browser close
+-> [142 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-1.html
+"{\"count\":20,\"last\":null}"
+✓ Browser closed
+
+$ cd /tmp/books && rm -f p*.json
+for i in $(seq 1 50); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$i.html"
+  agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.product_pod')).map(el=>({t:el.querySelector('a').getAttribute('title'),p:parseFloat(el.querySelector('.price_color').textContent.replace('£',''))})))" > "p$i.json"
+done
+agent-browser close
+ls /tmp/books | wc -l; tail -c 300 /tmp/books/p1.json
+-> [5061 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-1.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-2.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-3.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-4.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-5.html
+✓ All products | Books to Scra …"t\":null,\"p\":35.02},{\"t\":null,\"p\":57.25},{\"t\":null,\"p\":23.88},{\"t\":null,\"p\":37.59},{\"t\":null,\"p\":51.33},{\"t\":null,\"p\":45.17}]"
+
+SAY: Prices extracted but titles came back null (the link has no `title` attribute). Re-extracting with the image alt text:
+$ cd /tmp/books && for i in $(seq 1 50); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$i.html"
+  agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.product_pod')).map(el=>({t:el.querySelector('img').alt,p:parseFloat(el.querySelector('.price_color').textContent.replace('£',''))})))" > "t$i.json"
+done
+agent-browser close
+python3 -c "
+import json,glob
+books=[]
+for f in glob.glob('t*.json'):
+    books+=json.load(open(f))
+print('total books:',len(books))
+lt=[b for b in books if b['p']<12.0]
+print('under 12:',len(lt))
+cheapest=min(books,key=lambda b:b['p'])
+print('cheapest:',cheapest)
+"
+-> [4933 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-1.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-2.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-3.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-4.html
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-5.html
+✓ All products | Books to Scra …ll last):
+  File "<string>", line 7, in <module>
+TypeError: string indices must be integers, not 'str'
+total books: 58029
+
+
+Command exited with code 1
+SAY: The eval output is a quoted JSON string. Let me inspect and fix:
+$ cd /tmp/books && head -c 200 t1.json; echo; python3 -c "
+import json,glob
+books=[]
+for f in sorted(glob.glob('t*.json')):
+    raw=json.load(open(f))
+    if isinstance(raw,str): raw=json.loads(raw)
+    books+=raw
+print('total books:',len(books))
+lt=[b for b in books if b['p']<12.0]
+print('under 12.00:',len(lt))
+print('cheapest:',min(books,key=lambda b:b['p']))
+"
+-> [290 chars] "[{\"t\":\"A Light in the Attic\",\"p\":51.77},{\"t\":\"Tipping the Velvet\",\"p\":53.74},{\"t\":\"Soumission\",\"p\":50.1},{\"t\":\"Sharp Objects\",\"p\":47.82},{\"t\":\"Sapiens: A Brief History of H
+total books: 1000
+under 12.00: 44
+cheapest: {'t': 'An Abundance of Katherines', 'p': 10}
+
+$ cd /tmp/books && python3 -c "
+import json,glob
+books=[]
+for f in sorted(glob.glob('t*.json')):
+    raw=json.load(open(f))
+    if isinstance(raw,str): raw=json.loads(raw)
+    books+=raw
+low=[b for b in books if b['p']<=10.5]
+print(sorted(low,key=lambda b:b['p'])[:5])
+print('titles missing:',sum(1 for b in books if not b['t']))
+"
+-> [268 chars] [{'t': 'An Abundance of Katherines', 'p': 10}, {'t': 'The Origin of Species', 'p': 10.01}, {'t': 'The Tipping Point: How Little Things Can Make a Big Difference', 'p': 10.02}, {'t': 'Patience', 'p': 10.16}, {'t': 'Greek Mythic History', 'p': 10.23}]
+titles missing: 0
+
+SAY: I crawled all 50 catalogue pages (1,000 books total) with `agent-browser`, extracting each book's title and price via `eval`.
+
+Results:
+- **Books under £12.00:** 44
+- **Cheapest book:** *An Abundance of Katherines* at **£10.00** (the next cheapest is *The Origin of Species* at £10.01, so it's unambiguously the single cheapest)
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00

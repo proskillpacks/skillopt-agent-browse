@@ -1,0 +1,122 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": true, "score": 0.887, "wtok": 75646, "out_tok": 3191, "turns": 12, "secs": 46, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating, out of 26 books total in the Historical Fiction category."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/history-20/index.html"; agent-browser snapshot -i
+-> [130 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/history-20/index.html
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/" ; agent-browser wait "nav ul"; agent-browser snapshot -i
+-> [5469 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+- link "Books to Scrape" [ref=e3]
+- link "Home" [ref=e4]
+- link "Books" [ref=e5]
+- link "Travel" [ref=e7]
+- link "Mystery" [ref=e8]
+- link "Historical Fiction" [ref=e9]
+- link "Sequential Art" [ref=e10]
+- link "Classics" [ref=e11]
+- link "Philosophy" [ref=e12]
+- link "Romance" [ref=e13]
+- link "Womens Fiction" [ref=e14]
+- link "Fiction" [ref=e15]
+- link "Childrens" [ref=e16]
+- link "Religion"  …"It's Only the Himalayas" [level=3, ref=e76]
+  - link "It's Only the Himalayas" [ref=e116]
+- button "Add to basket" [ref=e136]
+- link "next" [ref=e6]
+
+$ agent-browser click @e9; agent-browser wait "ol li article"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  url: location.href,
+  total: document.querySelector('.record_count')?.textContent?.trim() || null,
+  pages: [...document.querySelectorAll('.pagination ul li a')].map(a=>a.textContent.trim()),
+  books: document.querySelectorAll('article.product_pod').length,
+  oneStar: [...document.querySelectorAll('article.product_pod .star-rating')].filter(e=>e.className.includes('One')).length
+})
+JS
+-> [169 chars] ✓ Done
+✓ Done
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"total\":null,\"pages\":[],\"books\":13,\"oneStar\":3}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  resultCount: document.body.innerText.match(/\d+ results?/i)?.[0] || null,
+  next: document.querySelector('a.pace, footer a:contains' ) ? null : null,
+  links: [...document.querySelectorAll('a')].filter(a=>/^(next|previous)$/.test(a.textContent.trim())).map(a=>a.href)
+})
+JS
+-> [187 chars] ✗ Evaluation error: SyntaxError: Failed to execute 'querySelector' on 'Document': 'a.pace, footer a:contains' is not a valid selector.
+    at <anonymous>:3:18
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  resultCount: document.body.innerText.match(/\d+\s*results?/i)?.[0] || null,
+  nextLinks: [...document.querySelectorAll('a')].filter(a=>['next','previous'].includes(a.textContent.trim())).map(a=>a.href)
+})
+JS
+-> [140 chars] "{\"resultCount\":\"26 results\",\"nextLinks\":[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"]}"
+
+SAY: 26 results, 13 per page, 2 pages. Page 1 had 3 one-star books. Checking page 2:
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"; agent-browser wait "ol li article"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  books: document.querySelectorAll('article.product_pod').length,
+  oneStar: [...document.querySelectorAll('article.product_pod .star-rating')].filter(e=>e.className.includes('One')).length,
+  detail: [...document.querySelectorAll('article.product_pod .star-rating')].map(e=>e.className)
+})
+JS
+-> [314 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+✓ Done
+"{\"books\":6,\"oneStar\":0,\"detail\":[\"star-rating Five\",\"star-rating Five\",\"star-rating Three\",\"star-rating Three\",\"star-rating Four\",\"star-rating Five\"]}"
+
+SAY: Page 2 shows 6 books, but the footer says "26 results". Let me check if there's a page 3.
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a=>['next','previous'].includes(a.textContent.trim())).map(a=>a.href))
+JS
+-> [93 chars] "[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1.html\"]"
+
+SAY: No next link from page 2, so the category spans 2 pages. But the footer said "26 results" — let me verify what that number refers to:
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  p2: document.body.innerText.match(/\d+\s*results?/i)?.[0] || null,
+  footer: document.querySelector('footer')?.innerText
+})
+JS
+-> [42 chars] "{\"p2\":\"26 results\",\"footer\":\"\"}"
+
+$ agent-browser eval --stdin <<'JS'
+const el = [...document.querySelectorAll('*')].find(e => /\d+\s*results?/i.test(e.textContent) && e.children.length===0);
+JSON.stringify(el ? {tag: el.tagName, cls: el.className, text: el.textContent.trim(), parent: el.parentElement.tagName+'.'+el.parentElement.className} : null)
+JS
+-> [7 chars] "null"
+
+$ agent-browser eval --stdin <<'JS'
+const t = document.body.innerText; const m = t.match(/\d+\s*results?/i); JSON.stringify(m && t.slice(Math.max(0,m.index-80), m.index+40))
+JS
+-> [147 chars] "\"\\nShort Stories\\nNovels\\nHealth\\nPolitics\\nCultural\\nErotica\\nCrime\\nHistorical Fiction\\n26 results - showing 21 to 26.\\nWarning! \""
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser wait "ol li article"; agent-browser eval --stdin <<'JS'
+const t = document.body.innerText; const m = t.match(/\d+\s*results.*?\n?/);
+JSON.stringify({
+  snippet: m ? t.slice(m.index, m.index+100) : null,
+  books: document.querySelectorAll('article.product_pod').length,
+  oneStar: document.querySelectorAll('article.product_pod .star-rating.One').length
+})
+JS
+-> [292 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+"{\"snippet\":\"26 results - showing 1 to 20.\\nWarning! This is a demo website for web scraping purposes. Prices and \",\"books\":20,\"oneStar\":5}"
+
+SAY: Page 1 actually has 20 books (my first read was premature — 5 one-star). Page 2 showed "21 to 26" with 6 books and ratings [Five, Five, Three, Three, Four, Five] — zero one-star. So:
+
+- Total: 26 books (20 on page 1 + 6 on page 2), matching the "26 results" count
+- One-star: 5 on page 1, 0 on page 2 → **5 total**
+
+ANSWER: 5 books have a one-star rating, out of 26 books total in the Historical Fiction category.

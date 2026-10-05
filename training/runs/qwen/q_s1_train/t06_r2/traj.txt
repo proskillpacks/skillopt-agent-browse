@@ -1,0 +1,87 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r2", "correct": true, "score": 0.957, "wtok": 28494, "out_tok": 1746, "turns": 8, "secs": 12, "timed_out": false, "curl": false, "answer": "5 five-star ratings out of 32 total books in the Mystery category."}
+
+$ agent-browser open "https://books.toscrape.com/category/generator/1/mystery.html"
+-> [79 chars] ✓ 404 Not Found
+  https://books.toscrape.com/category/generator/1/mystery.html
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "JSON.stringify([...document.querySelectorAll('a')].filter(a=>/mystery/i.test(a.textContent)).map(a=>a.href))"
+-> [154 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; agent-browser eval "
+const out={pages:[],total:0,five:0};
+let href=location.href;
+while(href){
+  const books=[...document.querySelectorAll('article.product_pod')];
+  out.total+=books.length;
+  out.five+=books.filter(b=>b.querySelector('.star-rating.Five')).length;
+  out.pages.push(location.pathname);
+  const next=document.querySelector('li.next a');
+  href=next?next.getAttribute('href'):null;
+  if(href){
+    const res=await fetch(href);
+    const html=await res.text();
+    document.open();document.write(html);document.close();
+    document.querySelectorAll('li.next'); // ensure parsed
+  }
+}
+JSON.stringify(out);
+"
+-> [249 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+✗ Evaluation error: SyntaxError: await is only valid in async functions and the top level bodies of modules
+
+
+Command exited with code 1
+$ agent-browser eval "
+(async()=>{
+const out={pages:0,total:0,five:0};
+let nextHref=document.querySelector('li.next a')?.getAttribute('href');
+while(true){
+  const books=[...document.querySelectorAll('article.product_pod')];
+  out.pages++;
+  out.total+=books.length;
+  out.five+=books.filter(b=>b.querySelector('.star-rating.Five')).length;
+  if(!nextHref) break;
+  const res=await fetch(nextHref);
+  const html=await res.text();
+  document.open();document.write(html);document.close();
+  nextHref=document.querySelector('li.next a')?.getAttribute('href');
+}
+return JSON.stringify(out);
+})()"
+-> [40 chars] "{\"pages\":2,\"total\":32,\"five\":5}"
+
+SAY: The category has 2 pages. Let me verify by navigating explicitly:
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; agent-browser eval "JSON.stringify({books:document.querySelectorAll('article.product_pod').length,five:[...document.querySelectorAll('article.product_pod')].filter(b=>b.querySelector('.star-rating.Five')).length})"; agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html?page=2"; agent-browser eval "JSON.stringify({books:document.querySelectorAll('article.product_pod').length,five:[...document.querySelectorAll('article.product_pod')].filter(b=>b.querySelector('.star-rating.Five')).length})"; agent-browser close
+-> [306 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+"{\"books\":20,\"five\":3}"
+✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html?page=2
+"{\"books\":20,\"five\":3}"
+✓ Browser closed
+
+SAY: The `?page=2` param isn't the real pagination (it returned page 1 again). Using the actual "next" links:
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; agent-browser eval "JSON.stringify({url:location.href,books:document.querySelectorAll('article.product_pod').length,five:[...document.querySelectorAll('article.product_pod')].filter(b=>b.querySelector('.star-rating.Five')).length,next:document.querySelector('li.next a')?.getAttribute('href')})"
+-> [251 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"books\":20,\"five\":3,\"next\":\"page-2.html\"}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html"; agent-browser eval "JSON.stringify({url:location.href,books:document.querySelectorAll('article.product_pod').length,five:[...document.querySelectorAll('article.product_pod')].filter(b=>b.querySelector('.star-rating.Five')).length,next:!!document.querySelector('li.next a')})"; agent-browser close
+-> [260 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html\",\"books\":12,\"five\":2,\"next\":false}"
+✓ Browser closed
+
+SAY: Verified by navigating each real page in the browser:
+
+- **Page 1** (`mystery_3/index.html`): 20 books, 3 five-star
+- **Page 2** (`mystery_3/page-2.html`): 12 books, 2 five-star, no further pages
+
+**Totals: 32 books in the Mystery category, 5 of them with a five-star rating.**
+
+ANSWER: 5 five-star ratings out of 32 total books in the Mystery category.

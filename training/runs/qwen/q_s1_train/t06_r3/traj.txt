@@ -1,0 +1,35 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r3", "correct": true, "score": 0.97, "wtok": 19907, "out_tok": 826, "turns": 6, "secs": 8, "timed_out": false, "curl": false, "answer": "5 books have a five-star rating; the category has 32 books in total."}
+
+$ agent-browser open https://books.toscrape.com/catalogue/category/mystery_2/index.html; agent-browser eval "JSON.stringify({title:document.title, links:Array.from(document.querySelectorAll('ul.paginate li a')).map(a=>a.textContent), count:document.querySelectorAll('.page_number').length})"
+-> [142 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/mystery_2/index.html
+"{\"title\":\"404 Not Found\",\"links\":[],\"count\":0}"
+
+$ agent-browser open https://books.toscrape.com/ ; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('ul.all-genres li a')).map(a=>({t:a.textContent, h:a.href})))"; agent-browser close
+-> [95 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[]"
+✓ Browser closed
+
+$ agent-browser open https://books.toscrape.com/ ; agent-browser eval "JSON.stringify({genres:Array.from(document.querySelectorAll('a')).filter(a=>a.href.includes('category')).map(a=>a.href), uls:Array.from(document.querySelectorAll('ul')).map(u=>u.className)})"; agent-browser close
+-> [4242 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"{\"genres\":[\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\",\"https://books.tos …ttps://books.toscrape.com/catalogue/category/books/crime_51/index.html\"],\"uls\":[\"breadcrumb\",\"nav nav-list\",\"\",\"pager\"]}"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; agent-browser eval "JSON.stringify({total:document.querySelectorAll('.page_number').length, pager:document.querySelector('ul.pager')?document.querySelector('ul.pager').textContent:null, links:Array.from(document.querySelectorAll('ul.pager a')).map(a=>({t:a.textContent,h:a.href}))})"
+-> [426 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+"{\"total\":0,\"pager\":\"\\n            \\n            \\n            \\n                Page 1 of 2\\n            \\n            \\n            \\n                next\\n            \\n        \",\"links\":[{\"t\":\"next\",\"h\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html\"}]}"
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article')).map(a=>a.querySelector('p.star-rating')?.className))"; agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article')).map(a=>a.querySelector('p.star-rating')?.className))"; agent-browser close
+-> [807 chars] "[\"star-rating Four\",\"star-rating One\",\"star-rating Four\",\"star-rating One\",\"star-rating Four\",\"star-rating Two\",\"star-rating One\",\"star-rating One\",\"star-rating Five\",\"star-rating Two\",\"star-rating Three\",\"star-rating Four\",\"star-rating Three\",\"star-rating One\",\"star-rating Three\",\"star-rating Two\",\"star-rating Three\",\"star-rating Five\",\"star-rating Five\",\"star-rating Four\"]"
+✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/cat …ee\",\"star-rating Two\",\"star-rating Four\",\"star-rating Five\",\"star-rating Three\",\"star-rating Three\",\"star-rating One\"]"
+✓ Browser closed
+
+SAY: The Mystery category has 2 pages (20 books + 12 books = 32 total). Five-star ratings: 3 on page 1, 2 on page 2.
+
+ANSWER: 5 books have a five-star rating; the category has 32 books in total.

@@ -1,0 +1,50 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r3", "correct": true, "score": 0.969, "wtok": 20549, "out_tok": 758, "turns": 7, "secs": 107, "timed_out": false, "curl": false, "answer": "Heading: \"File Uploaded!\"; uploaded file name: skillopt-note.txt"}
+
+$ cd /home/user/skill-research/skillopt-agent-browse/tests/runs/q_q2_train/t12_r3 && echo "skillopt test note" > skillopt-note.txt && cat skillopt-note.txt
+-> [19 chars] skillopt test note
+
+$ agent-browser open "https://the-internet.herokuapp.com/upload"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/upload"; agent-browser wait "#file-select"; agent-browser snapshot -i
+-> [306 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "File Uploader" [level=3, ref=e2]
+- button "Choose File" [ref=e3]: No file chosen
+- button "Upload" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+$ agent-browser upload "#file-select" "$(pwd)/skillopt-note.txt"; agent-browser click "#file-upload"; agent-browser wait "#uploaded-files"; agent-browser get text body
+-> [300 chars] ✗ Element not found: #file-select. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+✗ Wait timed out after 25000ms
+File Uploader
+
+Choose a file on your system and then click upload. Or, drag and drop a file into the area below.
+
+
+
+Powered by Elemental Selenium
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('input,form')].map(e=>({tag:e.tagName,id:e.id,type:e.type,name:e.name})))"
+-> [205 chars] "[{\"tag\":\"FORM\",\"id\":\"\",\"name\":\"\"},{\"tag\":\"INPUT\",\"id\":\"file-upload\",\"type\":\"file\",\"name\":\"file\"},{\"tag\":\"INPUT\",\"id\":\"file-submit\",\"type\":\"submit\",\"name\":\"\"}]"
+
+$ agent-browser upload "#file-upload" "$(pwd)/skillopt-note.txt"; agent-browser click "#file-submit"; agent-browser wait --fn "document.querySelector('#uploaded-files') && document.querySelector('#uploaded-files').textContent.trim().length>0"; agent-browser get text body
+-> [82 chars] ✓ Done
+✓ Done
+true
+File Uploaded!
+skillopt-note.txt
+Powered by Elemental Selenium
+
+SAY: Done. The file `skillopt-note.txt` was created and uploaded via the form (file input `#file-upload`, submit `#file-submit`).
+
+After upload, the page shows:
+- **Heading:** `File Uploaded!`
+- **Uploaded file name displayed:** `skillopt-note.txt`
+
+ANSWER: Heading: "File Uploaded!"; uploaded file name: skillopt-note.txt

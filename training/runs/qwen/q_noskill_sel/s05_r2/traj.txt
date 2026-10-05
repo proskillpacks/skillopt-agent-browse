@@ -1,0 +1,123 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r2", "correct": false, "score": 0.0, "wtok": 88954, "out_tok": 2324, "turns": 14, "secs": 20, "timed_out": false, "curl": true, "answer": "Priya N.'s subject was \"Q3 vendor audit \u2014 rescheduled to the 19th\"; after archiving (confirmed), the receipt number shown was #A-7028."}
+
+$ agent-browser --help 2>&1 | head -50
+$ curl -s http://localhost:8791/inbox.html | head -100 2>/dev/null; echo "---"; echo "(checking page exists)"
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+-> [1923 chars] <!doctype html><html><head><meta charset="utf-8"><title>Inbox</title>
+<style>body{font-family:sans-serif;margin:20px}.row{border-bottom:1px solid #ccc;padding:22px 4px;display:flex;gap:16px}.from{width:160px;font-weight:bold}.subj{flex:1}#toast{position:fixed;top:10px;right:10px;background:#162;color:#fff;padding:10px;display:none}</style></head><body>
+<h1>Inbox</h1><p id="count"></p><div id="list"></div><div id="sentinel" style="height:40px">Loading more…</div><div id="toast" role="status"></di …r(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));
+</script></body></html>
+---
+(checking page exists)
+
+SAY: I see the page structure; now let me work through the browser CLI as instructed. First check the core skill for dialog handling:
+$ agent-browser skills get core 2>&1 | head -120
+-> [7936 chars] ---
+name: core
+description: Core agent-browser usage guide. Read this before running any agent-browser commands. Covers the snapshot-and-ref workflow, navigating pages, interacting with elements (click, fill, type, select), extracting text and data, taking screenshots, managing tabs, handling forms and auth, waiting for content, running multiple browser sessions in parallel, and troubleshooting common failures. Use when the user asks to interact with a website, fill a form, click something, extr …ord"] placeholder="Password"
+  @e5 [button type="submit"] "Continue"
+  @e6 [link] "Forgot password?"
+```
+
+For unstructured reading (no refs needed):
+
+
+$ agent-browser skills get core 2>&1 | grep -n -i -A8 "dialog\|confirm"
+-> [3911 chars] 347:- **Tab blocked by a dialog.** If the target tab has an open dialog (`confirm`/`prompt`, or `alert`/`beforeunload` under `--no-auto-dialog`) its renderer is paused, not discarded, so the switch leaves it untouched and reports `"dialogBlocked": true`. Resolve the dialog with `dialog accept`/`dialog dismiss` before interacting with the page.
+348-
+349-### Run multiple browsers in parallel
+350-
+351-Each `--session <name>` is an isolated browser with its own cookies, tabs, and refs. For agent ski …worth knowing
+484-
+485-```bash
+486---session <name>        # isolated browser session
+487---json                  # JSON output (for machine parsing)
+
+SAY: Now I'll work through the browser. Open the page:
+$ agent-browser open http://localhost:8791/inbox.html 2>&1
+-> [43 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+
+SAY: The list loads lazily; Priya N. is deep in the list. Scroll to load more rows:
+$ agent-browser scroll down 2000 2>&1; agent-browser scroll down 2000 2>&1; agent-browser scroll down 2000 2>&1; agent-browser scroll down 2000 2>&1; agent-browser scroll down 2000 2>&1
+-> [35 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+
+$ agent-browser eval "document.getElementById('sentinel').scrollIntoView(); setTimeout(()=>{},200); document.getElementById('count').textContent" 2>&1
+-> [19 chars] "Showing 36 of 60"
+
+$ agent-browser wait 1000 2>&1; agent-browser eval "document.getElementById('sentinel').scrollIntoView(); 'ok'" 2>&1; agent-browser wait 1000 2>&1; agent-browser eval "document.getElementById('sentinel').scrollIntoView(); 'ok'" 2>&1; agent-browser wait 1000 2>&1; agent-browser eval "document.getElementById('count').textContent + ' | ' + document.getElementById('sentinel').textContent" 2>&1
+-> [65 chars] ✓ Done
+"ok"
+✓ Done
+"ok"
+✓ Done
+"Showing 60 of 60 | End of inbox"
+
+SAY: All 60 messages loaded. Now locate Priya N.'s row and its Archive button:
+$ agent-browser eval "const rows=[...document.querySelectorAll('.row')]; const r=rows.find(r=>r.querySelector('.from').textContent==='Priya N.'); r ? {subj:r.querySelector('.subj').textContent, idx:rows.indexOf(r)} : 'not found'" 2>&1
+-> [71 chars] {
+  "idx": 44,
+  "subj": "Q3 vendor audit — rescheduled to the 19th"
+}
+
+SAY: Subject found. Now click its Archive button via a proper snapshot/click:
+$ agent-browser snapshot -s "#list .row:nth-child(45)" 2>&1
+-> [110 chars] - StaticText "Priya N."
+- StaticText "Q3 vendor audit — rescheduled to the 19th"
+- button "Archive" [ref=e46]
+
+SAY: Row verified (Priya N.). Click Archive and handle the confirm dialog:
+$ agent-browser click @e46 2>&1; agent-browser dialog status 2>&1
+-> [289 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+⚠ JavaScript confirm dialog is open: "Archive this message?"
+  Default prompt text: ""
+  Use `dialog accept [text]` or `dialog dismiss` to resolve it
+
+SAY: Confirm dialog is showing — the user asked me to confirm the archive, so accept:
+$ agent-browser dialog accept 2>&1; agent-browser eval "const t=document.getElementById('toast'); t.textContent" 2>&1
+-> [35 chars] ✓ Done
+"Archived. Receipt #A-7028"
+
+SAY: Verify the message was removed from the inbox:
+$ agent-browser eval "const rows=[...document.querySelectorAll('.row')]; ({rows:rows.length, priyaStillThere:rows.some(r=>r.querySelector('.from').textContent==='Priya N.')})" 2>&1
+-> [105 chars] ✗ Evaluation error: SyntaxError: Identifier 'rows' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval "(()=>{const all=[...document.querySelectorAll('.row')];return {rows:all.length, priyaStillThere:all.some(r=>r.querySelector('.from').textContent==='Priya N.')};})()" 2>&1
+-> [45 chars] {
+  "priyaStillThere": false,
+  "rows": 59
+}
+
+SAY: Done. Summary:
+
+1. **Message from Priya N.** — subject: **"Q3 vendor audit — rescheduled to the 19th"** (found in the inbox list after scrolling to load all 60 messages).
+2. **Archived** the message: clicked its Archive button, which triggered a `confirm("Archive this message?")` dialog, which I accepted (`agent-browser dialog accept`). The row was removed from the inbox (59 rows remain, Priya N. gone).
+3. **Receipt shown afterwards** (in the page toast): **`#A-7028`** — full toast text: "Archiv

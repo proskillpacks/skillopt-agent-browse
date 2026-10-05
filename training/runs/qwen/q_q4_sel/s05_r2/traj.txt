@@ -1,0 +1,219 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r2", "correct": true, "score": 0.951, "wtok": 32410, "out_tok": 1073, "turns": 8, "secs": 39, "timed_out": false, "curl": false, "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; archived with receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser read
+-> [429 chars] # Inbox
+
+Showing 12 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Loading more…
+
+SAY: Priya N. isn't on the first page (12 of 60). Let me scroll to load more.
+$ agent-browser press End; sleep 1; agent-browser read
+-> [1231 chars] ✓ Done
+# Inbox
+
+Showing 36 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Alex A.On-call swap #256Archive
+
+Femi H.Retro actions #269Archive
+
+Kai C.Relea …f J.On-call swap #516Archive
+
+Jude D.Retro actions #529Archive
+
+Chen L.Release checklist #542Archive
+
+Hana F.Design review #555Archive
+
+Loading more…
+
+$ agent-browser press End; sleep 1; agent-browser read
+-> [1645 chars] ✓ Done
+# Inbox
+
+Showing 48 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Alex A.On-call swap #256Archive
+
+Femi H.Retro actions #269Archive
+
+Kai C.Relea …t — rescheduled to the 19thArchive
+
+Jude D.Design review #685Archive
+
+Chen L.Hiring loop #698Archive
+
+Hana F.Standup notes #711Archive
+
+Loading more…
+
+SAY: Found it: Priya N. — subject "Q3 vendor audit — rescheduled to the 19th". Now I'll archive that message.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('li, .msg, [class*=msg], div')]
+    .filter(el => el.textContent.includes('Priya N.') && el.querySelector('button'));
+  const el = rows.sort((a,b)=>a.textContent.length-b.textContent.length)[0];
+  return JSON.stringify({tag: el.tagName, cls: el.className, btn: el.querySelector('button').textContent.trim()});
+})()
+JS
+-> [56 chars] "{\"tag\":\"DIV\",\"cls\":\"row\",\"btn\":\"Archive\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('div.row')];
+  const r = rows.find(el => el.textContent.includes('Priya N.'));
+  const b = r.querySelector('button');
+  b.click();
+  return 'clicked: ' + b.textContent.trim();
+})()
+JS
+agent-browser read
+-> [351 chars] ✗ CDP command timed out: Runtime.evaluate
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✗ A JavaScript confirm dialog is blocking the page: "Archive this message?". Resolve it with `dialog accept` or `dialog dismiss`, then retry `read`.
+
+
+Command exited with code 1
+$ agent-browser dialog accept; agent-browser read
+-> [1614 chars] ✓ Done
+# Inbox
+
+Showing 48 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Alex A.On-call swap #256Archive
+
+Femi H.Retro actions #269Archive
+
+Kai C.Relea …Archive
+
+Jude D.Design review #685Archive
+
+Chen L.Hiring loop #698Archive
+
+Hana F.Standup notes #711Archive
+
+Loading more…
+
+Archived. Receipt #A-7028
+
+SAY: The message from **Priya N.** has subject **"Q3 vendor audit — rescheduled to the 19th"**. I clicked its Archive button, confirmed the "Archive this message?" dialog, and the row was removed with a receipt shown.
+
+Receipt number: **#A-7028**
+
+ANSWER: Subject "Q3 vendor audit — rescheduled to the 19th"; archived with receipt #A-7028

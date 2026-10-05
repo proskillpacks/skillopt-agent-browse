@@ -1,0 +1,161 @@
+TASK t05: On https://quotes.toscrape.com/search.aspx select author 'Steve Martin' and tag 'humor', run the search, and report the quote text returned.
+EXPECT: ['day without sunshine is like, you know, night']
+RESULT: {"id": "t05_r1", "correct": true, "score": 0.968, "wtok": 21023, "out_tok": 737, "turns": 6, "secs": 6, "timed_out": false, "curl": false, "answer": "\u201cA day without sunshine is like, you know, night.\u201d"}
+
+$ agent-browser --help 2>&1 | head -50; echo ---; env | grep -i -E 'agent_browser|browser' | sed 's/KEY=.*/KEY=***/'
+-> [2585 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …WSER_SESSION=so-q_noskill_train-t05_r1
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_train-t05_r1
+AGENT_BROWSER_HEADED=1
+
+$ agent-browser open https://quotes.toscrape.com/search.aspx 2>&1; agent-browser snapshot 2>&1 | head -60
+-> [2500 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/search.aspx
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- paragraph
+  - link "Login" [ref=e4]
+- separator
+- form
+  - generic
+    - LabelText
+      - StaticText "Author"
+    - combobox "Author" [expanded=false, ref=e5]: ----------
+      - MenuListPopup
+        - option "----------" [selected, ref=e9]
+        - option "Albert Einstein" [ref=e10]
+        - option "J.K. Rowling" [ref=e11]
+        - option "Jane  ….M. Barrie" [ref=e54]
+        - option "E.E. Cummings" [ref=e55]
+        - option "Khaled Hosseini" [ref=e56]
+        - option "Harper Lee" [ref=e57]
+
+$ agent-browser select e5 "Steve Martin" 2>&1; agent-browser snapshot 2>&1 | sed -n '60,120p'
+-> [422 chars] ✓ Done
+        - option "Harper Lee" [ref=e114]
+        - option "Madeleine L'Engle" [ref=e115]
+  - generic
+    - LabelText
+      - StaticText "Tag"
+    - combobox "Tag" [expanded=false, ref=e65]: ----------
+      - MenuListPopup
+        - option "----------" [selected, ref=e116]
+        - option "humor" [ref=e117]
+        - option "obvious" [ref=e118]
+        - option "simile" [ref=e119]
+  - button "Search" [ref=e63]
+
+$ agent-browser select e65 humor 2>&1; agent-browser click e63 2>&1; agent-browser snapshot 2>&1
+-> [3019 chars] ✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e60]
+  - link "Quotes to Scrape" [ref=e61]
+- paragraph
+  - link "Login" [ref=e62]
+- separator
+- form
+  - generic
+    - LabelText
+      - StaticText "Author"
+    - combobox "Author" [expanded=false, ref=e64]: Steve Martin
+      - MenuListPopup
+        - option "----------" [ref=e66]
+        - option "Albert Einstein" [ref=e67]
+        - option "J.K. Rowling" [ref=e68]
+        - option "Jane Austen" [ref=e69]
+        - option "Marilyn Monroe …ph
+    - StaticText "Quotes by: "
+    - link "GoodReads.com" [ref=e120]
+  - paragraph
+    - StaticText "Made with ❤ by "
+    - link "Zyte" [ref=e121]
+
+SAY: The form fields are set, but the results didn't appear in that snapshot. Let me re-check the page content after search.
+$ agent-browser read 2>&1; echo ---; agent-browser eval "document.body.innerText" 2>&1
+-> [2022 chars] #
+Quotes to Scrape
+
+Login
+
+Author
+
+----------
+
+Albert Einstein
+
+J.K. Rowling
+
+Jane Austen
+
+Marilyn Monroe
+
+André Gide
+
+Thomas A. Edison
+
+Eleanor Roosevelt
+
+Steve Martin
+
+Bob Marley
+
+Dr. Seuss
+
+Douglas Adams
+
+Elie Wiesel
+
+Friedrich Nietzsche
+
+Mark Twain
+
+Allen Saunders
+
+Pablo Neruda
+
+Ralph Waldo Emerson
+
+Mother Teresa
+
+Garrison Keillor
+
+Jim Henson
+
+Charles M. Schulz
+
+William Nicholson
+
+Jorge Luis Borges
+
+George Eliot
+
+George R.R. Martin
+
+C.S. Lewis
+
+Martin Luther King Jr.
+
+James Baldwin
+
+Haruki M …vious\nsimile\nResults\n“A day without sunshine is like, you know, night.” - Steve Martin (humor)\n\nQuotes by: GoodReads.com\n\nMade with ❤ by Zyte"
+
+SAY: The search returned one result in the Results section:
+
+- **Quote:** "A day without sunshine is like, you know, night."
+- **Author:** Steve Martin
+- **Tags:** humor
+
+ANSWER: “A day without sunshine is like, you know, night.”

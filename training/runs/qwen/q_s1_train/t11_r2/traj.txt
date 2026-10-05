@@ -1,0 +1,48 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r2", "correct": true, "score": 0.968, "wtok": 21566, "out_tok": 771, "turns": 8, "secs": 118, "timed_out": false, "curl": false, "answer": "You selected a context menu"}
+
+$ agent-browser open https://the-internet.herokuapp.com/context_menu; agent-browser get box "#click-box"; agent-browser close
+-> [214 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: #click-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open https://the-internet.herokuapp.com/context_menu; agent-browser wait "#click-box"; agent-browser get box "#click-box"; agent-browser close
+-> [227 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+✗ Wait timed out after 25000ms
+✗ Element not found: #click-box. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open https://the-internet.herokuapp.com/context_menu; agent-browser snapshot -i
+-> [181 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+- link "Fork me on GitHub" [ref=e1]
+- heading "Context Menu" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('div')].map(d=>({id:d.id,class:d.className,tag:d.tagName})).filter(x=>x.class||x.id))"
+-> [482 chars] "[{\"id\":\"\",\"class\":\"row\",\"tag\":\"DIV\"},{\"id\":\"flash-messages\",\"class\":\"large-12 columns\",\"tag\":\"DIV\"},{\"id\":\"\",\"class\":\"row\",\"tag\":\"DIV\"},{\"id\":\"content\",\"class\":\"large-12 columns\",\"tag\":\"DIV\"},{\"id\":\"\",\"class\":\"example\",\"tag\":\"DIV\"},{\"id\":\"hot-spot\",\"class\":\"\",\"tag\":\"DIV\"},{\"id\":\"page-footer\",\"class\":\"row\",\"tag\":\"DIV\"},{\"id\":\"\",\"class\":\"large-4 large-centered columns\",\"tag\":\"DIV\"}]"
+
+$ agent-browser eval "window.__a=[];window.alert=m=>window.__a.push(String(m));'hooked'"; agent-browser get box "#hot-spot"; agent-browser eval "const e=document.getElementById('hot-spot');const r=e.getBoundingClientRect();JSON.stringify({x:r.x,y:r.y,w:r.width,h:r.height})"
+-> [107 chars] "hooked"
+x:      15
+y:      179.875
+width:  250
+height: 150
+"{\"x\":15,\"y\":179.875,\"w\":250,\"h\":150}"
+
+$ agent-browser mouse move 140 255; agent-browser mouse down right; agent-browser mouse up right; sleep 1; agent-browser eval "JSON.stringify(window.__a)"
+-> [57 chars] ✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Right-clicked inside the dashed box on the page. A JavaScript alert fired with the message:
+
+**"You selected a context menu"**
+
+ANSWER: You selected a context menu

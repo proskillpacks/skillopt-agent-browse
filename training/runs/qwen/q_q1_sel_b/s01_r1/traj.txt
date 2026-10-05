@@ -1,0 +1,37 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": false, "score": 0.0, "wtok": 16328, "out_tok": 582, "turns": 6, "secs": 31, "timed_out": false, "curl": false, "answer": "Name shown: user1; View profile href: https://the-internet.herokuapp.com/users/1"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover "div.figure:nth-child(3)"; agent-browser snapshot -i
+-> [249 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- heading "name: user1" [level=5, ref=e3]
+- link "View profile" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+$ agent-browser get attr "a[href*='user1'], a.view" href; agent-browser get text ".flash #message"
+-> [275 chars] ✗ Element not found: a[href*='user1'], a.view. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: .flash #message. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a=>a.textContent.trim()==='View profile').map(a=>a.href))
+JS
+-> [145 chars] "[\"https://the-internet.herokuapp.com/users/1\",\"https://the-internet.herokuapp.com/users/2\",\"https://the-internet.herokuapp.com/users/3\"]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].filter(a=>a.textContent.trim()==='View profile' && a.offsetParent!==null).map(a=>a.href))
+JS
+-> [51 chars] "[\"https://the-internet.herokuapp.com/users/1\"]"
+
+SAY: Hovering over the third avatar displayed a tooltip with **name: user1** and a **View profile** link whose href is **https://the-internet.herokuapp.com/users/1**.
+
+ANSWER: Name shown: user1; View profile href: https://the-internet.herokuapp.com/users/1

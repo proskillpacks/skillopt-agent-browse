@@ -1,0 +1,47 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r6", "correct": true, "score": 0.954, "wtok": 30806, "out_tok": 827, "turns": 5, "secs": 32, "timed_out": false, "curl": false, "answer": "49 wins, 269 GF"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser wait "#search_form" ; agent-browser snapshot -i
+-> [6613 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✗ Wait timed out after 25000ms
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill @e9 "Bruins"; agent-browser click @e10; agent-browser wait "table" ; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tbody tr')].map(r => [...r.cells].map(c => c.textContent.trim())))
+JS
+-> [547 chars] ✓ Done
+✓ Done
+✓ Done
+"[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\",\"0.607\",\"332\",\"268\",\"64\"],[\"Boston Bruins\",\"1993\",\"42\",\"29\",\"\",\"0.5\",\"289\",\"252\",\"37\"],[\"Boston Bruins\",\"1994\",\"27\",\"18\",\"\",\"0.562\",\"150\",\"127\",\"23\"]]"
+
+SAY: The search filtered to Bruins but only shows 1990-1994. Let me check pagination:
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({heading: document.querySelector('h1')?.textContent, links: [...document.querySelectorAll('a')].filter(a => /^\d+$/.test(a.textContent.trim())).map(a=>a.textContent.trim()), next: [...document.querySelectorAll('a')].filter(a=>/next/i.test(a.textContent)).map(a=>a.href)})
+JS
+-> [188 chars] "{\"heading\":\"\\n                            Hockey Teams: Forms, Searching and Pagination\\n                            21 items\\n                        \",\"links\":[],\"next\":[]}"
+
+SAY: 21 items for Bruins (one per season, 1990–2011). Page shows 5 rows; 2011 should be the last row. Let me check page 2:
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/?q=Bruins&page=2" ; agent-browser wait "table" ; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tbody tr')].map(r => [...r.cells].map(c => c.textContent.trim())).filter(cells => cells[1] === "2011"))
+JS
+-> [267 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/?q=Bruins&page=2
+✓ Done
+"[[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+
+SAY: Found it. For the **Boston Bruins 2011 season**: Wins = **49**, Goals For (GF) = **269**.
+
+ANSWER: 49 wins, 269 GF

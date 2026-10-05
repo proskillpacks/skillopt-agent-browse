@@ -1,0 +1,94 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r1", "correct": true, "score": 0.918, "wtok": 54791, "out_tok": 1891, "turns": 14, "secs": 96, "timed_out": false, "curl": false, "answer": "The heading shown after uploading is \"File Uploaded!\" and the page displays the uploaded file name \"skillopt-note.txt\"."}
+
+$ echo "hello skillopt" > skillopt-note.txt && cat skillopt-note.txt
+-> [15 chars] hello skillopt
+
+$ agent-browser open "https://the-internet.herokuapp.com/upload" ; agent-browser wait "input[type=file]"; agent-browser upload "input[type=file]" "$PWD/skillopt-note.txt"; agent-browser snapshot -i
+-> [292 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "File Uploader" [level=3, ref=e2]
+- button "Choose File" [ref=e3]: skillopt-note.txt
+- button "Upload" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+$ agent-browser click "@e4"; agent-browser wait "#content"; agent-browser eval "JSON.stringify({heading: document.querySelector('#content h3')?.textContent, body: document.querySelector('#content').innerText})"
+-> [175 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:118
+
+
+Command exited with code 1
+$ agent-browser snapshot -i; agent-browser eval "JSON.stringify(document.body.innerText)"
+-> [162 chars] (no interactive elements)
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:30
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser eval "JSON.stringify({url: location.href, doc: document.readyState, html: document.documentElement ? document.documentElement.outerHTML.slice(0,500) : 'no documentElement'})"
+-> [612 chars] https://the-internet.herokuapp.com/upload
+"{\"url\":\"https://the-internet.herokuapp.com/upload\",\"doc\":\"loading\",\"html\":\"<html class=\\\"no-js\\\" lang=\\\"en\\\"><!--<![endif]--><head>\\n    <script src=\\\"/js/vendor/298279967.js\\\"></script>\\n    <meta charset=\\\"utf-8\\\">\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width\\\">\\n    <title>The Internet</title>\\n    <link href=\\\"/css/app.css\\\" rel=\\\"stylesheet\\\">\\n    <link href=\\\"/css/font-awesome.css\\\" rel=\\\"stylesheet\\\">\\n    <script src=\\\"/js/vendor/jquery-1.11.3.min.js\\\"></script></head></html>\"}"
+
+$ agent-browser open "https://the-internet.herokuapp.com/upload" ; agent-browser wait "body"
+-> [66 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✓ Done
+
+SAY: The earlier upload triggered a slow page reload; re-running the upload.
+$ agent-browser wait "input[type=file]"; agent-browser upload "input[type=file]" "$PWD/skillopt-note.txt"; agent-browser click "button#fileUpload"; agent-browser wait "#content"; agent-browser eval "JSON.stringify({heading: document.querySelector('#content h3')?.textContent, text: document.querySelector('#content')?.innerText})"
+-> [315 chars] ✓ Done
+✓ Done
+✗ Element not found: button#fileUpload. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+"{\"heading\":\"File Uploader\",\"text\":\"File Uploader\\n\\nChoose a file on your system and then click upload. Or, drag and drop a file into the area below.\\n\\n\\n\"}"
+
+$ agent-browser snapshot -i
+-> [196 chars] - link "Fork me on GitHub" [ref=e6]
+- heading "File Uploader" [level=3, ref=e7]
+- button "Choose File" [ref=e8]: skillopt-note.txt
+- button "Upload" [ref=e9]
+- link "Elemental Selenium" [ref=e10]
+
+$ agent-browser click "@e9" ; agent-browser open "https://the-internet.herokuapp.com/upload" ; agent-browser wait "body"; agent-browser eval "JSON.stringify({text: document.body.innerText.slice(0,300)})"
+-> [248 chars] ✓ Done
+✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✓ Done
+"{\"text\":\"File Uploader\\n\\nChoose a file on your system and then click upload. Or, drag and drop a file into the area below.\\n\\n\\n\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser upload "input[type=file]" "$PWD/skillopt-note.txt"; agent-browser click "@e9" ; agent-browser wait --fn "document.body && document.body.innerText.includes('Uploaded')"; agent-browser eval "JSON.stringify({h3: document.querySelector('h3')?.textContent, ul: document.querySelector('ul')?.innerText})"
+-> [85 chars] ✓ Done
+✗ Unknown ref: e9
+✗ Wait timed out after 25000ms
+"{\"h3\":\"File Uploader\"}"
+
+$ agent-browser snapshot -i; agent-browser click "button:has-text('Upload')" 2>/dev/null || agent-browser click "button=Upload"
+-> [345 chars] - link "Fork me on GitHub" [ref=e11]
+- heading "File Uploader" [level=3, ref=e12]
+- button "Choose File" [ref=e13]: skillopt-note.txt
+- button "Upload" [ref=e14]
+- link "Elemental Selenium" [ref=e15]
+✗ Element not found: button=Upload. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser click "@e14"; agent-browser wait --fn "document.body && document.body.innerText.includes('Uploaded')" ; agent-browser wait --fn "document.body && document.body.innerText.includes('Uploaded')" ; agent-browser eval "JSON.stringify({h3: document.querySelector('h3')?.textContent, ul: document.querySelector('ul')?.innerText})"
+-> [47 chars] ✓ Done
+true
+true
+"{\"h3\":\"File Uploaded!\"}"
+
+$ agent-browser eval "JSON.stringify(document.body.innerText.slice(0,400))"
+-> [73 chars] "\"File Uploaded!\\nskillopt-note.txt\\nPowered by Elemental Selenium\""
+
+SAY: Upload succeeded. The page after uploading shows:
+
+- **Heading:** "File Uploaded!" (an `h3` in the content area)
+- **Uploaded file name displayed:** `skillopt-note.txt` (listed under the heading)
+
+ANSWER: The heading shown after uploading is "File Uploaded!" and the page displays the uploaded file name "skillopt-note.txt".

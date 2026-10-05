@@ -1,0 +1,109 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r1", "correct": true, "score": 0.945, "wtok": 36401, "out_tok": 1977, "turns": 9, "secs": 151, "timed_out": false, "curl": false, "answer": "After Remove the message is \"It's gone!\"; after Enable and typing, the message is \"It's enabled!\" and the input's value is \"hello\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser click "#checkbox"; agent-browser wait --text "You clicked into the box" 2>/dev/null; agent-browser wait --text "It's gone!" ; agent-browser get text #done
+-> [328 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: #checkbox. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "#flash, #button, input[type=checkbox]"; agent-browser click "#button"; agent-browser wait --fn "document.querySelector('input')===null"; agent-browser get text #flash
+-> [333 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✗ Element not found: #button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser snapshot -i; agent-browser get text body
+-> [535 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+Dynamic Controls
+
+This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.
+
+Remove/add
+
+
+ A checkbox
+Remove
+
+
+Enable/disable
+
+
+Enable
+Powered by Elemental Selenium
+
+SAY: The page is loaded now. Proceeding with the full flow:
+$ agent-browser click e5; agent-browser wait --fn "!document.querySelector('input[type=checkbox]')"; agent-browser get text #flash
+-> [113 chars] ✓ Done
+true
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser get text "#flash"; agent-browser click e7; agent-browser wait --fn "!document.querySelector('input[type=text]').disabled"; agent-browser fill e6 "hello"; agent-browser get text "#flash"; agent-browser get text "input[type=text]"
+-> [240 chars] ✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+true
+✓ Done
+✗ Element not found: #flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+$ agent-browser eval "JSON.stringify({flash: document.getElementById('flash') ? document.getElementById('flash').innerText : null, msg: document.querySelector('#msg') ? document.querySelector('#msg').innerText : null, val: document.querySelector('input[type=text]').value, disabled: document.querySelector('input[type=text]').disabled})"; agent-browser get text body
+-> [301 chars] "{\"flash\":null,\"msg\":null,\"val\":\"hello\",\"disabled\":false}"
+Dynamic Controls
+
+This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.
+
+Remove/add
+
+
+Add
+
+
+
+Enable/disable
+
+
+Disable
+
+It's enabled!
+
+Wait for it... 
+
+
+Powered by Elemental Selenium
+
+$ agent-browser eval "(()=>{const all=[...document.querySelectorAll('body *')].filter(e=>/It's (gone|enabled)!/.test(e.textContent)&&e.children.length===0);return JSON.stringify(all.map(e=>({id:e.id,class:e.className,tag:e.tagName,txt:e.textContent})) )})()"
+-> [2582 chars] "[{\"id\":\"\",\"class\":\"\",\"tag\":\"SCRIPT\",\"txt\":\"\\n  function swapInput() {\\n    disableButton(\\\"#input-example button\\\");\\n    clearMessage();\\n    showDelay(\\\"#input-example button\\\");\\n    pauseThenToggleControls(\\\"input\\\");\\n  }\\n\\n  function swapCheckbox (){\\n    disableButton(\\\"#checkbox-example button\\\");\\n    clearMessage();\\n    showDelay(\\\"#checkbox-example button\\\");\\n    pauseThenToggleControls(\\\"checkbox\\\");\\n  };\\n\\n  function disabl …ttr(\\\"disabled\\\", false);\\n      load.hide();\\n    }\\n  };\\n\"},{\"id\":\"message\",\"class\":\"\",\"tag\":\"P\",\"txt\":\"It's enabled!\"}]"
+
+$ agent-browser click "#checkbox-example button"; agent-browser wait --fn "document.querySelector('#checkbox-example button').textContent==='Remove'"; agent-browser click "#checkbox-example button"; agent-browser wait --text "It's gone!"; agent-browser get text "#message"; agent-browser close
+-> [58 chars] ✓ Done
+true
+✓ Done
+It's gone!
+It's gone!
+✓ Browser closed
+
+SAY: Done. On https://the-internet.herokuapp.com/dynamic_controls:
+
+1. **Remove**: Clicked the Remove button (checkbox removed after a ~3s delay). The message shown was **`It's gone!`** (in a `<p id="message">`).
+2. **Enable**: Clicked Enable, waited until the text input became enabled (disabled=false), typed `hello` into it. The message shown was **`It's enabled!`** and the input's value was **`hello`**.
+
+ANSWER: After Remove the message is "It's gone!"; after Enable and typing, the message is "It's

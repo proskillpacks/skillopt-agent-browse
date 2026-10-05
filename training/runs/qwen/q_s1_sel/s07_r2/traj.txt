@@ -1,0 +1,67 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r2", "correct": true, "score": 0.927, "wtok": 48596, "out_tok": 1960, "turns": 12, "secs": 180, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#draggable"; agent-browser eval "JSON.stringify([document.querySelector('#draggable h3').textContent, document.querySelector('#droppable h3').textContent])"; agent-browser drag "#draggable" "#droppable"; sleep 1; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#column1 h3, #column2 h3')).map(h=>h.textContent.trim()))"; agent-browser close
+-> [360 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:56
+✗ Element not found: #draggable. Verify the selector, role, or name is correct and the element exists in the DOM.
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#draggable"; agent-browser eval "JSON.stringify([document.querySelector('#draggable h3').textContent, document.querySelector('#droppable h3').textContent])"; agent-browser drag "#draggable" "#droppable"; sleep 1; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#column1 h3, #column2 h3')).map(h=>h.textContent.trim()))"; agent-browser close
+-> [316 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:56
+✗ Element not found: #draggable. Verify the selector, role, or name is correct and the element exists in the DOM.
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" ; agent-browser eval "location.href" ; agent-browser eval "document.querySelectorAll('h3').length"
+-> [92 chars] ✗ CDP command timed out: Page.navigate
+"https://the-internet.herokuapp.com/drag_and_drop"
+0
+
+$ agent-browser eval "JSON.stringify({rs:document.readyState, bodyLen:(document.body&&document.body.innerHTML.length)||-1, title:document.title, html:document.documentElement.outerHTML.length})"
+-> [84 chars] "{\"rs\":\"complete\",\"bodyLen\":93,\"title\":\"Application Error\",\"html\":548}"
+
+$ agent-browser eval "document.body.textContent.trim().slice(0,300)"
+-> [3 chars] ""
+
+$ agent-browser eval "document.documentElement.outerHTML"
+-> [586 chars] "<html><head>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <meta charset=\"utf-8\">\n    <title>Application Error</title>\n    <style media=\"screen\">\n      html,body,iframe {\n        margin: 0;\n        padding: 0;\n      }\n\n      html,body {\n        height: 100%;\n        overflow: hidden;\n      }\n\n      iframe {\n        width: 100%;\n        height: 100%;\n        border: 0;\n      }\n    </style>\n  </head>\n  <body>\n    <iframe src=\"https://www.herokucdn.com/error-pages/application-error.html\"></iframe>\n  \n</body></html>"
+
+SAY: The site is returning Heroku's "Application Error" page. Let me retry a few times in case it's transient.
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" >/dev/null 2>&1; sleep 8; out=$(agent-browser eval "document.title+'|'+(document.body?document.body.innerHTML.length:0)" 2>&1); echo "try $i: $out"; case "$out" in *Drag*|*drag_and_drop*) break;; esac; done
+-> [81 chars] try 1: "The Internet|2550"
+try 2: "The Internet|2550"
+try 3: "The Internet|2550"
+
+SAY: Page is up now. Performing the drag:
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#column1 h3, #column2 h3')).map(h=>h.textContent.trim()))"; agent-browser drag "#draggable" "#droppable"; sleep 1; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('#column1 h3, #column2 h3')).map(h=>h.textContent.trim()))"
+-> [124 chars] "[]"
+✗ Element not found: #draggable. Verify the selector, role, or name is correct and the element exists in the DOM.
+"[]"
+
+$ agent-browser eval "location.href"; agent-browser eval "document.body.innerHTML.slice(0,800)"
+-> [919 chars] "https://the-internet.herokuapp.com/drag_and_drop"
+"\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 col …px dashed #000;\n}\n</style>\n\n<div class=\"example\">\n  <h3>Drag and Drop</h3>\n  <div id=\"columns\">\n    <div class=\"column\" id=\"column-a\""
+
+SAY: The page structure is different from the classic version — it uses `#column-a`/`#column-b`. Let me inspect:
+$ agent-browser eval "document.querySelector('#content').innerHTML"
+-> [1951 chars] "\n        <style>\n.columns {\n  width: 400px;\n}\n.column {\n  height: 150px;\n  width: 150px;\n  float: left;\n  border: 2px solid #666666;\n  background-color: #ccc;\n  margin-right: 5px;\n  text-align: center;\n  cursor: move;\n}\n.column.over {\n  border: 2px dashed #000;\n}\n</style>\n\n<div class=\"example\">\n  <h3>Drag and Drop</h3>\n  <div id=\"columns\">\n    <div class=\"column\" id=\"column-a\" draggable=\"true\"><header>A</header></div>\n    <div class=\"column\" id=\"column-b\" d …ave, false);\n  col.addEventListener('drop', handleDrop, false);\n  col.addEventListener('dragend', handleDragEnd, false);\n});\n</script>\n\n      "
+
+SAY: Now performing the drag on `#column-a` → `#column-b`:
+$ agent-browser drag "#column-a" "#column-b"; sleep 1; agent-browser eval "JSON.stringify([document.querySelector('#column-a header').textContent.trim(), document.querySelector('#column-b header').textContent.trim()])"
+-> [23 chars] ✓ Done
+"[\"B\",\"A\"]"
+
+SAY: The drag succeeded. After dropping box A onto box B, the two boxes swapped their contents:
+
+- Left box (`#column-a`) header: **B**
+- Right box (`#column-b`) header: **A**
+
+ANSWER: B, A

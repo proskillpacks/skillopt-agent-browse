@@ -1,0 +1,39 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r1", "correct": true, "score": 0.962, "wtok": 25241, "out_tok": 1184, "turns": 8, "secs": 118, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser drag "#column_a > ul li" "#column_b > ul li"; agent-browser eval "Array.from(document.querySelectorAll('#drag_content h1')).map(h=>h.textContent).join(',')"; agent-browser close
+-> [224 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: #column_a > ul li. Verify the selector, role, or name is correct and the element exists in the DOM.
+""
+✓ Browser closed
+
+SAY: The initial load stalled. Retrying with a wait step:
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#column_a > ul li"; agent-browser drag "#column_a > ul li" "#column_b > ul li"; agent-browser eval "Array.from(document.querySelectorAll('#drag_content h1')).map(h=>h.textContent).join(',')"; agent-browser close
+-> [255 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #column_a > ul li. Verify the selector, role, or name is correct and the element exists in the DOM.
+""
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; sleep 3; agent-browser eval "JSON.stringify({url: location.href, title: document.title, body: document.body ? document.body.innerText.slice(0,300) : null})"
+-> [189 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"{\"url\":\"https://the-internet.herokuapp.com/drag_and_drop\",\"title\":\"The Internet\",\"body\":null}"
+
+$ sleep 5; agent-browser eval "JSON.stringify({url: location.href, ready: document.readyState, body: document.body ? document.body.innerText.slice(0,300) : null, hasA: !!document.querySelector('#column_a')})"
+-> [170 chars] "{\"url\":\"https://the-internet.herokuapp.com/drag_and_drop\",\"ready\":\"complete\",\"body\":\"Drag and Drop\\nA\\nB\\nPowered by Elemental Selenium\",\"hasA\":false}"
+
+$ agent-browser eval "JSON.stringify({ids: Array.from(document.querySelectorAll('[id]')).map(e=>e.id), h1s: Array.from(document.querySelectorAll('h1')).map(h=>h.textContent)})"
+-> [110 chars] "{\"ids\":[\"flash-messages\",\"content\",\"columns\",\"column-a\",\"column-b\",\"page-footer\"],\"h1s\":[]}"
+
+$ agent-browser eval "JSON.stringify({a: document.querySelector('#column-a').outerHTML, b: document.querySelector('#column-b').outerHTML})"
+-> [212 chars] "{\"a\":\"<div class=\\\"column\\\" id=\\\"column-a\\\" draggable=\\\"true\\\"><header>A</header></div>\",\"b\":\"<div class=\\\"column\\\" id=\\\"column-b\\\" draggable=\\\"true\\\"><header>B</header></div>\"}"
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "Array.from(document.querySelectorAll('#columns header')).map(h=>h.textContent).join(',')"; agent-browser close
+-> [30 chars] ✓ Done
+"B,A"
+✓ Browser closed
+
+SAY: Done. After dragging box A onto box B, the DOM reorders so the headers read left-to-right as B, A.
+
+ANSWER: B, A

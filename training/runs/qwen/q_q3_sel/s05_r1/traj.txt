@@ -1,0 +1,199 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r1", "correct": true, "score": 0.933, "wtok": 44663, "out_tok": 1683, "turns": 10, "secs": 13, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; archived with receipt #A-7028"}
+
+$ agent-browser open "http://localhost:8791/inbox.html" && agent-browser wait "body"
+-> [50 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✓ Done
+
+$ agent-browser read
+-> [429 chars] # Inbox
+
+Showing 12 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Loading more…
+
+$ agent-browser snapshot -i
+-> [724 chars] - heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+- button "Archive" [ref=e14]
+- button "Archive" [ref=e15]
+- button "Archive" [ref=e16]
+- button "Archive" [ref=e17]
+- button …e20]
+- button "Archive" [ref=e21]
+- button "Archive" [ref=e22]
+- button "Archive" [ref=e23]
+- button "Archive" [ref=e24]
+- button "Archive" [ref=e25]
+
+SAY: No explicit "load more" button — it's infinite scroll. Let me scroll to load more messages.
+$ agent-browser press "End"; sleep 1; agent-browser press "End"; sleep 1; agent-browser read
+-> [1652 chars] ✓ Done
+✓ Done
+# Inbox
+
+Showing 48 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Alex A.On-call swap #256Archive
+
+Femi H.Retro actions #269Archive
+
+Kai  …t — rescheduled to the 19thArchive
+
+Jude D.Design review #685Archive
+
+Chen L.Hiring loop #698Archive
+
+Hana F.Standup notes #711Archive
+
+Loading more…
+
+SAY: Found Priya N.'s message: subject is "Q3 vendor audit — rescheduled to the 19th". Now let me find and click its Archive button.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('li, tr, div')].filter(el => el.textContent.includes('Priya N.'));
+  const row = rows[rows.length-1];
+  const btn = row.querySelector('button');
+  return JSON.stringify({found: !!row, hasBtn: !!btn, btnText: btn && btn.textContent.trim()});
+})()
+JS
+-> [59 chars] "{\"found\":true,\"hasBtn\":true,\"btnText\":\"Archive\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('li, tr, div')].filter(el => el.textContent.includes('Priya N.'));
+  const row = rows[rows.length-1];
+  return JSON.stringify({tag: row.tagName, cls: row.className, id: row.id, outer: row.outerHTML.slice(0,400)});
+})()
+JS
+-> [229 chars] "{\"tag\":\"DIV\",\"cls\":\"row\",\"id\":\"\",\"outer\":\"<div class=\\\"row\\\"><span class=\\\"from\\\">Priya N.</span><span class=\\\"subj\\\">Q3 vendor audit — rescheduled to the 19th</span><button>Archive</button></div>\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('.row')];
+  const row = rows.find(r => r.querySelector('.from').textContent === 'Priya N.');
+  row.setAttribute('data-target', 'priya');
+  return JSON.stringify({ok: true, subj: row.querySelector('.subj').textContent});
+})()
+JS
+-> [71 chars] "{\"ok\":true,\"subj\":\"Q3 vendor audit — rescheduled to the 19th\"}"
+
+$ agent-browser click ".row[data-target=priya] button"; agent-browser dialog accept
+-> [146 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+
+SAY: The confirm dialog was accepted. Now let me read the receipt number shown afterwards.
+$ agent-browser read
+-> [1607 chars] # Inbox
+
+Showing 48 of 60
+
+Alex A.Invoice #100Archive
+
+Femi H.Lunch order #113Archive
+
+Kai C.On-call swap #126Archive
+
+Dana K.Retro actions #139Archive
+
+Ivo E.Release checklist #152Archive
+
+Bo M.Design review #165Archive
+
+Gus G.Hiring loop #178Archive
+
+Lena B.Standup notes #191Archive
+
+Elif J.Travel booking #204Archive
+
+Jude D.Budget draft #217Archive
+
+Chen L.Invoice #230Archive
+
+Hana F.Lunch order #243Archive
+
+Alex A.On-call swap #256Archive
+
+Femi H.Retro actions #269Archive
+
+Kai C.Release chec …Archive
+
+Jude D.Design review #685Archive
+
+Chen L.Hiring loop #698Archive
+
+Hana F.Standup notes #711Archive
+
+Loading more…
+
+Archived. Receipt #A-7028
+
+SAY: Task complete. Here's the summary:
+
+1. **Opened** `http://localhost:8791/inbox.html` in the preselected browser session.
+2. **Located Priya N.'s message** — it wasn't on the first 12 items, so I used the page's infinite scroll ("Loading more…") until her row appeared.
+   - **Subject:** "Q3 vendor audit — rescheduled to the 19th"
+3. **Archived it** — clicked that row's Archive button, which triggered a JavaScript confirm dialog ("Archive this message?"), which I accepted.
+4. **Receipt shown after

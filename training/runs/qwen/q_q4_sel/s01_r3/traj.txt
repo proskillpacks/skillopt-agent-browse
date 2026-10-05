@@ -1,0 +1,93 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r3", "correct": true, "score": 0.868, "wtok": 88044, "out_tok": 3303, "turns": 18, "secs": 101, "timed_out": false, "curl": false, "answer": "Name: user3; View profile href: https://the-internet.herokuapp.com/users/3"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait ".hover-state" 2>/dev/null; agent-browser snapshot -i | head -50
+-> [193 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser get text .hover-state 2>/dev/null; agent-browser eval "Array.from(document.querySelectorAll('img.hover-image')).length" 2>/dev/null; agent-browser eval "document.querySelector('figure').outerHTML"
+-> [138 chars] 0
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'outerHTML')
+    at <anonymous>:1:33
+
+
+Command exited with code 1
+SAY: The page didn't fully load. Retrying open:
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait "img.hover-image"; agent-browser eval "Array.from(document.querySelectorAll('img.hover-image')).length"
+-> [92 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✗ Wait timed out after 25000ms
+0
+
+$ agent-browser eval "document.querySelector('#aw-container').innerHTML.slice(0,800)"; agent-browser get body 2>/dev/null | head -20
+-> [108 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:40
+
+$ agent-browser eval "JSON.stringify({url: location.href, title: document.title, bodyLen: document.body ? document.body.innerHTML.length : -1, bodyStart: document.body ? document.body.innerHTML.slice(0,300) : ''})"
+-> [480 chars] "{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"title\":\"The Internet\",\"bodyLen\":1581,\"bodyStart\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\"}"
+
+SAY: The main content is missing (page load likely cut off). Reloading:
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser eval "(() => { const s = document.querySelector('section') || document.body; return JSON.stringify({sec: s ? s.innerHTML.slice(0,600) : 'no section', imgs: document.querySelectorAll('img').length}); })()"
+-> [810 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+"{\"sec\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on …\n.figcaption {\\n  display: none;\\n}\\n\\n.figure:hover .figcaption {\\n  display: block;\\n}\\n</style>\\n\\n<div class=\\\"example\",\"imgs\":4}"
+
+$ agent-browser hover ".example div.figure:nth-child(3) img"; sleep 1; agent-browser eval "(() => { const f = document.querySelectorAll('.example div.figure')[2]; const cap = f.querySelector('.figcaption'); return JSON.stringify({text: cap.textContent, href: cap.querySelector('a').href, name: cap.querySelector('span').textContent}); })()"
+-> [171 chars] ✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:229
+    at <anonymous>:1:247
+
+
+Command exited with code 1
+$ agent-browser eval "(() => { const figs = document.querySelectorAll('.example div.figure'); return JSON.stringify({n: figs.length, html: figs.length>=3 ? figs[2].outerHTML.slice(0,500) : ''}); })()"
+-> [262 chars] "{\"n\":3,\"html\":\"<div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  </div>\"}"
+
+$ agent-browser hover ".example div.figure:nth-child(3) img"; sleep 1; agent-browser eval "(() => { const f = document.querySelectorAll('.example div.figure')[2]; const cap = f.querySelector('.figcaption'); return JSON.stringify({name: cap.querySelector('h5').textContent.trim(), href: cap.querySelector('a').href, visible: getComputedStyle(cap).display}); })()"
+-> [113 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"visible\":\"none\"}"
+
+$ agent-browser hover ".example div.figure:nth-child(3) img" && agent-browser eval "(() => { const cap = document.querySelectorAll('.example div.figure')[2].querySelector('.figcaption'); return getComputedStyle(cap).display; })()"
+-> [14 chars] ✓ Done
+"none"
+
+$ agent-browser hover ".example div.figure:nth-child(3)" && agent-browser eval "getComputedStyle(document.querySelectorAll('.example div.figure')[2].querySelector('.figcaption')).display"
+-> [14 chars] ✓ Done
+"none"
+
+$ box=$(agent-browser get box ".example div.figure:nth-child(3)"); echo "$box"
+-> [59 chars] x:      15
+y:      134.28125
+width:  180
+height: 213.78125
+
+$ agent-browser mouse move 105 241 && agent-browser eval "getComputedStyle(document.querySelectorAll('.example div.figure')[2].querySelector('.figcaption')).display"
+-> [14 chars] ✓ Done
+"none"
+
+$ agent-browser eval "JSON.stringify({el: document.elementFromPoint(105,241).className, scroll: [window.scrollX, window.scrollY]})"
+-> [33 chars] "{\"el\":\"\",\"scroll\":[0,0]}"
+
+$ agent-browser eval "(() => { const e = document.elementFromPoint(105,241); return JSON.stringify({tag: e.tagName, cls: e.className, parent: e.parentElement.className, inner: e.outerHTML.slice(0,200)}); })()"
+-> [133 chars] "{\"tag\":\"IMG\",\"cls\":\"\",\"parent\":\"figure\",\"inner\":\"<img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\"}"
+
+$ agent-browser eval "(() => { const figs = document.querySelectorAll('div.figure'); const out = []; figs.forEach((f,i) => out.push({i, match: f.matches(':hover'), cap: getComputedStyle(f.querySelector('.figcaption')).display, rect: f.getBoundingClientRect()})); return JSON.stringify(out); })()"
+-> [532 chars] "[{\"i\":0,\"match\":true,\"cap\":\"block\",\"rect\":{\"x\":15,\"y\":134.28125,\"width\":180,\"height\":213.78125,\"top\":134.28125,\"right\":195,\"bottom\":348.0625,\"left\":15}},{\"i\":1,\"match\":false,\"cap\":\"none\",\"rect\":{\"x\":195,\"y\":134.28125,\"width\":180,\"height\":160,\"top\":134.28125,\"right\":375,\"bottom\":294.28125,\"left\":195}},{\"i\":2,\"match\":false,\"cap\":\"none\",\"rect\":{\"x\":375,\"y\":134.28125,\"width\":180,\"height\":160,\"top\":134.28125,\"right\":555,\"bottom\":294.28125,\"left\":375}}]"
+
+SAY: I found the issue—the mouse was on the first figure due to the `nth-child` selector matching the wrong element. Now I'll move the pointer to the third figure's center and verify it's targeting the correct one.
+$ agent-browser mouse move 465 214 && agent-browser eval "(() => { const figs = document.querySelectorAll('div.example div.figure'); const f = figs[2]; const cap = f.querySelector('.figcaption'); return JSON.stringify({fig: f, hover: f.matches(':hover'), name: cap.querySelector('h5').textContent.trim(), href: cap.querySelector('a').href, display: getComputedStyle(cap).display}); })()"
+-> [140 chars] ✓ Done
+"{\"fig\":{},\"hover\":true,\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"display\":\"block\"}"
+
+SAY: Done. Using the `agent-browser` CLI:
+
+1. Opened `https://the-internet.herokuapp.com/hovers` (retried once after a slow initial load that left the page without its content).
+2. Hovered the mouse over the third avatar figure (its center at x=465, y=214).
+3. Verified the figure matched `:hover` and its `.figcaption` became `display: block`, then read its content.
+
+For the third avatar, the hover overlay shows:
+- **Name:** `name: user3`
+- **'View profile' link href:** `https://the-internet.herokuapp

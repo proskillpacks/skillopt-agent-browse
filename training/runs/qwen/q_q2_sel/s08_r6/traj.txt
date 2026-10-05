@@ -1,0 +1,182 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r6", "correct": true, "score": 0.923, "wtok": 51081, "out_tok": 2414, "turns": 10, "secs": 30, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open https://books.toscrape.com/ ; agent-browser eval "JSON.stringify({title: document.title, next: (document.querySelector('ul.pagination a:last-of-type')||{}).textContent, links: [...document.querySelectorAll('ul.pagination li a')].map(a=>a.textContent)})"
+-> [145 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"{\"title\":\"All products | Books to Scrape - Sandbox\",\"links\":[]}"
+
+$ agent-browser eval "JSON.stringify({html: document.querySelector('div.pagination')?.outerHTML || document.body.innerHTML.slice(0,3000)})" | head -c 4000
+-> [3368 chars] "{\"html\":\"\\n        \\n        \\n    \\n    \\n    <header class=\\\"header container-fluid\\\">\\n        <div class=\\\"page_inner\\\">\\n            <div class=\\\"row\\\">\\n                <div class=\\\"col-sm-8 h1\\\"><a href=\\\"index.html\\\">Books to Scrape</a><small> We love being scraped!</small>\\n</div>\\n\\n                \\n            </div>\\n        </div>\\n    </header>\\n\\n    \\n    \\n<div class=\\\"container-fluid page\\\">\\n    <div class=\\\"page_inner\\\">\\n  …             \\n                                Philosophy\\n                            \\n                        </a>\\n\\n                   \"}"
+
+SAY: The full catalogue lives under `catalogue/page-N.html` (50 pages). I'll walk through them in a shell loop.
+$ agent-browser open "https://books.toscrape.com/catalogue/page-1.html"; agent-browser eval --stdin <<'JS'
+const arts=[...document.querySelectorAll('article.product_pod')].map(a=>{
+  const t=a.querySelector('h3 a')?.title || a.querySelector('a img').alt;
+  const p=parseFloat(a.querySelector('.price_color')?.textContent.replace('£',''));
+  return [t,p];
+});
+const next=document.querySelector('li.next a');
+JSON.stringify({count:arts.length, next:next?next.getAttribute('href'):null, sample:arts.slice(0,3)})
+JS
+-> [235 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-1.html
+"{\"count\":20,\"next\":\"page-2.html\",\"sample\":[[\"A Light in the Attic\",51.77],[\"Tipping the Velvet\",53.74],[\"Soumission\",50.1]]}"
+
+SAY: Structure confirmed. Now walk all 50 pages and collect data:
+$ cd /tmp && rm -f books.jsonl
+for i in $(seq 1 50); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null
+  agent-browser eval --stdin >> books.jsonl <<'JS'
+const arts=[...document.querySelectorAll('article.product_pod')].map(a=>{
+  const t=a.querySelector('h3 a')?.title || a.querySelector('a img').alt;
+  const p=parseFloat(a.querySelector('.price_color')?.textContent.replace('£',''));
+  return [t,p];
+});
+const next=document.querySelector('li.next a');
+JSON.stringify({count:arts.length, next:next?true:false, books:arts})
+JS
+  echo "$i done"
+done
+wc -l /tmp/books.jsonl
+-> [411 chars] 1 done
+2 done
+3 done
+4 done
+5 done
+6 done
+7 done
+8 done
+9 done
+10 done
+11 done
+12 done
+13 done
+14 done
+15 done
+16 done
+17 done
+18 done
+19 done
+20 done
+21 done
+22 done
+23 done
+24 done
+25 done
+26 done
+27 done
+28 done
+29 done
+30 done
+31 done
+32 done
+33 done
+34 done
+35 done
+36 done
+37 done
+38 done
+39 done
+40 done
+41 done
+42 done
+43 done
+44 done
+45 done
+46 done
+47 done
+48 done
+49 done
+50 done
+50 /tmp/books.jsonl
+
+$ cd /tmp && python3 - <<'EOF'
+import json
+rows=[]
+for line in open('books.jsonl'):
+    d=json.loads(line)
+    assert d['count']==20
+    rows+=d['books']
+    if d['next']: print('WARNING: page', d, 'had next')
+print('total books:', len(rows))
+print('all have prices:', all(isinstance(p,float) for _,p in rows))
+lt=[(t,p) for t,p in rows if p<12.00]
+print('books < £12.00:', len(lt))
+mn=min(rows, key=lambda x:x[1])
+print('cheapest:', mn)
+for t,p in sorted(lt, key=lambda x:x[1])[:5]: print(' <12:', t, p)
+EOF
+-> [155 chars] Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+$ cd /tmp && head -c 200 books.jsonl
+-> [200 chars] "{\"count\":20,\"next\":true,\"books\":[[\"A Light in the Attic\",51.77],[\"Tipping the Velvet\",53.74],[\"Soumission\",50.1],[\"Sharp Objects\",47.82],[\"Sapiens: A Brief History of Humankind\",54.23
+$ cd /tmp && python3 - <<'EOF'
+import json
+rows=[]
+for line in open('books.jsonl'):
+    d=json.loads(json.loads(line))  # outer string, inner JSON
+    rows+=d['books']
+    if d['next']: print('WARNING next on', d['count'])
+print('total books:', len(rows))
+lt=[(t,p) for t,p in rows if p<12.00]
+print('books < £12.00:', len(lt))
+mn=min(rows, key=lambda x:x[1])
+print('cheapest:', mn)
+print('5 cheapest:', sorted(rows,key=lambda x:x[1])[:5])
+EOF
+-> [1225 chars] WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNING next on 20
+WARNIN …of Species', 10.01], ['The Tipping Point: How Little Things Can Make a Big Difference', 10.02], ['Patience', 10.16], ['Greek Mythic History', 10.23]]
+
+SAY: All 50 pages loaded (1000 books total), but let me verify the "next" warning on the final page:
+$ agent-browser open "https://books.toscrape.com/catalogue/page-50.html" >/dev/null; agent-browser eval "JSON.stringify({n:document.querySelectorAll('li.next a').length, pag:[...document.querySelectorAll('ul.pagination li a')].map(a=>a.textContent), last:document.querySelector('article.product_pod h3 a').textContent})"
+-> [49 chars] "{\"n\":0,\"pag\":[],\"last\":\"Frankenstein\"}"
+
+$ cd /tmp && python3 -c "
+import json
+lines=open('books.jsonl').read().splitlines()
+for i,l in enumerate(lines):
+    d=json.loads(json.loads(l))
+    if i>=47: print(i+1, d['count'], d['next'], d['books'][0])
+"
+-> [123 chars] 48 20 True ['The Bhagavad Gita', 57.49]
+49 20 True ['On the Road (Duluoz Legend)', 32.36]
+50 20 False ['Frankenstein', 38]
+
+SAY: Verified: pages 1–49 have a "next" link, page 50 is the last — all 1000 books (50 × 20) were collected with no duplicates or gaps.
+
+**Results:**
+- Books priced below £12.00: **44** out of 1000
+- Cheapest book: **An Abundance of Katherines — £10.00** (runner-ups: *The Origin of Species* £10.01, *The Tipping Point* £10.02)
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00.

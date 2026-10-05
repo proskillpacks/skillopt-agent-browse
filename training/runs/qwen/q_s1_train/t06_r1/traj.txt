@@ -1,0 +1,100 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r1", "correct": true, "score": 0.955, "wtok": 29709, "out_tok": 1836, "turns": 8, "secs": 13, "timed_out": false, "curl": false, "answer": "5 five-star books out of 32 total books in the Mystery category"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_17/index.html"; agent-browser wait "h1"; agent-browser eval "JSON.stringify({total: document.querySelectorAll('.page').length, text: document.querySelector('.pagination')?.innerText})"
+-> [115 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books/mystery_17/index.html
+✓ Done
+"{\"total\":0}"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait "body"; agent-browser eval "JSON.stringify([...document.querySelectorAll('a')].filter(a=>a.textContent.trim()==='Mystery').map(a=>a.href))"
+-> [161 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"[\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; agent-browser wait ".page"; agent-browser eval "JSON.stringify({pages: document.querySelectorAll('.page').length, num: document.querySelectorAll('.page_num a').length})"
+-> [146 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+✓ Done
+"{\"pages\":1,\"num\":0}"
+
+$ total=0; five=0; page=1
+while true; do
+  if [ $page -eq 1 ]; then url="https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; else url="https://books.toscrape.com/catalogue/category/books/mystery_3/page-$page.html"; fi
+  agent-browser open "$url" > /dev/null
+  agent-browser wait "h1" > /dev/null
+  res=$(agent-browser eval "JSON.stringify({books: document.querySelectorAll('.col-xs-6').length, five: document.querySelectorAll('li.rating.five').length, h1: document.querySelector('h1')?.innerText, notfound: !!document.querySelector('.alert')})")
+  echo "page $page: $res"
+  b=$(echo $res | sed 's/.*"books":\([0-9]*\).*/\1/'); n=$(echo $res | sed 's/.*"five":\([0-9]*\).*/\1/')
+  if [ "$b" = "0" ]; then break; fi
+  total=$((total+b)); five=$((five+n)); page=$((page+1))
+  if [ $page -gt 20 ]; then break; fi
+done
+echo "TOTAL books: $total, FIVE-star: $five"
+agent-browser close
+-> [320 chars] page 1: "{\"books\":20,\"five\":0,\"h1\":\"Mystery\",\"notfound\":true}"
+/bin/bash: line 10: "{\"books\":20,\"five\":0,\"h1\":\"Mystery\",\"notfound\":true}": syntax error: operand expected (error token is ""{\"books\":20,\"five\":0,\"h1\":\"Mystery\",\"notfound\":true}"")
+TOTAL books: 0, FIVE-star: 0
+✓ Browser closed
+
+SAY: The sed parsing broke; let me redo with plain-number evals.
+$ total=0; five=0; page=1
+while [ $page -le 20 ]; do
+  if [ $page -eq 1 ]; then url="https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; else url="https://books.toscrape.com/catalogue/category/books/mystery_3/page-$page.html"; fi
+  agent-browser open "$url" > /dev/null
+  agent-browser wait "h1" > /dev/null
+  h=$(agent-browser eval "document.querySelector('h1').innerText")
+  b=$(agent-browser eval "document.querySelectorAll('.col-xs-6').length")
+  f=$(agent-browser eval "document.querySelectorAll('li.rating.five').length")
+  echo "page $page h1=$h books=$b five=$f"
+  if [ "$b" = "0" ]; then break; fi
+  total=$((total+b)); five=$((five+f)); page=$((page+1))
+done
+echo "TOTAL books: $total | FIVE-star: $five"
+agent-browser close
+-> [161 chars] page 1 h1="Mystery" books=20 five=0
+page 2 h1="Mystery" books=12 five=0
+page 3 h1="404 Not Found" books=0 five=0
+TOTAL books: 32 | FIVE-star: 0
+✓ Browser closed
+
+SAY: Five-star count of 0 is suspicious — the rating class on this site is `star-rating Five`, not `li.rating.five`. Let me re-check.
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html" > /dev/null; agent-browser wait "h1" > /dev/null
+agent-browser eval "document.querySelector('.star-rating')?.className"
+agent-browser eval "JSON.stringify([...document.querySelectorAll('.star-rating')].reduce((a,c)=>{a[c.className.split(' ')[1]]=(a[c.className.split(' ')[1]]||0)+1;return a},{}))"
+agent-browser close
+-> [94 chars] "star-rating Four"
+"{\"Four\":5,\"One\":5,\"Two\":3,\"Five\":3,\"Three\":4}"
+✓ Browser closed
+
+$ total=0; five=0; page=1
+while [ $page -le 20 ]; do
+  if [ $page -eq 1 ]; then url="https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; else url="https://books.toscrape.com/catalogue/category/books/mystery_3/page-$page.html"; fi
+  agent-browser open "$url" > /dev/null
+  agent-browser wait "h1" > /dev/null
+  h=$(agent-browser eval "document.querySelector('h1').innerText")
+  b=$(agent-browser eval "document.querySelectorAll('.col-xs-6').length")
+  f=$(agent-browser eval "document.querySelectorAll('.star-rating.Five').length")
+  echo "page $page h1=$h books=$b five=$f"
+  if [ "$b" = "0" ]; then break; fi
+  total=$((total+b)); five=$((five+f)); page=$((page+1))
+done
+echo "TOTAL books: $total | FIVE-star: $five"
+agent-browser close
+-> [161 chars] page 1 h1="Mystery" books=20 five=3
+page 2 h1="Mystery" books=12 five=2
+page 3 h1="404 Not Found" books=0 five=0
+TOTAL books: 32 | FIVE-star: 5
+✓ Browser closed
+
+SAY: Scanned the Mystery category in a real browser:
+
+- **Page 1** (index.html): 20 books, 3 five-star
+- **Page 2**: 12 books, 2 five-star
+- **Page 3**: 404 (end of category)
+
+Totals: **32 books** in the category, **5 books** with a five-star rating.
+
+ANSWER: 5 five-star books out of 32 total books in the Mystery category

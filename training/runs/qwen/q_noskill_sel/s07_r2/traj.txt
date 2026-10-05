@@ -1,0 +1,74 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r2", "correct": true, "score": 0.942, "wtok": 38800, "out_tok": 1751, "turns": 13, "secs": 93, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -40
+-> [13 chars] (empty page)
+
+$ agent-browser eval "location.href" 2>&1; agent-browser eval "document.title" 2>&1
+-> [54 chars] "https://the-internet.herokuapp.com/drag_and_drop"
+""
+
+$ sleep 3; agent-browser eval "document.title + '|' + document.body.innerText.slice(0,200)" 2>&1
+-> [136 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:38
+
+
+Command exited with code 1
+$ agent-browser eval "location.reload(); 'reloading'" 2>&1; sleep 5; agent-browser eval "document.title + '|' + (document.body?document.body.innerText.slice(0,200):'nobody')" 2>&1
+-> [22 chars] "reloading"
+"|nobody"
+
+$ agent-browser eval "readyState=0" 2>&1; agent-browser eval "document.readyState + ' | ' + document.documentElement.outerHTML.slice(0,300)" 2>&1
+-> [140 chars] 0
+"loading | <html class=\"no-js\" lang=\"en\"><!--<![endif]--><head>\n    <script src=\"/js/vendor/298279967.js\"></script></head></html>"
+
+$ sleep 10; agent-browser eval "document.readyState + ' | ' + document.title + ' | ' + (document.body?document.body.innerText.slice(0,300).replace(/\n/g,' '):'nobody')" 2>&1
+-> [22 chars] "loading |  | nobody"
+
+$ agent-browser eval "location.replace('https://the-internet.herokuapp.com/drag_and_drop'); 'nav'" 2>&1; sleep 15; agent-browser eval "document.readyState + ' | ' + document.title + ' | ' + (document.body?document.body.innerText.slice(0,300).replace(/\n/g,' '):'nobody')" 2>&1
+-> [40 chars] "nav"
+"loading | The Internet | nobody"
+
+$ sleep 20; agent-browser eval "document.readyState + ' | ' + (document.body?document.body.innerText.slice(0,300).replace(/\n/g,' '):'nobody')" 2>&1
+-> [61 chars] "complete | Drag and Drop A B Powered by Elemental Selenium"
+
+SAY: Page loaded. Now drag box A onto box B:
+$ agent-browser drag "#column-a" "#column-b" 2>&1; sleep 1; agent-browser eval "(document.querySelector('#column-a .message')?document.querySelector('#column-a .message').textContent:'A?') + ',' + (document.querySelector('#column-b .message')?document.querySelector('#column-b .message').textContent:'B?')" 2>&1
+-> [15 chars] ✓ Done
+"A?,B?"
+
+$ agent-browser eval "document.querySelector('#column-a').outerHTML.slice(0,300) + ' || ' + document.querySelector('#column-b').outerHTML.slice(0,300)" 2>&1
+-> [191 chars] "<div class=\"column\" id=\"column-a\" draggable=\"true\" style=\"opacity: 1;\"><header>B</header></div> || <div class=\"column\" id=\"column-b\" draggable=\"true\"><header>A</header></div>"
+
+SAY: The drag succeeded — the headers swapped. Left box (`#column-a`) now shows **B**, right box (`#column-b`) now shows **A**.
+
+Left-to-right after the drop: B, A
+
+ANSWER: B, A

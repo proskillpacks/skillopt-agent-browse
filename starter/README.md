@@ -130,6 +130,8 @@ python3 run.py --skill none --split sel --tag local-baseline --adapter openai --
 
 Use `--par 1` or `--par 2` on a single GPU. Optional: `STUDENT_TEMPERATURE` (default 0.2) and `STUDENT_EXTRA`, a JSON object merged into the request body (for example to switch off a thinking mode). To use another kind of model, copy `OpenAICompatible` in `adapters.py`: one class with a `complete(system, user)` method returning text and token counts.
 
+If you want to see a full example of tuning a skill for a local model, read [Part 2 of the main write-up](../README.md#part-2-retargeting-the-skill-at-a-local-model-qwen38-27b): a real skill retargeted at Qwen3.8-27B through the `pi` coding agent, with every candidate, accepted and rejected, in `training/candidates/` and the scores in `training/runs/qwen/`. The harness for it is `tests/run_pi.py`. Its test-split results were still pending when this was written.
+
 ## What this is not
 
 This is not the paper's full pipeline. There is no separate analyst, merge and ranking stage: one optimizer call reads the trajectories directly. There is no slow or meta update across epochs. The task set is 18 toy tasks. The proposal-to-candidate step is manual on purpose, so you read every change. If you need the full method, read the paper.

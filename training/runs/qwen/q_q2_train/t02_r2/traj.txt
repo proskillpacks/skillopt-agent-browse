@@ -1,0 +1,46 @@
+TASK t02: On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.
+EXPECT: ['you clicked: cancel', 'you entered: skillopt-42']
+RESULT: {"id": "t02_r2", "correct": true, "score": 0.975, "wtok": 16593, "out_tok": 500, "turns": 6, "secs": 79, "timed_out": false, "curl": false, "answer": "Confirm: \"You clicked: Cancel\"; Prompt: \"You entered: skillopt-42\""}
+
+$ agent-browser open "https://the-internet.herokuapp.com/javascript_alerts"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/javascript_alerts"; agent-browser wait "h2"; agent-browser snapshot -i
+-> [393 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "JavaScript Alerts" [level=3, ref=e2]
+- button "Click for JS Alert" [ref=e4]
+- button "Click for JS Confirm" [ref=e5]
+- button "Click for JS Prompt" [ref=e6]
+- heading "Result:" [level=4, ref=e3]
+- link "Elemental Selenium" [ref=e7]
+
+$ agent-browser click @e5; agent-browser dialog dismiss; agent-browser get text "div#result p"
+-> [286 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "I am a JS Confirm" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+✗ Element not found: div#result p. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({result: document.querySelector('#result').innerText, html: document.querySelector('#result').outerHTML})
+JS
+-> [123 chars] "{\"result\":\"You clicked: Cancel\",\"html\":\"<p id=\\\"result\\\" style=\\\"color:green\\\">You clicked: Cancel</p>\"}"
+
+$ agent-browser click @e6; agent-browser dialog accept "skillopt-42"; agent-browser eval --stdin <<'JS'
+document.querySelector('#result').innerText
+JS
+-> [167 chars] ✓ Done
+⚠ A JavaScript prompt dialog is blocking the page: "I am a JS prompt" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+"You entered: skillopt-42"
+
+SAY: Both dialogs were handled in the real browser:
+
+1. **JS Confirm → Cancel**: Result text: `You clicked: Cancel`
+2. **JS Prompt → "skillopt-42" → OK**: Result text: `You entered: skillopt-42`
+
+ANSWER: Confirm: "You clicked: Cancel"; Prompt: "You entered: skillopt-42"

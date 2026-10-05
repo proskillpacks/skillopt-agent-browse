@@ -1,0 +1,50 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07_r1", "correct": true, "score": 0.972, "wtok": 18821, "out_tok": 909, "turns": 6, "secs": 57, "timed_out": false, "curl": false, "answer": "A Year in Provence ... \u2014 \u00a356.88"}
+
+$ agent-browser open "https://books.toscrape.com/category/books/travel/97/"; agent-browser wait "article.product_pod"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => {
+  const t = a.querySelector('h3 a').textContent;
+  const p = a.querySelector('.price_color').textContent;
+  return {t, p};
+}))
+JS
+-> [107 chars] ✓ 404 Not Found
+  https://books.toscrape.com/category/books/travel/97/
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait "li.active-nav"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#categories li a')].filter(a=>/travel/i.test(a.textContent)).map(a=>a.href))
+JS
+-> [109 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('a')].map(a=>[a.textContent.trim(),a.href]).filter(([t])=>/travel/i.test(t)))
+JS
+-> [93 chars] "[[\"Travel\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\"]]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser wait "article.product_pod"; agent-browser eval --stdin <<'JS'
+const items = [...document.querySelectorAll('article.product_pod')].map(a => ({t: a.querySelector('h3 a').textContent.trim(), p: a.querySelector('.price_color').textContent}));
+const fmt = p => { const v = p.replace('£','').trim(); return v === v.trim() ? v : v; };
+items.sort((x,y) => parseFloat(y.p.replace('£','')) - parseFloat(x.p.replace('£','')));
+JSON.stringify({count: items.length, mostExpensive: items[0]})
+JS
+-> [205 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+✓ Done
+"{\"count\":11,\"mostExpensive\":{\"t\":\"A Year in Provence ...\",\"p\":\"£56.88\"}}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('ul.pagination li')].map(li=>li.textContent.trim()))
+JS
+-> [5 chars] "[]"
+
+SAY: No pagination found, so all 11 books on this page are the full Travel category list.
+
+- Most expensive book: **A Year in Provence ...** — **£56.88**
+
+ANSWER: A Year in Provence ... — £56.88

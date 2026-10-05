@@ -1,0 +1,62 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r2", "correct": true, "score": 0.969, "wtok": 20494, "out_tok": 604, "turns": 6, "secs": 55, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login/ && agent-browser snapshot -i
+-> [93 chars] ✓ 404 Not Found
+  https://quotes.toscrape.com/login/
+- heading "Not Found" [level=1, ref=e1]
+
+$ agent-browser open https://quotes.toscrape.com/ ; agent-browser wait "#tag_cloud" ; agent-browser snapshot -i
+-> [1695 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✗ Wait timed out after 25000ms
+- heading "Quotes to Scrape" [level=1, ref=e2]
+  - link "Quotes to Scrape" [ref=e24]
+- link "Login" [ref=e25]
+- link "(about)" [ref=e3]
+- link "change" [ref=e26]
+- link "deep-thoughts" [ref=e27]
+- link "thinking" [ref=e28]
+- link "world" [ref=e29]
+- link "(about)" [ref=e4]
+- link "abilities" [ref=e30]
+- link "choices" [ref=e31]
+- link "(about)" [ref=e5]
+- link "inspirational" [ref=e32]
+- link "life" [ref=e33]
+- link …hip" [ref=e20]
+- link "friends" [ref=e21]
+- link "truth" [ref=e22]
+- link "simile" [ref=e23]
+- link "GoodReads.com" [ref=e56]
+- link "Zyte" [ref=e57]
+
+$ agent-browser click @e25 ; agent-browser wait "form" ; agent-browser snapshot -i
+-> [269 chars] ✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e59]
+  - link "Quotes to Scrape" [ref=e60]
+- link "Login" [ref=e61]
+- textbox "Username Password" [ref=e63]
+- textbox [ref=e64]
+- button "Login" [ref=e62]
+- link "GoodReads.com" [ref=e65]
+- link "Zyte" [ref=e66]
+
+$ agent-browser fill @e63 "admin" ; agent-browser fill @e64 "admin" ; agent-browser click @e62 ; agent-browser wait "quote" ; agent-browser get attr a href
+-> [54 chars] ✓ Done
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+/
+
+$ agent-browser get text "#body" ; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('div.quote')].slice(0,2).map(q => q.innerHTML))
+JS
+-> [1985 chars] ✗ Element not found: #body. Verify the selector, role, or name is correct and the element exists in the DOM.
+"[\"\\n        <span class=\\\"text\\\" itemprop=\\\"text\\\">“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”</span>\\n        <span>by <small class=\\\"author\\\" itemprop=\\\"author\\\">Albert Einstein</small>\\n        <a href=\\\"/author/Albert-Einstein\\\">(about)</a> - <a href=\\\"http://goodreads.com/author/show/98 …lities</a>\\n            \\n            <a class=\\\"tag\\\" href=\\\"/tag/choices/page/1/\\\">choices</a>\\n            \\n        </div>\\n    \"]"
+
+SAY: Logged in successfully — the Goodreads links now appear on the quotes. The first quote on page 1 is the Albert Einstein "The world as we have created it..." quote, and its "(Goodreads page)" link points to `http://goodreads.com/author/show/9810.Albert_Einstein`.
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

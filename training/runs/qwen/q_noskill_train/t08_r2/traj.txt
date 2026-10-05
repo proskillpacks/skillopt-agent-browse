@@ -1,0 +1,201 @@
+TASK t08: On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?
+EXPECT: ['gravity', '\\b7\\b', '12 years a slave']
+RESULT: {"id": "t08_r2", "correct": true, "score": 0.943, "wtok": 37756, "out_tok": 1470, "turns": 11, "secs": 13, "timed_out": false, "curl": false, "answer": "Gravity won the most awards in 2013 with 7 awards; 12 Years a Slave is marked as Best Picture."}
+
+$ agent-browser --help 2>&1 | head -50
+$ env | grep -i agent-browser; ls /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_train/t08_r2
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+-> [21 chars] raw.jsonl
+stderr.txt
+
+$ env | grep -iE "AGENT_BROWSER|BROWSER" ; agent-browser skills list 2>&1 | head
+-> [1196 chars] AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_train-t08_r2
+AGENT_BROWSER_SESSION=so-q_noskill_train-t08_r2
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_train-t08_r2
+AGENT_BROWSER_HEADED=1
+  agentcore                     Run agent-browser on AWS Bedrock AgentCore cloud browsers. Use when...
+  core                          Core agent-browser usage guide. Read this before running any...
+  d …ome inside Vercel Sandbox microVMs for browser...
+  webmcp-gen                    Build and validate experimental WebMCP tools for an existing web...
+
+$ agent-browser open https://www.scrapethissite.com/pages/ajax-javascript/ 2>&1 | tail -5
+-> [163 chars] ✓ Oscar Winning Films: AJAX and Javascript | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/ajax-javascript/
+
+$ agent-browser read 2>&1 | head -80
+-> [702 chars] -
+
+Scrape This Site
+
+-
+
+Sandbox
+
+-
+
+Lessons
+
+-
+
+FAQ
+
+-
+
+Login
+
+#
+Oscar Winning Films: AJAX and Javascript
+87 items
+
+Click through a bunch of great films. Learn how content is added to the page asynchronously with Javascript and how you can scrape it.
+Look for ways that you can tell visually when a site is loading content with AJAX. Then, browse through your network tab to see those AJAX requests and scrape them.
+
+There are 3 video lessons that show you how to scrape this page.
+
+Data via
+https:// …films
+
+###
+Choose a Year to View Films
+
+2015
+2014
+2013
+2012
+2011
+2010
+
+Title
+Nominations
+Awards
+Best Picture
+
+Lessons and Videos © Hartley Brody 2023
+
+$ agent-browser snapshot 2>&1 | head -60
+-> [1423 chars] - navigation
+  - list
+    - listitem [level=1]
+    - listitem [level=1]
+      - link "Sandbox" [ref=e9]
+    - listitem [level=1]
+      - link "Lessons" [ref=e10]
+    - listitem [level=1]
+      - link "FAQ" [ref=e11]
+    - listitem [level=1]
+      - link "Login" [ref=e12]
+- generic
+  - heading "Oscar Winning Films: AJAX and Javascript 87 items" [level=1, ref=e1]
+    - StaticText "Oscar Winning Films: AJAX and Javascript 87 items"
+  - separator
+- generic
+  - paragraph
+    - StaticText "Click throu …ink "2013" [ref=e5]
+  - link "2012" [ref=e6]
+  - link "2011" [ref=e7]
+  - link "2010" [ref=e8]
+- StaticText "Lessons and Videos © Hartley Brody 2023"
+
+$ agent-browser click @e5 2>&1 | tail -3; sleep 2; agent-browser read 2>&1 | head -60
+-> [775 chars] ✓ Done
+-
+
+Scrape This Site
+
+-
+
+Sandbox
+
+-
+
+Lessons
+
+-
+
+FAQ
+
+-
+
+Login
+
+#
+Oscar Winning Films: AJAX and Javascript
+87 items
+
+Click through a bunch of great films. Learn how content is added to the page asynchronously with Javascript and how you can scrape it.
+Look for ways that you can tell visually when a site is loading content with AJAX. Then, browse through your network tab to see those AJAX requests and scrape them.
+
+There are 3 video lessons that show you how to scrape this page.
+
+Data via
+h …010
+
+Title
+Nominations
+Awards
+Best Picture
+
+12 Years a Slave93
+
+Gravity107
+
+Dallas Buyers Club63
+
+Frozen22
+
+The Great Gatsby22
+
+Her51
+
+Blue Jasmine31
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#films tr')].map(tr => [...tr.children].map(td => td.textContent.trim())))" 2>&1
+-> [5 chars] "[]"
+
+$ agent-browser eval "const t=document.querySelector('table'); JSON.stringify(t ? {id:t.id, cls:t.className, rows:t.rows.length} : 'no table')" 2>&1
+-> [46 chars] "{\"id\":\"\",\"cls\":\"table\",\"rows\":13}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('table tr')].map(tr => [...tr.children].map(td => td.textContent.trim())))" 2>&1
+-> [519 chars] "[[\"Title\",\"Nominations\",\"Awards\",\"Best Picture\"],[\"12 Years a Slave\",\"9\",\"3\",\"\"],[\"Gravity\",\"10\",\"7\",\"\"],[\"Dallas Buyers Club\",\"6\",\"3\",\"\"],[\"Frozen\",\"2\",\"2\",\"\"],[\"The Great Gatsby\",\"2\",\"2\",\"\"],[\"Her\",\"5\",\"1\",\"\"],[\"Blue Jasmine\",\"3\",\"1\",\"\"],[\"Mr Hublot\",\"1\",\"1\",\"\"],[\"The Lady in Number 6: Music Saved My Life\",\"1\",\"1\",\"\"],[\"Helium\",\"1\",\"1\",\"\"],[\"The Great Beauty\",\"1\",\"1\",\"\"],[\"20 Feet from Stardom\",\"1\",\"1\",\"\"]]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('table tr')].slice(1).map(tr => [tr.children[0].textContent.trim(), tr.children[3].innerHTML.trim()]))" 2>&1
+-> [364 chars] "[[\"12 Years a Slave\",\"<i class=\\\"glyphicon glyphicon-flag\\\"></i>\"],[\"Gravity\",\"\"],[\"Dallas Buyers Club\",\"\"],[\"Frozen\",\"\"],[\"The Great Gatsby\",\"\"],[\"Her\",\"\"],[\"Blue Jasmine\",\"\"],[\"Mr Hublot\",\"\"],[\"The Lady in Number 6: Music Saved My Life\",\"\"],[\"Helium\",\"\"],[\"The Great Beauty\",\"\"],[\"20 Feet from Stardom\",\"\"]]"
+
+SAY: All data extracted from the page (2013 films loaded via AJAX after clicking the 2013 link):
+
+**Films for 2013:**
+
+| Title | Nominations | Awards | Best Picture |
+|---|---|---|---|
+| 12 Years a Slave | 9 | 3 | ✓ (flag icon) |
+| Gravity | 10 | 7 | |
+| Dallas Buyers Club | 6 | 3 | |
+| Frozen | 2 | 2 | |
+| The Great Gatsby | 2 | 2 | |
+| Her | 5 | 1 | |
+| Blue Jasmine | 3 | 1 | |
+| Mr Hublot | 1 | 1 | |
+| The Lady in Number 6: Music Saved My Life | 1 | 1 | |
+| Helium | 1 | 1 | |
+| The Great Beauty | 

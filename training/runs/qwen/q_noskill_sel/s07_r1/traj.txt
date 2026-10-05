@@ -1,0 +1,93 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r1", "correct": true, "score": 0.932, "wtok": 45461, "out_tok": 1678, "turns": 14, "secs": 69, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ which agent-browser && agent-browser --help 2>&1 | head -50
+-> [2342 chars] /home/user/.nvm/versions/node/v24.21.0/bin/agent-browser
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, prote … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop && agent-browser snapshot | head -40
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -40; echo ---; agent-browser read 2>&1 | head -20
+-> [18 chars] (empty page)
+---
+
+
+$ agent-browser eval "location.href" 2>&1; agent-browser open https://the-internet.herokuapp.com/drag_and_drop 2>&1
+-> [162 chars] "https://the-internet.herokuapp.com/drag_and_drop"
+✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head; echo ---; agent-browser eval "document.readyState" 2>&1; agent-browser eval "document.body ? document.body.innerText.slice(0,300) : 'no body'" 2>&1
+-> [37 chars] (empty page)
+---
+"loading"
+"no body"
+
+$ for i in 1 2 3 4 5 6; do s=$(agent-browser eval "document.readyState" 2>&1); b=$(agent-browser eval "document.body?1:0" 2>&1); echo "$i: $s $b"; [ "$b" = "1" ] && break; sleep 5; done
+-> [31 chars] 1: "loading" 0
+2: "complete" 1
+
+$ agent-browser snapshot
+-> [360 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "Drag and Drop" [level=3, ref=e2]
+  - generic
+    - group
+      - banner
+        - StaticText "A"
+    - group
+      - banner
+        - StaticText "B"
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval "Array.from(document.querySelectorAll('.demo-frame')).map(e=>e.id+'|'+e.className+'|'+e.querySelector('.ui-widget-header')?.innerText).join('\n')"
+-> [3 chars] ""
+
+$ agent-browser eval "Array.from(document.querySelectorAll('.ui-widget')).map(e=>e.id+'|'+e.className).join('\n')"
+-> [3 chars] ""
+
+$ agent-browser eval "document.body.innerHTML.slice(0,2000)"
+-> [2134 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <style>\n.columns {\n  width: 400p …n[].forEach.call(cols, function(col) {\n  col.addEventListener('dragstart', handleDragStart, false);\n  col.addEventListener('dragenter', handleDrag"
+
+SAY: Found the structure: boxes `#column-a` and `#column-b`, each with a `<header>`. Now perform the drag:
+$ agent-browser drag #column-a #column-b && agent-browser eval "Array.from(document.querySelectorAll('#columns .column')).map(e=>e.id+': '+e.querySelector('header').innerText).join(' | ')"
+-> [100 chars] Missing arguments for: drag
+Usage: agent-browser drag <source> <target>
+
+
+Command exited with code 1
+$ agent-browser drag "#column-a" "#column-b" 2>&1; echo "exit=$?"
+-> [14 chars] ✓ Done
+exit=0
+
+$ agent-browser eval "Array.from(document.querySelectorAll('#columns .column')).map(e=>e.id+': '+e.querySelector('header').innerText).join(' | ')"
+-> [28 chars] "column-a: B | column-b: A"
+
+SAY: The drag swapped the two boxes' contents: the left box now shows "B" and the right box now shows "A".
+
+ANSWER: B, A

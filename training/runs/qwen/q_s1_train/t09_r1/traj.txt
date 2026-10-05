@@ -1,0 +1,66 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09_r1", "correct": true, "score": 0.957, "wtok": 28845, "out_tok": 1051, "turns": 9, "secs": 32, "timed_out": false, "curl": false, "answer": "Quote ref NOR-2087, total \u20ac1470.00"}
+
+$ agent-browser open http://localhost:8791/shop.html; agent-browser snapshot -i
+-> [446 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click @e6; agent-browser click @e2 && agent-browser snapshot -i
+-> [285 chars] ✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click @e2 && agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('select, .dropdown, [role=listbox], [role=option], option')).map(e=>e.tagName+'.'+e.className+' '+e.textContent.trim().slice(0,40)))"
+-> [12 chars] ✓ Done
+"[]"
+
+$ agent-browser eval "JSON.stringify(document.body.innerHTML.slice(0,3000))"
+-> [1787 chars] "\"\\n\\n<h1>Request a quote</h1>\\n<p>Region</p>\\n<div class=\\\"dd\\\" id=\\\"dd\\\">Choose region…</div><div class=\\\"opts open\\\" id=\\\"opts\\\"></div>\\n<p><label>Quantity <input id=\\\"qty\\\" type=\\\"number\\\" min=\\\"1\\\" value=\\\"1\\\"></label></p>\\n<p><label><input type=\\\"radio\\\" name=\\\"plan\\\" value=\\\"basic\\\" checked=\\\"\\\"> Basic</label>\\n<label><input type=\\\"radio\\\" name=\\\"plan\\\" value=\\\"pro\\\"> Pro</label></p>\\n<button id=\\\"go\\\" disabled=\\\"\ …ength*104729+(pro?31337:0))%9973);\\nout.innerHTML='<p>Quote ref: <b>'+ref+'</b></p><p>Total: €'+total.toFixed(2)+'</p>';},2500);};\\n</script>\\n\""
+
+$ agent-browser click @e2 && agent-browser wait ".opt" && agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.opt')).map(o=>o.textContent))"
+-> [74 chars] ✓ Done
+✓ Done
+"[\"Benelux\",\"Nordics\",\"Iberia\",\"DACH\",\"Baltics\"]"
+
+$ agent-browser eval "document.querySelectorAll('.opt')[1].click()" && agent-browser fill "#qty" "7" && agent-browser click @e8 && agent-browser click @e3 && agent-browser wait "text=Quote ref" ; agent-browser get text #out; agent-browser close
+-> [158 chars] null
+✓ Done
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser get text #out; agent-browser close
+-> [101 chars] Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser eval "document.getElementById('out').textContent" && agent-browser close
+-> [54 chars] "Quote ref: NOR-2087Total: €1470.00"
+✓ Browser closed
+
+SAY: I completed the quote request in the browser: opened the shop page, accepted the privacy banner, selected region **Nordics**, set quantity to **7**, chose the **Pro** plan, and clicked **Get quote**. The page displayed:
+
+- Quote ref: **NOR-2087**
+- Total: **€1470.00** (140 × 7 × 1.5)
+
+ANSWER: Quote ref NOR-2087, total €1470.00

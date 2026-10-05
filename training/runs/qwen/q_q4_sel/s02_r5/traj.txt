@@ -1,0 +1,74 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r5", "correct": true, "score": 0.96, "wtok": 26894, "out_tok": 1002, "turns": 8, "secs": 58, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login/; agent-browser wait "#login_form"
+-> [112 chars] ✓ 404 Not Found
+  https://quotes.toscrape.com/login/
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser open https://quotes.toscrape.com/; agent-browser wait ".quote"
+-> [57 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const f = document.querySelector('form.login');
+  return JSON.stringify({
+    formHTML: f ? f.outerHTML.slice(0, 800) : null,
+    user: document.querySelector('#id_username') ? true : false
+  });
+})()
+JS
+-> [37 chars] "{\"formHTML\":null,\"user\":false}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const nav = document.querySelector('nav');
+  const links = [...document.querySelectorAll('a')].map(a => a.getAttribute('href')).slice(0, 20);
+  return JSON.stringify({ navHTML: nav ? nav.innerHTML.slice(0,600) : null, links });
+})()
+JS
+-> [764 chars] "{\"navHTML\":\"\\n        <ul class=\\\"pager\\\">\\n            \\n            \\n            <li class=\\\"next\\\">\\n                <a href=\\\"/page/2/\\\">Next <span aria-hidden=\\\"true\\\">→</span></a>\\n            </li>\\n            \\n        </ul>\\n    \",\"links\":[\"/\",\"/login\",\"/author/Albert-Einstein\",\"/tag/change/page/1/\",\"/tag/deep-thoughts/page/1/\",\"/tag/thinking/page/1/\",\"/tag/world/page/1/\",\"/author/J-K-Rowling\",\"/tag/abilities/page/1/\",\"/tag/choices/pa …tag/miracle/page/1/\",\"/tag/miracles/page/1/\",\"/author/Jane-Austen\",\"/tag/aliteracy/page/1/\",\"/tag/books/page/1/\",\"/tag/classic/page/1/\"]}"
+
+$ agent-browser open https://quotes.toscrape.com/login; agent-browser wait "form.login"; agent-browser snapshot -i
+-> [333 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✗ Wait timed out after 25000ms
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill @e5 "testuser"; agent-browser fill @e6 "testpass"; agent-browser click @e2; agent-browser wait ".quote"; agent-browser eval --stdin <<'JS'
+(() => {
+  const q = document.querySelector('.quote');
+  const link = q.querySelector('a');
+  return JSON.stringify({ text: link.textContent, href: link.href });
+})()
+JS
+-> [117 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+"{\"text\":\"(about)\",\"href\":\"https://quotes.toscrape.com/author/Albert-Einstein\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const q = document.querySelector('.quote');
+  const links = [...q.querySelectorAll('a')].map(a => ({text: a.textContent.trim(), href: a.href}));
+  return JSON.stringify(links);
+})()
+JS
+-> [534 chars] "[{\"text\":\"(about)\",\"href\":\"https://quotes.toscrape.com/author/Albert-Einstein\"},{\"text\":\"(Goodreads page)\",\"href\":\"http://goodreads.com/author/show/9810.Albert_Einstein\"},{\"text\":\"change\",\"href\":\"https://quotes.toscrape.com/tag/change/page/1/\"},{\"text\":\"deep-thoughts\",\"href\":\"https://quotes.toscrape.com/tag/deep-thoughts/page/1/\"},{\"text\":\"thinking\",\"href\":\"https://quotes.toscrape.com/tag/thinking/page/1/\"},{\"text\":\"world\",\"href\":\"https://quotes.toscrape.com/tag/world/page/1/\"}]"
+
+SAY: Logged in successfully — the first quote (Albert Einstein) now shows a "(Goodreads page)" link, and it points to the author's Goodreads profile.
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

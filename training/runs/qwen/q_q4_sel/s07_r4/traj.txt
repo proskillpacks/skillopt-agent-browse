@@ -1,0 +1,63 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r4", "correct": true, "score": 0.933, "wtok": 44494, "out_tok": 1625, "turns": 9, "secs": 111, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser --help 2>&1 | head -80
+-> [3508 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …        Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+  storage <local|session>    Manage web storage
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" ; agent-browser wait "#A" ; agent-browser get text "#header" ; agent-browser eval "document.querySelectorAll('#A,#B').length"
+-> [227 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+✗ Element not found: #header. Verify the selector, role, or name is correct and the element exists in the DOM.
+0
+
+SAY: The first open timed out; retrying the load:
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" ; agent-browser wait "#A" ; agent-browser get text "#header" ; agent-browser eval "document.querySelectorAll('#A,#B').length"
+-> [210 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+✗ Wait timed out after 25000ms
+✗ Element not found: #header. Verify the selector, role, or name is correct and the element exists in the DOM.
+0
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" ; agent-browser wait "#A" ; agent-browser get text "#header" ; agent-browser eval "document.body ? document.body.innerHTML.slice(0,600) : 'no body'"
+-> [856 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+✗ Wait timed out after 25000ms
+✗ Element not found: #header. Verify the selector, role, or name is correct and the element exists in the DOM.
+"\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absol …0px;\n}\n.column {\n  height: 150px;\n  width: 150px;\n  float: left;\n  border: 2px solid #666666;\n  background-color: #ccc;\n  margin-right: 5px;"
+
+$ agent-browser eval "JSON.stringify({a:!!document.getElementById('A'),b:!!document.getElementById('B'),hdr:document.getElementById('header')?document.getElementById('header').textContent:null,ids:[...document.querySelectorAll('[id]')].map(e=>e.id).slice(0,40)})"
+-> [136 chars] "{\"a\":false,\"b\":false,\"hdr\":null,\"ids\":[\"flash-messages\",\"content\",\"columns\",\"column-a\",\"column-b\",\"page-footer\"]}"
+
+SAY: The actual element IDs differ from what I expected. Let me inspect the real markup:
+$ agent-browser eval "document.getElementById('content').innerHTML.replace(/\s+/g,' ').slice(0,1800)"
+-> [1730 chars] " <style> .columns { width: 400px; } .column { height: 150px; width: 150px; float: left; border: 2px solid #666666; background-color: #ccc; margin-right: 5px; text-align: center; cursor: move; } .column.over { border: 2px dashed #000; } </style> <div class=\"example\"> <h3>Drag and Drop</h3> <div id=\"columns\"> <div class=\"column\" id=\"column-a\" draggable=\"true\"><header>A</header></div> <div class=\"column\" id=\"column-b\" draggable=\"true\"><header>B</header></div> </div> </div> <script> …ve', handleDragLeave, false); col.addEventListener('drop', handleDrop, false); col.addEventListener('dragend', handleDragEnd, false); }); </script> "
+
+SAY: This page uses HTML5 drag & drop with `#column-a` and `#column-b`, each containing a `<header>` with the character in it. I'll try the `drag` command:
+$ agent-browser drag "#column-a" "#column-b" ; agent-browser get text "#column-a header" ; agent-browser get text "#column-b header"
+-> [11 chars] ✓ Done
+B
+A
+
+SAY: The drag swapped the headers. Verifying physical left-to-right positions:
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns .column')].map(el=>({id:el.id,x:Math.round(el.getBoundingClientRect().x),h:el.querySelector('header').textContent.trim()})).sort((a,b)=>a.x-b.x))"
+-> [91 chars] "[{\"id\":\"column-a\",\"x\":15,\"h\":\"B\"},{\"id\":\"column-b\",\"x\":230,\"h\":\"A\"}]"
+
+SAY: Done. After dragging box A onto box B via `agent-browser drag "#column-a" "#column-b"`, the contents swapped: the left box now shows **B** and the right box shows **A**.
+
+ANSWER: B, A

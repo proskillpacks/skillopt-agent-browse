@@ -1,0 +1,73 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r6", "correct": true, "score": 0.963, "wtok": 24539, "out_tok": 1003, "turns": 7, "secs": 31, "timed_out": false, "curl": false, "answer": "name: user3, href: /users/3"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/hovers" && break; sleep 5; done; agent-browser eval --stdin <<'JS'
+(() => {
+  const imgs = [...document.querySelectorAll('#container img')];
+  return JSON.stringify({count: imgs.length, html: document.querySelector('#container')?.innerHTML.slice(0, 1500)});
+})()
+JS
+-> [75 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+"{\"count\":0}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify({
+    container: document.querySelector('#container')?.outerHTML?.slice(0,2000) || 'no container',
+    bodyText: document.body.innerText.slice(0,300)
+  });
+})()
+JS
+-> [147 chars] "{\"container\":\"no container\",\"bodyText\":\"Hovers\\n\\nHover over the image for additional information\\n\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify(document.body.innerHTML.length);
+})()
+JS
+agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify(document.querySelector('.example')?.outerHTML?.slice(0,2500) || 'no example');
+})()
+JS
+-> [872 chars] "1581"
+"\"<div class=\\\"example\\\">\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user1</h5>\\n      <a href=\\\"/users/1\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption …div class=\\\"figcaption\\\">\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n</div>\""
+
+SAY: The DOM already shows the third figure's figcaption. Let me verify by actually hovering over the third image to confirm it displays.
+$ agent-browser hover "#container img:nth-of-type(3)" 2>/dev/null || agent-browser eval "document.querySelectorAll('.figure img')[2] && 'found'"
+agent-browser eval --stdin <<'JS'
+(() => {
+  const fig = document.querySelectorAll('.figure')[2];
+  const cap = fig.querySelector('.figcaption');
+  const name = cap.querySelector('h5')?.textContent;
+  const href = cap.querySelector('a')?.getAttribute('href');
+  const rect = cap.getBoundingClientRect();
+  return JSON.stringify({name, href, visible: rect.width > 0 && rect.height > 0});
+})()
+JS
+-> [77 chars] "found"
+"{\"name\":\"name: user3\",\"href\":\"/users/3\",\"visible\":false}"
+
+SAY: Let me hover over the third image with the correct selector to make the figcaption visible.
+$ agent-browser hover ".figure:nth-of-type(3) img"; agent-browser eval --stdin <<'JS'
+(() => {
+  const fig = document.querySelectorAll('.figure')[2];
+  const cap = fig.querySelector('.figcaption');
+  const name = cap.querySelector('h5')?.textContent;
+  const href = cap.querySelector('a')?.getAttribute('href');
+  const rect = cap.getBoundingClientRect();
+  return JSON.stringify({name, href, visible: rect.width > 0 && rect.height > 0});
+})()
+JS
+-> [75 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"/users/3\",\"visible\":true}"
+
+SAY: Hovering over the third avatar makes its figcaption visible. The name shown is **user3** and the 'View profile' link's href is **/users/3**.
+
+ANSWER: name: user3, href: /users/3

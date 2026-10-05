@@ -1,0 +1,240 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r1", "correct": true, "score": 0.791, "wtok": 139313, "out_tok": 3383, "turns": 28, "secs": 368, "timed_out": false, "curl": false, "answer": "After uploading, the page shows the heading \"File Uploaded!\" and displays the uploaded file name \"skillopt-note.txt\"."}
+
+$ echo "skillopt test note" > skillopt-note.txt && ls -la skillopt-note.txt && cat skillopt-note.txt
+$ agent-browser --help 2>&1 | head -50
+-> [80 chars] -rw-rw-r-- 1 user user 19 Oct  5 12:31 skillopt-note.txt
+skillopt test note
+
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/upload && agent-browser snapshot
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -40; agent-browser eval "document.title" 2>&1
+-> [16 chars] (empty page)
+""
+
+$ agent-browser eval "location.href" 2>&1; agent-browser eval "document.readyState" 2>&1
+-> [54 chars] "https://the-internet.herokuapp.com/upload"
+"loading"
+
+SAY: The page navigated but is stuck in "loading" state, causing the timeout. Let me check if it stabilizes:
+$ sleep 3; agent-browser eval "document.readyState" 2>&1; agent-browser eval "document.title" 2>&1
+-> [26 chars] "complete"
+"The Internet"
+
+SAY: Page is loaded now. Let me snapshot and upload:
+$ agent-browser snapshot 2>&1 | head -30
+-> [456 chars] - link "Fork me on GitHub" [ref=e1]
+  - image "Fork me on GitHub"
+- generic
+  - heading "File Uploader" [level=3, ref=e2]
+  - paragraph
+    - StaticText "Choose a file on your system and then click upload. Or, drag and drop a file into the area below."
+  - form
+    - button "Choose File" [ref=e3]: No file chosen
+    - LineBreak "\n"
+    - button "Upload" [ref=e4]
+- separator
+- generic
+  - StaticText "Powered by "
+  - link "Elemental Selenium" [ref=e5]
+
+$ agent-browser upload 'input[type=file]' ./skillopt-note.txt 2>&1; agent-browser eval "document.querySelector('input[type=file]').files.length + ' | ' + document.querySelector('input[type=file]').files[0].name" 2>&1
+-> [31 chars] ✓ Done
+"1 | skillopt-note.txt"
+
+SAY: File is attached. Now click Upload:
+$ agent-browser click e4 2>&1; sleep 2; agent-browser snapshot 2>&1 | head -25
+-> [43 chars] ✓ Done
+✗ CDP command timed out: DOM.enable
+
+$ agent-browser eval "document.querySelector('h3')?.textContent" 2>&1; agent-browser eval "Array.from(document.querySelectorAll('p')).map(p=>p.textContent).join(' || ')" 2>&1
+-> [112 chars] ✗ CDP command timed out: Runtime.evaluate
+✗ CDP command timed out: Runtime.evaluate
+
+
+Command exited with code 1
+$ sleep 5; agent-browser eval "document.title" 2>&1
+-> [70 chars] ✗ CDP command timed out: Runtime.evaluate
+
+
+Command exited with code 1
+SAY: The browser seems blocked, possibly by a dialog. Let me check available commands:
+$ agent-browser skills get core 2>&1 | grep -iA3 dialog | head -30
+$ agent-browser --help 2>&1 | sed -n '50,120p'
+-> [757 chars] - **Tab blocked by a dialog.** If the target tab has an open dialog (`confirm`/`prompt`, or `alert`/`beforeunload` under `--no-auto-dialog`) its renderer is paused, not discarded, so the switch leaves it untouched and reports `"dialogBlocked": true`. Resolve the dialog with `dialog accept`/`dialog dismiss` before interacting with the page.
+
+### Run multiple browsers in parallel
+
+--
+### Dialogs
+
+`alert` and `beforeunload` are auto-accepted so agents never block. For `confirm` and `prompt`:
+
+--
+ag …ept
+agent-browser dialog accept "text"    # accept with prompt input
+agent-browser dialog dismiss          # cancel
+```
+
+## Diagnosing install issues
+
+-> [3183 chars]   back                       Go back
+  forward                    Go forward
+  reload                     Reload page
+
+Get Info:  agent-browser get <what> [selector]
+  text, html, value, attr <name>, title, url, count, box, styles, cdp-url
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+  role, text, label, placeholder, alt, title, testid, first, last, nth
+
+Mouse:  agent-browser mouse <action> [ar …art recording re-renders via onCommitFiberRoot
+  react renders stop [--json] Stop and print render profile
+  react suspense [--only-dynamic] [--json]
+
+$ agent-browser dialog status 2>&1; agent-browser dialog accept 2>&1
+-> [122 chars] ✓ No dialog is currently open
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+
+
+Command exited with code 1
+$ agent-browser eval "document.title + ' | ' + document.querySelector('h3')?.textContent" 2>&1
+-> [70 chars] ✗ CDP command timed out: Runtime.evaluate
+
+
+Command exited with code 1
+$ sleep 10; agent-browser get url 2>&1; agent-browser get title 2>&1
+-> [112 chars] ✗ CDP command timed out: Runtime.evaluate
+✗ CDP command timed out: Runtime.evaluate
+
+
+Command exited with code 1
+$ agent-browser network requests 2>&1 | tail -10; agent-browser network requests --filter upload 2>&1
+-> [992 chars] [774421.2] GET https://the-internet.herokuapp.com/js/vendor/298279967.js (Script) 503
+[774421.3] GET https://the-internet.herokuapp.com/css/app.css (Stylesheet) 503
+[774421.4] GET https://the-internet.herokuapp.com/css/font-awesome.css (Stylesheet) 200
+[774421.5] GET https://the-internet.herokuapp.com/js/vendor/jquery-1.11.3.min.js (Script) 503
+[774421.6] GET https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js (Script) 503
+[774421.7] GET https://the-internet.herokuapp.com/ …://the-internet.herokuapp.com/favicon.ico (Other) 404
+[5055247E84BF49427659CFCDADF3315A] GET https://the-internet.herokuapp.com/upload (Document) 200
+
+SAY: Some scripts 503'd and the form POST never fired. Let me reload and redo the upload:
+$ agent-browser reload 2>&1; sleep 4; agent-browser get title 2>&1
+-> [43 chars] https://the-internet.herokuapp.com/upload
+
+
+$ agent-browser upload 'input[type=file]' ./skillopt-note.txt 2>&1; agent-browser eval "document.querySelector('input[type=file]').files[0].name" 2>&1
+-> [252 chars] ✗ Element not found: input[type=file]. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'files')
+    at <anonymous>:1:43
+
+
+Command exited with code 1
+$ sleep 3; agent-browser snapshot 2>&1 | head -30; agent-browser eval "document.querySelectorAll('input').length + ' inputs: ' + Array.from(document.querySelectorAll('input')).map(i=>i.type).join(',')" 2>&1
+-> [26 chars] (empty page)
+"0 inputs: "
+
+$ sleep 3; agent-browser eval "document.readyState" 2>&1
+-> [10 chars] "loading"
+
+$ for i in $(seq 1 10); do s=$(agent-browser eval "document.readyState" 2>/dev/null); echo "$i: $s"; [ "$s" = '"complete"' ] && break; sleep 2; done
+-> [105 chars] 1: "loading"
+2: "loading"
+3: "loading"
+4: "loading"
+5: "loading"
+6: "loading"
+7: "loading"
+8: "complete"
+
+$ agent-browser upload 'input[type=file]' /home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_train/t12_r1/skillopt-note.txt 2>&1; agent-browser eval "document.querySelector('input[type=file]').files[0].name" 2>&1
+-> [27 chars] ✓ Done
+"skillopt-note.txt"
+
+$ agent-browser eval "document.querySelector('button')?.textContent" 2>&1; agent-browser snapshot 2>&1 | grep -i upload
+-> [205 chars] null
+    - heading "File Uploader" [level=3, ref=e7]
+      - StaticText "Choose a file on your system and then click upload. Or, drag and drop a file into the area below."
+      - button "Upload" [ref=e9]
+
+$ agent-browser click e9 2>&1
+-> [7 chars] ✓ Done
+
+$ for i in $(seq 1 12); do sleep 2; t=$(agent-browser eval "document.querySelector('h3')?.textContent" 2>/dev/null); echo "$i: $t"; case "$t" in *Upload\ successful*|*"h3"*|*"null"*"") ;; *) break;; esac; done 2>&1
+-> [99 chars] 1: null
+2: null
+3: null
+4: null
+5: null
+6: null
+7: null
+8: null
+9: null
+10: null
+11: null
+12: null
+
+$ agent-browser eval "document.readyState + ' | ' + location.href" 2>&1; agent-browser network requests 2>&1 | tail -5
+-> [669 chars] "loading | https://the-internet.herokuapp.com/upload"
+[790001.28] GET https://the-internet.herokuapp.com/js/vendor/jquery-ui-1.11.4/jquery-ui.js (Script)
+[790001.29] GET https://the-internet.herokuapp.com/js/foundation/foundation.js (Script)
+[790001.30] GET https://the-internet.herokuapp.com/js/foundation/foundation.alerts.js (Script)
+[790001.31] GET https://the-internet.herokuapp.com/img/forkme_right_green_007200.png (Image) 200
+[790001.33] GET https://298279967.log.optimizely.com/event?a=298279967&d=298279967&y=false&n=https%3A%2F%2Fthe-internet.herokuapp.com%2Fupload&u=oeu1791203794264r0.7088691193144038&wxhr=true&t=1791203794267&f=298349752,318188263 (XHR)
+
+SAY: The form submitted (POST navigation in progress). Waiting for it to complete:
+$ for i in $(seq 1 15); do sleep 2; s=$(agent-browser eval "document.readyState" 2>/dev/null); echo "$i: $s"; [ "$s" = '"complete"' ] && break; done; agent-browser eval "document.querySelector('h3')?.textContent + ' | ' + (document.querySelector('#content > p, main p, .content p')?.textContent || document.body.innerText.slice(0,200))" 2>&1
+-> [111 chars] 1: "loading"
+2: "complete"
+"File Uploaded! | File Uploaded!\nskillopt-note.txt\nPowered by Elemental Selenium"
+
+SAY: Upload successful. Let me confirm with a full snapshot:
+$ agent-browser snapshot 2>&1 | head -20
+-> [283 chars] - generic
+  - link "Fork me on GitHub" [ref=e11]
+    - image "Fork me on GitHub"
+  - heading "File Uploaded!" [level=3, ref=e12]
+  - StaticText "skillopt-note.txt"
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e13]
+
+SAY: Done. Summary of what happened:
+
+1. Created `skillopt-note.txt` (content: "skillopt test note")
+2. Opened https://the-internet.herokuapp.com/upload in the running browser session (the Heroku app was flaky with 503s on some scripts, so it took a couple of attempts and a reload)
+3. Attached `skillopt-note.txt` to the file input and clicked the **Upload** button
+4. After the POST completed, the page shows:
+   - **Heading (h3):** `File Uploaded!`
+   - **Displayed file name:** `skillopt-note.txt`
+
+AN

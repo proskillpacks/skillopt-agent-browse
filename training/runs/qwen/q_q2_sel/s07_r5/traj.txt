@@ -1,0 +1,77 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r5", "correct": true, "score": 0.95, "wtok": 33561, "out_tok": 1231, "turns": 10, "secs": 37, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser wait "#column-b"; agent-browser snapshot -i; agent-browser eval "JSON.stringify({header: document.querySelector('#column-header').textContent, a: document.querySelector('#column-a').textContent, b: document.querySelector('#column-b').textContent})"
+-> [262 chars] ✓ Done
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:65
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#drag_block .element')].map(e=>({id:e.id, label:e.textContent, cls:e.className})))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({header: (document.getElementById('column-header')||{}).textContent,
+ a: (document.getElementById('column-a')||{}).textContent,
+ b: (document.getElementById('column-b')||{}).textContent,
+ dragBlock: (document.getElementById('drag_block')||{}).outerHTML?.slice(0,500)})
+JS
+-> [28 chars] "{\"a\":\"A\",\"b\":\"B\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+ a:(document.getElementById('column-a')||{}).outerHTML,
+ b:(document.getElementById('column-b')||{}).outerHTML,
+ parent:(document.getElementById('column-a')?.parentElement||{}).id
+})
+JS
+-> [235 chars] "{\"a\":\"<div class=\\\"column\\\" id=\\\"column-a\\\" draggable=\\\"true\\\"><header>A</header></div>\",\"b\":\"<div class=\\\"column\\\" id=\\\"column-b\\\" draggable=\\\"true\\\"><header>B</header></div>\",\"parent\":\"columns\"}"
+
+$ agent-browser drag #column-a #column-b; agent-browser eval "JSON.stringify([...document.querySelectorAll('.column')].map(e=>({id:e.id, h:e.querySelector('header').textContent})))"
+-> [100 chars] Missing arguments for: drag
+Usage: agent-browser drag <source> <target>
+
+
+Command exited with code 1
+$ agent-browser drag --help 2>&1 | head -20
+-> [363 chars] agent-browser drag - Drag and drop
+
+Usage: agent-browser drag <source> <target> [--human]
+
+Drags an element from source to target location.
+
+Global Options:
+  --json               Output as JSON
+  --session <name>     Use specific session
+
+Examples:
+  agent-browser drag "#draggable" "#drop-zone"
+  agent-browser drag @e1 @e2
+  agent-browser drag @e1 @e2 --human
+
+$ agent-browser drag "#column-a" "#column-b"; echo "exit: $?"
+-> [15 chars] ✓ Done
+exit: 0
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.column')].map(e=>({id:e.id, h:e.querySelector('header')?.textContent})))"
+-> [72 chars] "[{\"id\":\"column-a\",\"h\":\"B\"},{\"id\":\"column-b\",\"h\":\"A\"}]"
+
+SAY: The drag succeeded — box A dropped onto box B caused the two to swap. After the drop:
+
+- Left box (`#column-a`): header **B**
+- Right box (`#column-b`): header **A**
+
+B, A
+
+ANSWER: B, A

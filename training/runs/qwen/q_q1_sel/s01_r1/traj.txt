@@ -1,0 +1,37 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": true, "score": 0.965, "wtok": 23046, "out_tok": 1020, "turns": 7, "secs": 83, "timed_out": false, "curl": false, "answer": "name: user3, View profile href: /users/3"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait "#hovers"; agent-browser snapshot -i
+-> [224 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#hovers > div')].map(d=>({id:d.id, img: d.querySelector('img')?.src?.includes(d.id)||d.querySelector('img')?.getAttribute('src')})))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({url:location.href, title:document.title, hasHovers:!!document.getElementById('hovers'), html:document.querySelector('#content')?.innerHTML?.slice(0,800) || document.body.innerHTML.slice(0,800)})
+JS
+-> [1089 chars] "{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"title\":\"The Internet\",\"hasHovers\":false,\"html\":\"\\n        <style>\\n.figure {\\n  float: left;\\n  padding-right: 20px;\\n}\\n\\n.figcaption {\\n  display: none;\\n}\\n\\n.figure:hover .figcaption {\\n  display: block;\\n}\\n</style>\\n\\n<div class=\\\"example\\\">\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\ …>\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user3</h5>\\n     \"}"
+
+SAY: The page loaded fine (the `open` timeout was just a slow load event). Now hover the third avatar and read the revealed tooltip:
+$ agent-browser hover "#content .example div:nth-of-type(3) img"; agent-browser eval --stdin <<'JS'
+const f=document.querySelectorAll('#content .example .figure')[2];
+JSON.stringify({name:f.querySelector('h5').textContent.trim(), href:f.querySelector('a').href, visible:getComputedStyle(f.querySelector('.figcaption')).display})
+JS
+-> [114 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"https://the-internet.herokuapp.com/users/3\",\"visible\":\"block\"}"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: ANSWER: name: user3, View profile href: /users/3

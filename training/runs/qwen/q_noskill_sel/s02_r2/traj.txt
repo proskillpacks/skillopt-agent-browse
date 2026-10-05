@@ -1,0 +1,107 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r2", "correct": true, "score": 0.891, "wtok": 72850, "out_tok": 1938, "turns": 12, "secs": 15, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser skills get core 2>&1 | head -150
+-> [11696 chars] ---
+name: core
+description: Core agent-browser usage guide. Read this before running any agent-browser commands. Covers the snapshot-and-ref workflow, navigating pages, interacting with elements (click, fill, type, select), extracting text and data, taking screenshots, managing tabs, handling forms and auth, waiting for content, running multiple browser sessions in parallel, and troubleshooting common failures. Use when the user asks to interact with a website, fill a form, click something, extr … before keyboard input)
+agent-browser fill @e2 "hello"            # clear then type
+agent-browser type @e2 " world"           # type without clearing
+
+$ env | grep -i -E "AGENT_BROWSER|BROWSER" | sed 's/=.*/=.../'
+$ agent-browser open https://quotes.toscrape.com/login 2>&1 | head -20
+-> [162 chars] AGENT_BROWSER_EXECUTABLE_PATH=...
+AGENT_BROWSER_ARGS=...
+AGENT_BROWSER_NAMESPACE=...
+AGENT_BROWSER_SESSION=...
+AGENT_BROWSER_PROFILE=...
+AGENT_BROWSER_HEADED=...
+
+-> [55 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+
+$ agent-browser snapshot -i 2>&1 | head -30
+-> [247 chars] - heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill @e5 "anyuser" 2>&1
+agent-browser fill @e6 "anypassword" 2>&1
+agent-browser click @e2 2>&1
+sleep 2
+agent-browser get url 2>&1
+-> [50 chars] ✓ Done
+✓ Done
+✓ Done
+https://quotes.toscrape.com/
+
+$ agent-browser get url; agent-browser get title
+-> [46 chars] https://quotes.toscrape.com/
+Quotes to Scrape
+
+$ agent-browser snapshot -i -u 2>&1 | head -60
+-> [4887 chars] - heading "Quotes to Scrape" [level=1, ref=e9]
+  - link "Quotes to Scrape" [ref=e41, url=https://quotes.toscrape.com/]
+- link "Logout" [ref=e42, url=https://quotes.toscrape.com/logout]
+- link "(about)" [ref=e10, url=https://quotes.toscrape.com/author/Albert-Einstein]
+- link "(Goodreads page)" [ref=e11, url=http://goodreads.com/author/show/9810.Albert_Einstein]
+- link "change" [ref=e43, url=https://quotes.toscrape.com/tag/change/page/1/]
+- link "deep-thoughts" [ref=e44, url=https://quotes.toscrap …/tag/life/]
+- link "humor" [ref=e34, url=https://quotes.toscrape.com/tag/humor/]
+- link "books" [ref=e35, url=https://quotes.toscrape.com/tag/books/]
+
+SAY: I'm logged in (the "Logout" link is present), and the Goodreads links are now visible. Let me confirm the first quote's Goodreads link specifically.
+$ agent-browser eval 'document.querySelector(".quote").querySelector(".author + a, .author a").outerHTML' 2>&1
+-> [50 chars] "<a href=\"/author/Albert-Einstein\">(about)</a>"
+
+$ agent-browser eval 'document.querySelector(".quote").textContent.trim()' 2>&1
+echo "-----"
+agent-browser eval 'const qs=document.querySelectorAll(".quote"); const first=qs[0]; const good=first.querySelector("a[href*=goodreads], a[href*=/author/show/]"); first.querySelector(".author").textContent + " => " + good.href' 2>&1
+-> [589 chars] "“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”\n        by Albert Einstein\n        (about) - (Goodreads page)\n        \n        \n            Tags:\n             \n            \n            change\n            \n            deep-thoughts\n            \n            thinking\n            \n            world"
+-----
+✗ Evaluation error: SyntaxError: Failed to execute 'querySelector' on 'Element': 'a[href*=goodreads], a[href*=/author/show/]' is not a valid selector.
+    at <anonymous>:1:83
+
+
+Command exited with code 1
+$ agent-browser eval 'const first=document.querySelector(".quote"); const links=Array.from(first.querySelectorAll("a")); const good=links.find(a=>a.textContent.trim()==="(Goodreads page)"); good.getAttribute("href")' 2>&1
+-> [106 chars] ✗ Evaluation error: SyntaxError: Identifier 'first' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval '(()=>{const q=document.querySelector(".quote"); const good=Array.from(q.querySelectorAll("a")).find(a=>a.textContent.trim()==="(Goodreads page)"); return good.getAttribute("href");})()' 2>&1
+-> [56 chars] "http://goodreads.com/author/show/9810.Albert_Einstein"
+
+SAY: I've completed the task. Here's what I did:
+
+1. Opened `https://quotes.toscrape.com/login` in the preselected browser session
+2. Logged in with an arbitrary username (`anyuser`) and password (`anypassword`)
+3. After login, I was redirected to the first page and each quote now shows an extra "(Goodreads page)" link (confirmed by the "Logout" link and the Goodreads links appearing)
+4. The first quote on the first page is Albert Einstein's *"The world as we have created it is a process of our think

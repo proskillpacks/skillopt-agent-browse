@@ -1,0 +1,73 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07_r1", "correct": true, "score": 0.942, "wtok": 38754, "out_tok": 1575, "turns": 11, "secs": 67, "timed_out": false, "curl": false, "answer": "A Year in Provence (Provence #1) \u2014 \u00a356.88"}
+
+$ agent-browser open "https://books.toscrape.com/category/page-1/index.html"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.article_product')].map(p=>{const t=p.querySelector('h3 a').textContent.trim();const pr=p.querySelector('.price_color').textContent.trim();return {t,pr};}))"; agent-browser close
+-> [94 chars] ✓ 404 Not Found
+  https://books.toscrape.com/category/page-1/index.html
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "JSON.stringify([...document.querySelectorAll('ul li a')].map(a=>a.href).filter(h=>h.includes('travel')))"; agent-browser close
+-> [170 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\"]"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser eval "var all={};function grab(){document.querySelectorAll('.article_product').forEach(p=>{all[p.querySelector('h3 a').textContent.trim()]=p.querySelector('.price_color').textContent.trim();});}grab();JSON.stringify({next: !!document.querySelector('li.next a'), count: Object.keys(all).length, books: all});"; agent-browser close
+-> [172 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"{\"next\":false,\"count\":0,\"books\":{}}"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser wait ".article_product"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.article_product')].map(p=>[p.querySelector('h3 a').textContent.trim(),p.querySelector('.price_color').textContent.trim()]))"; agent-browser close
+-> [164 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+✗ Wait timed out after 25000ms
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser wait ".article_product" ; agent-browser eval "JSON.stringify([...document.querySelectorAll('.article_product')].map(p=>[p.querySelector('h3 a').textContent.trim(),p.querySelector('.price_color').textContent.trim()]))"; agent-browser close
+-> [164 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+✗ Wait timed out after 25000ms
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser eval "JSON.stringify({url:location.href, len:document.body.innerHTML.length, title:document.title, sample:document.body.innerHTML.slice(0,500)})"; agent-browser close
+-> [892 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"len\":35527,\"title\":\"Travel | Books to Scrape - Sandbox\",\"sample\":\"\\n        \\n        \\n    \\n    \\n    <header class=\\\"header container-fluid\\\">\\n        <div class=\\\"page_inner\\\">\\n            <div class=\\\"row\\\">\\n                <div class=\\\"col-sm-8 h1\\\"><a href=\\ … class=\\\"page_inner\\\">\\n        \\n    <ul class=\\\"breadcrumb\\\">\\n        <li>\\n            <a href=\\\"../../../../i\"}"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser eval "var m=document.body.innerHTML;var i=m.indexOf('price');JSON.stringify({i, around: m.slice(i-200,i+200)})"; agent-browser close
+-> [650 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"{\"i\":17862,\"around\":\"\\n\\n        \\n            <h3><a href=\\\"../../../its-only-the-himalayas_981/index.html\\\" title=\\\"It's Only the Himalayas\\\">It's Only the Himalayas</a></h3>\\n        \\n\\n        \\n            <div class=\\\"product_price\\\">\\n                \\n\\n\\n\\n\\n\\n\\n    \\n        <p class=\\\"price_color\\\">£45.17</p>\\n    \\n\\n<p class=\\\"instock availability\\\">\\n    <i class=\\\"icon-ok\\\"></i>\\n    \\n        In stock\\n    \\n</p>\\n\\n                \\n     \"}"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser eval "JSON.stringify([...document.querySelectorAll('h3 a')].map(a=>{var card=a.closest('li')||a.closest('div');var pr=card.querySelector('.price_color');return [a.textContent.trim(), pr?pr.textContent.trim():null];}))"; agent-browser close
+-> [598 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"[[\"It's Only the Himalayas\",\"£45.17\"],[\"Full Moon over Noah’s ...\",\"£49.43\"],[\"See America: A Celebration ...\",\"£48.87\"],[\"Vagabonding: An Uncommon Guide ...\",\"£36.94\"],[\"Under the Tuscan Sun\",\"£37.33\"],[\"A Summer In Europe\",\"£44.34\"],[\"The Great Railway Bazaar\",\"£30.54\"],[\"A Year in Provence ...\",\"£56.88\"],[\"The Road to Little ...\",\"£23.21\"],[\"Neither Here nor There: ...\",\"£38.95\"],[\"1,000 Places to See ...\",\"£26.08\"]]"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser eval "JSON.stringify([...document.querySelectorAll('ul.pagination li a')].map(a=>[a.textContent.trim(),a.href]))"; agent-browser close
+-> [133 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser eval "var best=null;document.querySelectorAll('h3 a').forEach(a=>{var card=a.closest('li')||a.closest('div');var pr=card.querySelector('.price_color').textContent;var v=parseFloat(pr.replace('£',''));if(!best||v>best.v)best={t:a.getAttribute('title'),p:pr,v};});JSON.stringify(best)"; agent-browser close
+-> [204 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"{\"t\":\"A Year in Provence (Provence #1)\",\"p\":\"£56.88\",\"v\":56.88}"
+✓ Browser closed
+
+SAY: I opened the Travel category on books.toscrape.com in the browser (single page, 11 books) and extracted each book's title and price from the DOM.
+
+Most expensive book in the **Travel** category:
+- **Title:** A Year in Provence (Provence #1)
+- **Price:** £56.88
+
+ANSWER: A Year in Provence (Provence #1) — £56.88

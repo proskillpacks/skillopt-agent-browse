@@ -1,0 +1,107 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r3", "correct": true, "score": 0.943, "wtok": 38093, "out_tok": 1916, "turns": 9, "secs": 13, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the category has 26 books in total."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_3/" ; agent-browser wait "h1" ; agent-browser snapshot -i
+-> [137 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_3/
+✓ Done
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/" ; agent-browser wait "h1" ; agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('a')].filter(a => /Historical/i.test(a.textContent));
+  return JSON.stringify(links.map(a => [a.textContent.trim(), a.href]));
+})()
+JS
+-> [295 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"[[\"Historical Fiction\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"],[\"Historical\",\"https://books.toscrape.com/catalogue/category/books/historical_42/index.html\"]]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" ; agent-browser wait ".page" ; agent-browser eval --stdin <<'JS'
+(() => {
+  const books = document.querySelectorAll('article.product_pod');
+  const total = document.querySelector('.pagination span.form');
+  const links = [...document.querySelectorAll('.pagination a')].map(a => a.href);
+  const ratings = [...books].map(b => {
+    const star = b.querySelector('p.star-rating .star-rating');
+    const classes = star ? [...star.childNodes[0].className] : null;
+    const stars = star ? (star.className.match(/star-rating\s+(\w+)/) || [null])[1] : null;
+    return stars;
+  });
+  return JSON.stringify({count: books.length, totalText: total ? total.textContent.trim() : null, pages: links, ratings});
+})()
+JS
+-> [305 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+"{\"count\":20,\"totalText\":null,\"pages\":[],\"ratings\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const one = document.querySelectorAll('article.product_pod');
+  const sample = one[0].querySelector('p.star-rating');
+  const dist = {};
+  [...one].forEach(b => {
+    const p = b.querySelector('p.star-rating');
+    const cls = p.className.replace('star-rating','').trim();
+    dist[cls] = (dist[cls]||0)+1;
+  });
+  return JSON.stringify({sample: sample.outerHTML.slice(0,300), dist, count: one.length,
+    pager: document.querySelector('.pagination') ? document.querySelector('.pagination').innerHTML : null});
+})()
+JS
+-> [439 chars] "{\"sample\":\"<p class=\\\"star-rating One\\\">\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                    <i class=\\\"icon-star\\\"></i>\\n                </p>\",\"dist\":{\"One\":5,\"Three\":3,\"Five\":5,\"Four\":3,\"Two\":4},\"count\":20,\"pager\":null}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const pagers = [...document.querySelectorAll('a,li')].filter(e => /next|page/i.test(e.textContent||'')).map(e=>e.textContent.trim());
+  const oneStar = [...document.querySelectorAll('article.product_pod')].filter(b => b.querySelector('p.star-rating').className.includes('One')).length;
+  return JSON.stringify({nextOrPageLinks: pagers, articleCount: document.querySelectorAll('article.product_pod').length, oneStar});
+})()
+JS
+-> [94 chars] "{\"nextOrPageLinks\":[\"Page 1 of 2\",\"next\",\"next\"],\"articleCount\":20,\"oneStar\":5}"
+
+SAY: There's a second page. Let me follow the "next" link.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const next = [...document.querySelectorAll('a')].find(a => a.textContent.trim()==='next');
+  return next.href;
+})()
+JS
+-> [87 chars] "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html" ; agent-browser eval --stdin <<'JS'
+(() => {
+  const h1 = document.querySelector('h1');
+  const arts = document.querySelectorAll('article.product_pod').length;
+  return JSON.stringify({title: h1 ? h1.textContent.trim() : document.title, articles: arts});
+})()
+JS
+-> [188 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"title\":\"Historical Fiction\",\"articles\":6}"
+
+SAY: Page 2 exists with 6 books. Counting one-star ratings there:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const dist = {};
+  [...document.querySelectorAll('article.product_pod')].forEach(b => {
+    const cls = b.querySelector('p.star-rating').className.replace('star-rating','').trim();
+    dist[cls] = (dist[cls]||0)+1;
+  });
+  const oneStar = Object.keys(dist).filter(k=>k==='One').reduce((s,k)=>s+dist[k],0);
+  const next = [...document.querySelectorAll('a')].filter(a=>a.textContent.trim()==='next');
+  return JSON.stringify({dist, oneStar, hasNext: next.length, count: document.querySelectorAll('article.product_pod').length});
+})()
+JS
+-> [89 chars] "{\"dist\":{\"Five\":3,\"Three\":2,\"Four\":1},\"oneStar\":0,\"hasNext\":0,\"count\":6}"
+
+SAY: **Results for the Historical Fiction category (2 pages):**
+- Page 1: 20 books — 5 with a one-star rating
+- Page 2: 6 books — 0 with a one-star rating (no further "next" link)
+
+Total: **26 books**, of which **5** have a one-star rating.
+
+ANSWER: 5 books have a one-star rating; the category has 26 books in total.

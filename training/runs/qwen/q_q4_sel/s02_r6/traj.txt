@@ -1,0 +1,76 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r6", "correct": true, "score": 0.975, "wtok": 16736, "out_tok": 594, "turns": 5, "secs": 30, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/; agent-browser wait ".login" 2>/dev/null; agent-browser snapshot -i | head -30
+-> [897 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e23]
+- link "Login" [ref=e24]
+- link "(about)" [ref=e2]
+- link "change" [ref=e25]
+- link "deep-thoughts" [ref=e26]
+- link "thinking" [ref=e27]
+- link "world" [ref=e28]
+- link "(about)" [ref=e3]
+- link "abilities" [ref=e29]
+- link "choices" [ref=e30]
+- link "(about)" [ref=e4]
+- link "inspirational" [ref=e31]
+- link "life" [ref=e32]
+- link "live" [ref=e33]
+- link "mirac …ional" [ref=e41]
+- link "(about)" [ref=e7]
+- link "adulthood" [ref=e42]
+- link "success" [ref=e43]
+- link "value" [ref=e44]
+- link "(about)" [ref=e8]
+
+$ agent-browser click "a[href='/login']"; agent-browser wait "form"; agent-browser fill "input[name='username']" "admin"; agent-browser fill "input[name='password']" "admin"; agent-browser press Enter; agent-browser wait "a[href='/logout']" 2>/dev/null; agent-browser snapshot -i | head -20
+-> [650 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e58]
+  - link "Quotes to Scrape" [ref=e90]
+- link "Logout" [ref=e91]
+- link "(about)" [ref=e59]
+- link "(Goodreads page)" [ref=e60]
+- link "change" [ref=e92]
+- link "deep-thoughts" [ref=e93]
+- link "thinking" [ref=e94]
+- link "world" [ref=e95]
+- link "(about)" [ref=e61]
+- link "(Goodreads page)" [ref=e62]
+- link "abilities" [ref=e96]
+- link "choices" [ref=e97]
+- link "(about)" [ref=e63]
+- link "(Goodreads page)" [ref=e64]
+- link "inspirational" [ref=e98]
+- link "life" [ref=e99]
+- link "live" [ref=e100]
+- link "miracle" [ref=e101]
+- link "miracles" [ref=e102]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('a')].filter(a => a.textContent.trim() === '(Goodreads page)');
+  return JSON.stringify(links.slice(0,1).map(a => a.href));
+})()
+JS
+-> [62 chars] "[\"http://goodreads.com/author/show/9810.Albert_Einstein\"]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const a = [...document.querySelectorAll('a')].find(a => a.textContent.trim() === '(Goodreads page)');
+  return JSON.stringify(a.getAttribute('href'));
+})()
+JS
+-> [60 chars] "\"http://goodreads.com/author/show/9810.Albert_Einstein\""
+
+SAY: Logged in successfully (Logout link appears) and found the "(Goodreads page)" link on the first quote ("The world would be terribly different without the curious..." by Albert Einstein). Its `href` is `http://goodreads.com/author/show/9810.Albert_Einstein`.
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

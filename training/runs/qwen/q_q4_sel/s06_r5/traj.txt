@@ -1,0 +1,94 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r5", "correct": true, "score": 0.967, "wtok": 22067, "out_tok": 776, "turns": 7, "secs": 59, "timed_out": false, "curl": false, "answer": "Remove showed \"It's gone!\"; after Enable the input became enabled and typing \"hello\" showed the message \"It's enabled!\" with the input's value being \"hello\"."}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls; agent-browser snapshot -i
+-> [393 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_controls
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click "e5" && agent-browser wait "text=It's gone!"; agent-browser get text "div.flash"; agent-browser get text "h4.flash"; agent-browser snapshot -i
+-> [549 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: div.flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: h4.flash. Verify the selector, role, or name is correct and the element exists in the DOM.
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser read; agent-browser eval "JSON.stringify(document.querySelector('#flash') ? document.querySelector('#flash').textContent : null)"
+-> [244 chars] #### Dynamic Controls
+
+This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.
+
+#### Remove/add
+
+Add
+
+It's gone!
+
+Wait for it...
+
+#### Enable/disable
+
+Enable
+
+Powered by Elemental Selenium
+"null"
+
+SAY: The checkbox is gone and the message shown is **"It's gone!"**. Now the enable part:
+$ agent-browser click "e7" && agent-browser wait --fn "[...document.querySelectorAll('input')].some(i => !i.disabled)"; agent-browser fill "e6" "hello"; agent-browser read; agent-browser eval "JSON.stringify(document.querySelector('#flash') ? document.querySelector('#flash').textContent : [...document.querySelectorAll('h4')].map(h=>h.textContent).join('|'))"
+-> [325 chars] ✓ Done
+true
+✓ Done
+#### Dynamic Controls
+
+This example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.
+
+#### Remove/add
+
+Add
+
+Wait for it...
+
+#### Enable/disable
+
+Disable
+
+It's enabled!
+
+Wait for it...
+
+Powered by Elemental Selenium
+"\"Dynamic Controls|Remove/add|Enable/disable\""
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('input')].map(i => ({value: i.value, disabled: i.disabled})))"
+-> [45 chars] "[{\"value\":\"hello\",\"disabled\":false}]"
+
+SAY: Done. Summary of what happened in the browser:
+
+1. **Remove**: Clicked the "Remove" button; the checkbox disappeared (the button became "Add") and the flash message shown was:
+   - **"It's gone!"**
+
+2. **Enable**: Clicked "Enable", waited for the text input to become enabled (`disabled` went from `true` to `false`), and typed into it. The flash message shown was:
+   - **"It's enabled!"**
+   - Input's value: **`hello`** (and it was enabled)
+
+ANSWER: Remove showed "It's gone!"; after Enable the in

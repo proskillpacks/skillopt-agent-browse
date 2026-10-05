@@ -1,0 +1,45 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r2", "correct": true, "score": 0.963, "wtok": 24381, "out_tok": 499, "turns": 5, "secs": 34, "timed_out": false, "curl": false, "answer": "Wins: 49, Goals For (GF): 269"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/; agent-browser wait "form"
+-> [165 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+
+$ agent-browser snapshot -i
+-> [6424 chars] - link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10]
+- columnheader "Team Name" [ref=e11]
+- columnheader "Year" [ref=e12]
+- columnheader "Wins" [ref=e13]
+- columnheader "Losses" [ref=e14]
+- columnheader "OT Lo …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill @e9 "Bruins"; agent-browser click @e10; agent-browser wait "table"
+-> [21 chars] ✓ Done
+✓ Done
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  rows: [...document.querySelectorAll('table tbody tr')].map(r => [...r.cells].map(c => c.textContent.trim())),
+  pages: [...document.querySelectorAll('nav a, .pagination a, li a')].map(a => a.textContent.trim()).filter(t => /^\d+$|^Next$|^Previous$/.test(t))
+})
+JS
+-> [1863 chars] "{\"rows\":[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"51\",\"26\",\"\",\"0.607\",\"332\",\"268\",\"64\"],[\"Boston Bruins\",\"1993\",\"42\",\"29\",\"\",\"0.5\",\"289\",\"252\",\"37\"],[\"Boston Bruins\",\"1994\",\"27\",\"18\",\"\", …6\",\"25\",\"11\",\"0.561\",\"246\",\"195\",\"51\"],[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]],\"pages\":[]}"
+
+SAY: The search returned the Boston Bruins rows, and the 2011 season row is visible: Wins = 49, Goals For (GF) = 269.
+
+ANSWER: Wins: 49, Goals For (GF): 269

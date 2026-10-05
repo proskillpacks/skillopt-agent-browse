@@ -1,0 +1,111 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09_r3", "correct": true, "score": 0.93, "wtok": 46442, "out_tok": 1365, "turns": 12, "secs": 12, "timed_out": false, "curl": false, "answer": "Quote ref NOR-2087, total \u20ac1470.00"}
+
+$ agent-browser open "http://localhost:8791/shop.html"; agent-browser snapshot -i
+-> [446 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click @e6; agent-browser select @e2 "Nordics"; agent-browser fill @e9 "7"; agent-browser click @e8; agent-browser click @e3; agent-browser snapshot -i
+-> [306 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 7
+- radio "Basic" [checked=false, ref=e7]
+- radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  region: document.querySelector('#region')?.textContent,
+  selects: [...document.querySelectorAll('select')].map(s => s.outerHTML.slice(0,200)),
+  generic: document.querySelectorAll('.custom-select, [class*=select]').length
+})
+JS
+-> [33 chars] "{\"selects\":[],\"generic\":0}"
+
+$ agent-browser click @e2; agent-browser snapshot -i
+-> [278 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 7
+- radio "Basic" [checked=false, ref=e7]
+- radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+const el = document.querySelector('[onclick], [class*=region], #regionSelect');
+JSON.stringify(el ? el.outerHTML.slice(0,1000) : 'not found')
+JS
+-> [16 chars] "\"not found\""
+
+$ agent-browser eval --stdin <<'JS'
+const main = document.querySelector('main') || document.body;
+JSON.stringify(main.innerHTML.slice(0,2500))
+JS
+-> [1963 chars] "\"\\n\\n<h1>Request a quote</h1>\\n<p>Region</p>\\n<div class=\\\"dd\\\" id=\\\"dd\\\">Choose region…</div><div class=\\\"opts open\\\" id=\\\"opts\\\"><div class=\\\"opt\\\">Benelux</div><div class=\\\"opt\\\">Nordics</div><div class=\\\"opt\\\">Iberia</div><div class=\\\"opt\\\">DACH</div><div class=\\\"opt\\\">Baltics</div></div>\\n<p><label>Quantity <input id=\\\"qty\\\" type=\\\"number\\\" min=\\\"1\\\" value=\\\"1\\\"></label></p>\\n<p><label><input type=\\\"radio\\\" name=\\\"plan\\\" va …ength*104729+(pro?31337:0))%9973);\\nout.innerHTML='<p>Quote ref: <b>'+ref+'</b></p><p>Total: €'+total.toFixed(2)+'</p>';},2500);};\\n</script>\\n\""
+
+$ agent-browser click "#opts div.opt:nth-of-type(2)"; agent-browser eval "document.getElementById('dd').textContent + ' | go.disabled=' + document.getElementById('go').disabled"
+-> [37 chars] ✓ Done
+"Nordics | go.disabled=false"
+
+$ agent-browser click #go; agent-browser wait "#out p"; agent-browser get text #out
+-> [117 chars] Missing arguments for: click
+Usage: agent-browser click <selector> [--new-tab] [--human]
+
+
+Command exited with code 1
+$ agent-browser click "button#go"; agent-browser wait "#out p"; agent-browser get text #out
+-> [115 chars] ✓ Done
+✓ Done
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser get --help 2>&1 | head -30
+-> [1090 chars] agent-browser get - Retrieve information from elements or page
+
+Usage: agent-browser get <subcommand> [args]
+
+Retrieves various types of information from elements or the page.
+
+Subcommands:
+  text <selector>            Get text content of element
+  html <selector>            Get inner HTML of element
+  value <selector>           Get value of input element
+  attr <selector> <name>     Get attribute value
+  title                      Get page title
+  url                        Get current URL
+  co … get value "#email-input"
+  agent-browser get attr "#link" href
+  agent-browser get title
+  agent-browser get url
+  agent-browser get count "li.item"
+
+$ agent-browser get text "#out"; agent-browser get attr "#out p b" "textContent" 2>/dev/null; agent-browser eval "document.getElementById('out').textContent"
+-> [81 chars] Quote ref: NOR-2087
+
+Total: €1470.00
+✓ Done
+"Quote ref: NOR-2087Total: €1470.00"
+
+SAY: The quote was generated for region Nordics, quantity 7, plan Pro:
+
+- **Quote reference:** NOR-2087
+- **Total price:** €1470.00 (base €140 × 7 × 1.5 Pro multiplier, matching the page's calculation)
+
+ANSWER: Quote ref NOR-2087, total €1470.00

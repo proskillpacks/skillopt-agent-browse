@@ -1,0 +1,116 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r1", "correct": true, "score": 0.925, "wtok": 50173, "out_tok": 1689, "turns": 15, "secs": 83, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser --help 2>&1 | head -60
+-> [2634 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …l
+
+Check State:  agent-browser is <what> <selector>
+  visible, enabled, checked
+
+Find Elements:  agent-browser find <locator> <value> <action> [text]
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2 && agent-browser snapshot
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser open --help 2>&1 | head -30; agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2 2>&1
+-> [1436 chars] agent-browser open - Launch the browser, optionally navigate
+
+Usage: agent-browser open [url]
+
+Without a URL, launches the browser but stays on about:blank. This lets
+you stage state (network routes, cookies, init scripts) before the first
+real navigation — useful for SSR debug, auth setup, and capturing fresh
+`react suspense` / `vitals` state without noise from a prior page.
+
+With a URL, launches and navigates. If no protocol is provided, https://
+is automatically prepended. WebMCP tools are an …om
+  agent-browser open localhost:3000
+✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser get title; agent-browser snapshot 2>&1 | head -20
+-> [79 chars] https://the-internet.herokuapp.com/dynamic_loading/2
+The Internet
+(empty page)
+
+$ agent-browser get text 2>&1 | head -20; agent-browser get html 2>&1 | head -40
+-> [146 chars] Missing arguments for: get text
+Usage: agent-browser get text <selector>
+Missing arguments for: get html
+Usage: agent-browser get html <selector>
+
+$ agent-browser eval "document.body.innerText" 2>&1; agent-browser eval "document.body.innerHTML.slice(0,500)" 2>&1
+-> [244 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:15
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:15
+
+
+Command exited with code 1
+$ agent-browser eval "document.readyState" 2>&1; agent-browser eval "document.documentElement ? document.documentElement.outerHTML.slice(0,300) : 'no html element'" 2>&1
+-> [336 chars] "loading"
+"<html class=\"no-js\" lang=\"en\"><!--<![endif]--><head>\n    <script src=\"/js/vendor/298279967.js\"></script>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width\">\n    <title>The Internet</title>\n    <link href=\"/css/app.css\" rel=\"stylesheet\">\n    <link href=\"/css/font-awesom"
+
+SAY: The page is still in "loading" state. Let me wait and retry.
+$ agent-browser wait 5000; agent-browser eval "document.readyState + ' / body=' + (document.body?document.body.innerText.slice(0,200):'null')"
+-> [148 chars] ✓ Done
+"complete / body=Dynamically Loaded Page Elements\nExample 2: Element rendered after the fact\n\n\nStart\n\n\nPowered by Elemental Selenium"
+
+$ agent-browser find text Start click 2>&1 || agent-browser click "#start" 2>&1
+-> [7 chars] ✓ Done
+
+$ agent-browser wait "#loading" --hidden 2>&1 || true; agent-browser eval "document.querySelector('#loading') ? document.querySelector('#loading').innerText : 'none'"
+-> [21 chars] ✓ Done
+"Loading... "
+
+$ agent-browser wait 3000; agent-browser eval "document.querySelector('#loading').innerText"
+-> [21 chars] ✓ Done
+"Loading... "
+
+$ agent-browser wait 10000; agent-browser eval "document.querySelector('#loading').innerText"
+-> [21 chars] ✓ Done
+"Loading... "
+
+$ agent-browser snapshot 2>&1 | head -30
+-> [421 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "Dynamically Loaded Page Elements" [level=3, ref=e2]
+  - heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+  - LineBreak "\n"
+  - heading "Hello World!" [level=4, ref=e4]
+  - LineBreak "\n"
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e5]
+
+$ agent-browser get text "h4#loading" 2>&1; agent-browser eval "JSON.stringify({loading: document.getElementById('loading').textContent, visible: getComputedStyle(document.getElementById('loading')).display})"
+-> [167 chars] ✗ Element not found: h4#loading. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"loading\":\"Loading... \",\"visible\":\"none\"}"
+
+SAY: The task is complete. Here's what happened:
+
+1. **Opened** `https://the-internet.herokuapp.com/dynamic_loading/2` — the page took a while to finish loading (Heroku is slow), so I waited until `document.readyState` became `complete`.
+2. **Clicked** the "Start" button (`agent-browser find text Start click`).
+3. **Waited** for the loading spinner to disappear — the `#loading` element shows "Loading..." but is now `display: none`.
+4. **Verified** with a snapshot: the accessibility tree shows a new `

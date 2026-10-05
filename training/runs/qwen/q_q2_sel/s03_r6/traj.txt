@@ -1,0 +1,90 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r6", "correct": true, "score": 0.951, "wtok": 32835, "out_tok": 1536, "turns": 8, "secs": 12, "timed_out": false, "curl": false, "answer": "The Historical Fiction category has 26 books in total, of which 5 books have a one-star rating."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_4/index.html"; agent-browser snapshot -i
+-> [140 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_4/index.html
+- heading "404 Not Found" [level=1, ref=e1]
+
+SAY: The direct URL 404'd. Let me navigate from the homepage.
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "JSON.stringify([...document.querySelectorAll('a')].filter(a=>a.textContent.includes('Historical Fiction')).map(a=>a.href))"
+-> [165 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval "JSON.stringify({
+  pages: document.querySelectorAll('.pagination a').length,
+  total: (document.querySelector('.pagination')||{}).textContent || ''
+})"
+-> [166 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"pages\":0,\"total\":\"\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  bookCount: document.querySelectorAll('.product_pod').length,
+  oneStar: document.querySelectorAll('.star-rating.One').length,
+  starClasses: [...new Set([...document.querySelectorAll('.star-rating')].map(a=>a.className))],
+  hasNext: !![...document.querySelectorAll('a')].find(a=>/next/i.test(a.textContent.trim()))
+})
+JS
+-> [174 chars] "{\"bookCount\":20,\"oneStar\":5,\"starClasses\":[\"star-rating One\",\"star-rating Three\",\"star-rating Five\",\"star-rating Four\",\"star-rating Two\"],\"hasNext\":true}"
+
+SAY: There's a next page. Let me walk all pages and aggregate.
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('li ul a')].map(a=>[a.textContent.trim(), a.href]))"; agent-browser eval "[...document.querySelectorAll('a')].filter(a=>/next/i.test(a.textContent)).map(a=>a.href).join(',')"
+-> [4917 chars] "[[\"Travel\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\"],[\"Mystery\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\"],[\"Historical Fiction\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"],[\"Sequential Art\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\"],[\"Classics\",\"https://books.toscrape.com/catalogue/category/books/classics_6/index.html\"],[\"Phil …toscrape.com/catalogue/category/books/crime_51/index.html\"]]"
+"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html"
+
+$ for p in 1 2 3 4 5 6 7 8 9; do
+  if [ "$p" = "1" ]; then url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; else url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"; fi
+  agent-browser open "$url" >/dev/null
+  agent-browser wait "li ul a, .pagination, .product_pod" >/dev/null 2>&1 || true
+  out=$(agent-browser eval --stdin <<'JS'
+const next = [...document.querySelectorAll('a')].find(a=>/next/i.test(a.textContent.trim()));
+JSON.stringify({p: document.querySelectorAll('.product_pod').length, o: document.querySelectorAll('.star-rating.One').length, next: next ? next.href : null});
+JS
+)
+  echo "page $p: $out"
+  case "$out" in
+    *'"next":null'*) break;;
+  esac
+done
+-> [367 chars] /bin/bash: line 7: warning: here-document at line 5 delimited by end-of-file (wanted `JS')
+/bin/bash: -c: line 7: syntax error near unexpected token `{p:'
+/bin/bash: -c: line 7: `ON.stringify({p: document.querySelectorAll('.product_pod').length, o: document.querySelectorAll('.star-rating.One').length, next: next ? next.href : null});'
+
+
+Command exited with code 127
+$ cat > /tmp/eval.js <<'JS'
+const next = [...document.querySelectorAll('a')].find(a=>/next/i.test(a.textContent.trim()));
+JSON.stringify({p: document.querySelectorAll('.product_pod').length, o: document.querySelectorAll('.star-rating.One').length, next: next ? next.href : null});
+JS
+for p in 1 2 3 4 5 6 7 8 9 10; do
+  if [ "$p" = "1" ]; then url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; else url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"; fi
+  agent-browser open "$url" >/dev/null
+  out=$(agent-browser eval --stdin < /tmp/eval.js)
+  echo "page $p: $out"
+  case "$out" in
+    *'"next":null'*) break;;
+  esac
+done
+-> [506 chars] page 1: "{\"p\":20,\"o\":5,\"next\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"}"
+page 2: "{\"p\":6,\"o\":0,\"next\":null}"
+page 3: "{\"p\":0,\"o\":0,\"next\":null}"
+page 4: "{\"p\":0,\"o\":0,\"next\":null}"
+page 5: "{\"p\":0,\"o\":0,\"next\":null}"
+page 6: "{\"p\":0,\"o\":0,\"next\":null}"
+page 7: "{\"p\":0,\"o\":0,\"next\":null}"
+page 8: "{\"p\":0,\"o\":0,\"next\":null}"
+page 9: "{\"p\":0,\"o\":0,\"next\":null}"
+page 10: "{\"p\":0,\"o\":0,\"next\":null}"
+
+SAY: All data collected (the loop just kept running past page 2 because the JSON has escaped quotes, but page 3+ show 0 books — the category has exactly 2 pages).
+
+**Results:**
+- Page 1: 20 books, 5 one-star ratings
+- Page 2: 6 books, 0 one-star ratings
+- **Total: 26 books in the category, 5 with a one-star rating**
+
+ANSWER: The Historical Fiction category has 26 books in total, of which 5 books have a one-star rating.

@@ -1,0 +1,40 @@
+TASK t04: Start at https://quotes.toscrape.com/js/ and use the Next link to go to the third page. Report the author of the first quote on page 3.
+EXPECT: ['pablo neruda']
+RESULT: {"id": "t04_r1", "correct": true, "score": 0.979, "wtok": 13671, "out_tok": 444, "turns": 5, "secs": 4, "timed_out": false, "curl": false, "answer": "Pablo Neruda"}
+
+$ agent-browser open https://quotes.toscrape.com/js/ ; agent-browser snapshot -i
+-> [240 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/js/
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e2]
+- link "Login" [ref=e3]
+- link "Next " [ref=e6]
+- link "GoodReads.com" [ref=e4]
+- link "Zyte" [ref=e5]
+
+$ agent-browser click @e6; agent-browser wait 'a[href*="page"]' ; agent-browser snapshot -i
+-> [233 chars] ✓ Done
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e7]
+  - link "Quotes to Scrape" [ref=e8]
+- link "Login" [ref=e9]
+- link " Previous" [ref=e12]
+- link "Next " [ref=e13]
+- link "GoodReads.com" [ref=e10]
+- link "Zyte" [ref=e11]
+
+$ agent-browser wait --fn "document.querySelectorAll('.quote').length>0"; agent-browser click @e13; agent-browser wait --fn "document.querySelectorAll('.quote').length>0 && location.href.includes('page/3')"
+-> [17 chars] true
+✓ Done
+true
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({url: location.href, firstAuthor: document.querySelector('.quote .author')?.textContent})
+JS
+-> [88 chars] "{\"url\":\"https://quotes.toscrape.com/js/page/3/\",\"firstAuthor\":\"Pablo Neruda\"}"
+
+SAY: On page 3 (https://quotes.toscrape.com/js/page/3/), the first quote's author is:
+
+**Pablo Neruda** — *"It is not enough to love life. You must be happy in it."*
+
+ANSWER: Pablo Neruda

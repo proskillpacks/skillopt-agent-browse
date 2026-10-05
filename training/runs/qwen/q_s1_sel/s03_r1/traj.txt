@@ -1,0 +1,44 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": true, "score": 0.956, "wtok": 29041, "out_tok": 919, "turns": 6, "secs": 36, "timed_out": false, "curl": false, "answer": "5 one-star books out of 26 total"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/history_4/index.html"; agent-browser wait ".page"; agent-browser get text "body" | head -20
+-> [143 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/history_4/index.html
+✗ Wait timed out after 25000ms
+404 Not Found
+nginx/1.21.6
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait ".active"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('li.active a, li a')).map(a=>({t:a.textContent,h:a.href})).filter(x=>x.t))"; agent-browser close
+-> [14711 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"[{\"t\":\"Home\",\"h\":\"https://books.toscrape.com/index.html\"},{\"t\":\"\\n                            \\n                                Books\\n                            \\n                        \",\"h\":\"https://books.toscrape.com/catalogue/category/books_1/index.html\"},{\"t\":\"\\n                            \\n                                Travel\\n                            \\n                      …com/catalogue/its-only-the-himalayas_981/index.html\"},{\"t\":\"next\",\"h\":\"https://books.toscrape.com/catalogue/page-2.html\"}]"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser wait "article.product_pod"; agent-browser eval "JSON.stringify({total: document.querySelectorAll('article.product_pod').length, one: Array.from(document.querySelectorAll('article.product_pod .star-rating.One')).length})"; agent-browser close
+-> [186 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+✓ Done
+"{\"total\":20,\"one\":5}"
+✓ Browser closed
+
+$ for p in 2 3 4; do agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html" >/dev/null 2>&1; agent-browser eval "JSON.stringify({page:$p, title:document.title, total: document.querySelectorAll('article.product_pod').length, one: Array.from(document.querySelectorAll('article.product_pod .star-rating.One')).length})"; done; agent-browser close
+-> [245 chars] "{\"page\":2,\"title\":\"Historical Fiction | Books to Scrape - Sandbox\",\"total\":6,\"one\":0}"
+"{\"page\":3,\"title\":\"404 Not Found\",\"total\":0,\"one\":0}"
+"{\"page\":4,\"title\":\"404 Not Found\",\"total\":0,\"one\":0}"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html" >/dev/null 2>&1; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('section .pagination, section p')).map(e=>e.textContent.trim()).filter(t=>t).slice(0,3))"; agent-browser close
+-> [56 chars] "[\"£20.79\",\"In stock\",\"£41.32\"]"
+✓ Browser closed
+
+SAY: Done. Walked the Historical Fiction category in the browser:
+
+- **Page 1** (`historical-fiction_4/index.html`): 20 books, 5 rated one star
+- **Page 2** (`page-2.html`): 6 books, 0 rated one star
+- Page 3+ returns 404, so the category ends at 26 books.
+
+Total: **26 books** in Historical Fiction, **5** with a one-star rating.
+
+ANSWER: 5 one-star books out of 26 total

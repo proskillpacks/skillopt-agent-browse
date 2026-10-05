@@ -1,0 +1,68 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r1", "correct": true, "score": 0.964, "wtok": 24070, "out_tok": 1419, "turns": 6, "secs": 124, "timed_out": false, "curl": false, "answer": "Name: user3; 'View profile' link href: /users/3"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+SAY: The page load timed out (the site is slow), so I'm retrying:
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/hovers" && break; sleep 5; done; agent-browser eval --stdin <<'JS'
+(() => {
+  const hs = document.querySelectorAll('.figure');
+  return JSON.stringify(hs.length);
+})()
+JS
+-> [253 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+"0"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify({
+    title: document.title,
+    url: location.href,
+    readyState: document.readyState,
+    bodyLen: document.body ? document.body.innerHTML.length : -1,
+    imgs: document.querySelectorAll('img').length,
+    figures: document.querySelectorAll('figure').length
+  });
+})()
+JS
+-> [155 chars] "{\"title\":\"The Internet\",\"url\":\"https://the-internet.herokuapp.com/hovers\",\"readyState\":\"complete\",\"bodyLen\":1581,\"imgs\":4,\"figures\":0}"
+
+SAY: Page loaded. Let me inspect the markup:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const container = document.querySelector('#content');
+  return JSON.stringify(container ? container.innerHTML : document.body.innerHTML);
+})()
+JS
+-> [1069 chars] "\"\\n        <style>\\n.figure {\\n  float: left;\\n  padding-right: 20px;\\n}\\n\\n.figcaption {\\n  display: none;\\n}\\n\\n.figure:hover .figcaption {\\n  display: block;\\n}\\n</style>\\n\\n<div class=\\\"example\\\">\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user1</h5>\\n      <a href=\\\"/users …\"figcaption\\\">\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n</div>\\n\\n      \""
+
+SAY: I can see the markup. Now I'll perform the actual hover on the third avatar, then read the revealed caption:
+$ agent-browser hover 'div.figure:nth-of-type(3) img'; agent-browser eval --stdin <<'JS'
+(() => {
+  const caps = document.querySelectorAll('.figcaption');
+  const cap = caps[2];
+  const style = getComputedStyle(cap);
+  const h5 = cap.querySelector('h5');
+  const a = cap.querySelector('a');
+  return JSON.stringify({
+    display: style.display,
+    name: h5 ? h5.textContent : null,
+    href: a ? a.getAttribute('href') : null
+  });
+})()
+JS
+-> [80 chars] ✓ Done
+"{\"display\":\"block\",\"name\":\"name: user3\",\"href\":\"/users/3\"}"
+
+SAY: I hovered over the third avatar. The hover revealed the caption (it switched to `display: block`):
+
+- **Name shown:** user3 (shown as "name: user3")
+- **'View profile' link href:** `/users/3` (i.e. https://the-internet.herokuapp.com/users/3)
+
+ANSWER: Name: user3; 'View profile' link href: /users/3

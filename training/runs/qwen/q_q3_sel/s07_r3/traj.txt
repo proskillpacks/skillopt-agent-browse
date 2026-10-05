@@ -1,0 +1,49 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r3", "correct": true, "score": 0.96, "wtok": 26505, "out_tok": 962, "turns": 8, "secs": 98, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" && break; sleep 5; done; agent-browser snapshot -i
+-> [275 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser get text body 2>&1 | head -20; agent-browser eval "document.title"
+-> [63 chars] Drag and Drop
+A
+B
+Powered by Elemental Selenium
+"The Internet"
+
+SAY: Page loaded despite timeouts. Now let me find the box elements and drag.
+$ agent-browser get box "#a" && agent-browser get box "#b"
+-> [134 chars] ✗ Element not found: #a. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const els = [...document.querySelectorAll('div, a, p')].filter(e => /^A$|^B$/.test((e.textContent||'').trim()) && e.children.length===0);
+  return JSON.stringify(els.map(e => ({tag:e.tagName, id:e.id, cls:e.className})));
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval "document.querySelector('.example').innerHTML" 2>/dev/null || agent-browser eval "document.querySelector('#content').innerHTML"
+-> [239 chars] "\n  <h3>Drag and Drop</h3>\n  <div id=\"columns\">\n    <div class=\"column\" id=\"column-a\" draggable=\"true\"><header>A</header></div>\n    <div class=\"column\" id=\"column-b\" draggable=\"true\"><header>B</header></div>\n  </div>\n"
+
+SAY: The boxes are `#column-a` and `#column-b`. Let me drag.
+$ agent-browser drag "#column-a" "#column-b"; sleep 1; agent-browser eval "JSON.stringify({a: document.getElementById('column-a').textContent.trim(), b: document.getElementById('column-b').textContent.trim(), order: [...document.querySelectorAll('#columns > *')].map(e=>e.textContent.trim())})"
+-> [59 chars] ✓ Done
+"{\"a\":\"B\",\"b\":\"A\",\"order\":[\"B\",\"A\"]}"
+
+$ agent-browser get text "#columns"
+-> [4 chars] B
+A
+
+SAY: The drag succeeded. After dropping box A onto box B, the headers swapped:
+
+- Left box (`#column-a`): **B**
+- Right box (`#column-b`): **A**
+
+ANSWER: B, A

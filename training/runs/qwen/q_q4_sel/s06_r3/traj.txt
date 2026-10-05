@@ -1,0 +1,87 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r3", "correct": true, "score": 0.94, "wtok": 39798, "out_tok": 1616, "turns": 10, "secs": 127, "timed_out": false, "curl": false, "answer": "After removing the checkbox, the message is \"It's gone!\"; after enabling the text input and typing into it, the message is \"It's enabled!\" and the input value is \"hello\"."}
+
+SAY: I'll work through this on the dynamic controls page.
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "#checkbox"; agent-browser click "#remove-button"; agent-browser wait --fn "document.getElementById('checkbox') === null"; agent-browser get text "#message"
+-> [333 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+✗ Element not found: #remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+true
+✗ Element not found: #message. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+SAY: Navigation seems flaky. Let me check the current state and retry.
+$ agent-browser get attr #checkbox disabled; agent-browser get text #message 2>/dev/null; agent-browser snapshot -i
+-> [113 chars] Missing arguments for: get attr
+Usage: agent-browser get attr <selector> <attribute>
+
+
+Command exited with code 1
+SAY: The unquoted `#checkbox` got treated as a shell comment. Retrying with quoted selectors:
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "#checkbox"; agent-browser click "#remove-button"; agent-browser wait --fn "document.getElementById('checkbox') === null"; agent-browser get text "#message"
+-> [379 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✗ Element not found: #remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: #message. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser snapshot -i; agent-browser get text "#hucarb" 2>/dev/null; agent-browser get text ".example h2" 2>/dev/null; agent-browser get text "h3"
+-> [458 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+✗ Element not found: h3. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('button')].map(b => ({id: b.id, text: b.textContent})))
+JS
+-> [72 chars] "[{\"id\":\"\",\"text\":\"Remove\"},{\"id\":\"\",\"text\":\"Enable\"}]"
+
+SAY: Buttons have no IDs; I'll use snapshot refs. Now executing the full flow:
+$ agent-browser click "@e5"; agent-browser wait --fn "document.querySelector('input') && document.querySelectorAll('button').length === 1 && !document.querySelector('label input") " ; sleep 1; agent-browser wait --fn "![...document.querySelectorAll('input[type=checkbox]')].some(c=>c.isConnected)"; agent-browser get text "#message"
+-> [446 chars] /bin/bash: -c: line 1: syntax error near unexpected token `)'
+/bin/bash: -c: line 1: `agent-browser click "@e5"; agent-browser wait --fn "document.querySelector('input') && document.querySelectorAll('button').length === 1 && !document.querySelector('label input") " ; sleep 1; agent-browser wait --fn "![...document.querySelectorAll('input[type=checkbox]')].some(c=>c.isConnected)"; agent-browser get text "#message"'
+
+
+Command exited with code 2
+SAY: Quote syntax error in my JS. Simpler approach:
+$ agent-browser click "@e5"; agent-browser wait --fn "!document.querySelector('input[type=checkbox]')"; agent-browser get text "#message"
+-> [23 chars] ✓ Done
+true
+It's gone!
+
+SAY: Checkbox removed; message: **It's gone!** Now the Enable/input part:
+$ agent-browser snapshot -i
+-> [286 chars] - link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- button "Add" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click "@e7"; agent-browser wait --fn "document.querySelector('input[type=text]').disabled === false"; agent-browser fill "@e6" "hello"; agent-browser get text "#message"; agent-browser get value "@e6"
+-> [39 chars] ✓ Done
+true
+✓ Done
+It's enabled!
+hello
+
+SAY: Done. Summary of what happened in the browser:
+
+1. **Remove (checkbox)**: Clicked "Remove", waited until the checkbox was removed from the DOM. Message shown: **"It's gone!"** (the Remove button also changed to "Add").
+2. **Enable (text input)**: Clicked "Enable", waited until the input was no longer disabled, then typed `hello` into it. Message shown: **"It's enabled!"** and the input's value is: **hello**.
+
+ANSWER: After removing the checkbox, the message is "It's gone!"; after enabling the te

@@ -1,0 +1,65 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r5", "correct": true, "score": 0.956, "wtok": 29368, "out_tok": 1266, "turns": 8, "secs": 124, "timed_out": false, "curl": false, "answer": "The third avatar shows the name \"user3\" and its 'View profile' link points to /users/3 (https://the-internet.herokuapp.com/users/3)."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers" && agent-browser snapshot -i
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/hovers" && break; sleep 5; done; agent-browser snapshot -i
+-> [275 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({url: location.href, cards: document.querySelectorAll('#cvp').length, imgs: document.querySelectorAll('#cvp img').length, body: document.body ? document.body.innerHTML.slice(0,300) : null})
+JS
+-> [454 chars] "{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"cards\":0,\"imgs\":0,\"body\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const imgs = [...document.querySelectorAll('img')].map(i => i.id || i.className);
+  return JSON.stringify({imgs, ready: document.readyState, sample: document.querySelector('.example, main') ? document.querySelector('.example, main').innerHTML.slice(0,400) : null});
+})()
+JS
+-> [558 chars] "{\"imgs\":[\"\",\"\",\"\",\"\"],\"ready\":\"complete\",\"sample\":\"\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user1</h5>\\n      <a href=\\\"/users/1\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>nam\"}"
+
+SAY: Page loaded. Now hovering over the third avatar:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const figs = document.querySelectorAll('.figure');
+  const r = figs[2].getBoundingClientRect();
+  return JSON.stringify({x: Math.round(r.left + r.width/2), y: Math.round(r.top + r.height/2), n: figs.length});
+})()
+JS
+-> [32 chars] "{\"x\":465,\"y\":214,\"n\":3}"
+
+$ agent-browser get box ".figure img:nth-of-type(1)" >/dev/null; agent-browser eval --stdin <<'JS'
+(() => {
+  const img = document.querySelectorAll('.figure img')[2];
+  const r = img.getBoundingClientRect();
+  return JSON.stringify({x: Math.round(r.left + r.width/2), y: Math.round(r.top + r.height/2)});
+})()
+JS
+-> [24 chars] "{\"x\":455,\"y\":214}"
+
+$ agent-browser mouse move 455 214; sleep 1; agent-browser eval --stdin <<'JS'
+(() => {
+  const fig = document.querySelectorAll('.figure')[2];
+  const cap = fig.querySelector('.figcaption');
+  const name = cap.querySelector('h5') ? cap.querySelector('h5').textContent : null;
+  const a = cap.querySelector('a');
+  return JSON.stringify({name, href: a ? a.getAttribute('href') : null, abs: a ? a.href : null, visible: getComputedStyle(cap).display});
+})()
+JS
+-> [135 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"/users/3\",\"abs\":\"https://the-internet.herokuapp.com/users/3\",\"visible\":\"block\"}"
+
+SAY: The third avatar's caption is now visible on hover:
+
+- **Name shown:** `name: user3`
+- **View profile link:** `/users/3` (absolute: `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: The third avatar shows the name "user3" and its 'View profile' link points to /users/3 (https://the-internet.herokuapp.com/users/3).

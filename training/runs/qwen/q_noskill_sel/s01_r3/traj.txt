@@ -1,0 +1,178 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r3", "correct": true, "score": 0.82, "wtok": 120008, "out_tok": 4283, "turns": 24, "secs": 95, "timed_out": false, "curl": false, "answer": "name: user3, View profile href /users/3 (https://the-internet.herokuapp.com/users/3)"}
+
+$ agent-browser --help 2>&1 | head -50
+$ env | grep -i -E 'agent|browser' | head -20
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+-> [745 chars] PI_CODING_AGENT=true
+AI_AGENT=pi
+PWD=/home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_sel/s01_r3
+AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_sel-s01_r3
+AGENT_BROWSER_SESSION=so-q_noskill_sel-s01_r3
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_sel-s01_r3
+PATH=<scrubbed> …sr/local/cuda/bin:/opt/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+AGENT_BROWSER_HEADED=1
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers 2>&1
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser open https://the-internet.herokuapp.com/hovers 2>&1
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -40
+-> [13 chars] (empty page)
+
+$ agent-browser eval 'window.location.href' 2>&1; agent-browser eval 'document.title' 2>&1
+-> [59 chars] "https://the-internet.herokuapp.com/hovers"
+"The Internet"
+
+$ agent-browser snapshot 2>&1
+-> [13 chars] (empty page)
+
+$ agent-browser eval 'document.body.innerHTML.length' 2>&1; agent-browser eval 'document.querySelector("#images").children.length' 2>&1
+-> [243 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:15
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'children')
+    at <anonymous>:1:34
+
+
+Command exited with code 1
+$ agent-browser eval 'document.readyState' 2>&1; agent-browser eval 'document.documentElement.outerHTML.length' 2>&1
+-> [14 chars] "loading"
+398
+
+$ sleep 5; agent-browser eval 'document.readyState + " " + (document.body ? document.body.innerHTML.length : "no body")' 2>&1
+-> [16 chars] "complete 1581"
+
+$ agent-browser hover '#images li:nth-child(3) span' 2>&1
+-> [160 chars] ✗ Element not found: #images li:nth-child(3) span. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval 'document.querySelector("#images") ? document.querySelector("#images").outerHTML.slice(0, 800) : "no #images"' 2>&1
+-> [13 chars] "no #images"
+
+$ agent-browser eval 'document.body.innerHTML' 2>&1
+-> [1718 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <style>\n.figure {\n  float: left; …ign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+
+SAY: The page uses `.figure` divs. Let me hover over the third one and read the tooltip that appears:
+$ agent-browser hover '.example .figure:nth-child(3) img' 2>&1
+-> [7 chars] ✓ Done
+
+$ agent-browser eval 'const f = document.querySelectorAll(".example .figure")[2]; const cap = f.querySelector(".figcaption"); JSON.stringify({visible: getComputedStyle(cap).display, name: cap.querySelector("h5").textContent.trim(), linkText: cap.querySelector("a").textContent.trim(), href: cap.querySelector("a").href})' 2>&1
+-> [136 chars] "{\"visible\":\"none\",\"name\":\"name: user3\",\"linkText\":\"View profile\",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+SAY: The tooltip is hidden (display:none) after hover — let me hover on the figure itself and verify it becomes visible:
+$ agent-browser hover '.example .figure:nth-child(3)' 2>&1 && agent-browser eval 'const f = document.querySelectorAll(".example .figure")[2]; const cap = f.querySelector(".figcaption"); getComputedStyle(cap).display' 2>&1
+-> [109 chars] ✓ Done
+✗ Evaluation error: SyntaxError: Identifier 'f' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval '(function(){const f = document.querySelectorAll(".example .figure")[2]; const cap = f.querySelector(".figcaption"); return JSON.stringify({display: getComputedStyle(cap).display, name: cap.querySelector("h5").textContent.trim(), linkText: cap.querySelector("a").textContent.trim(), href: cap.querySelector("a").href});})()' 2>&1
+-> [136 chars] "{\"display\":\"none\",\"name\":\"name: user3\",\"linkText\":\"View profile\",\"href\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+SAY: The data is confirmed from the DOM, but let me verify the hover actually triggers the CSS tooltip. Checking the core skill for hover details:
+$ agent-browser skills get core 2>&1 | grep -i -A5 hover
+-> [469 chars] agent-browser hover @e1                   # hover
+agent-browser focus @e1                   # focus (useful before keyboard input)
+agent-browser fill @e2 "hello"            # clear then type
+agent-browser type @e2 " world"           # type without clearing
+agent-browser press Enter                 # press a key at current focus
+agent-browser press Control+a             # key combination
+--
+agent-browser find nth 2 ".card" hover
+```
+
+Or a raw CSS selector:
+
+```bash
+
+$ agent-browser hover '.example .figure:nth-child(3) img' 2>&1 && agent-browser screenshot /tmp/hover3.png 2>&1
+-> [45 chars] ✓ Done
+✓ Screenshot saved to /tmp/hover3.png
+
+$ agent-browser --help 2>&1 | grep -i -E 'mouse|pointer' ; agent-browser skills get core --full 2>&1 | grep -i -B2 -A6 'hover'
+-> [2089 chars] Mouse:  agent-browser mouse <action> [args]
+  --input-mode <mode>        Session pointer movement: instant (default), smooth, human
+agent-browser click @e1 --human           # approach with reproducible curved movement
+agent-browser dblclick @e1                # double-click
+agent-browser hover @e1                   # hover
+agent-browser focus @e1                   # focus (useful before keyboard input)
+agent-browser fill @e2 "hello"            # clear then type
+agent-browser type @e2 " world"   …, scroll polish work |
+| 30 (default) | Flows, CI evidence, walkthroughs |
+| 1-15 | Long sessions where the video is a timeline, not a motion study |
+
+$ agent-browser mouse --help 2>&1 | head -20
+$ agent-browser eval '(function(){const r=document.querySelectorAll(".example .figure")[2].getBoundingClientRect(); return JSON.stringify({x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2),w:r.width,h:r.height})})()' 2>&1
+-> [714 chars] agent-browser mouse - Low-level mouse operations
+
+Usage: agent-browser mouse <subcommand> [args]
+
+Performs low-level mouse operations for precise control.
+
+Subcommands:
+  move <x> <y>         Move mouse to coordinates
+  down [button]        Press mouse button (left, right, middle)
+  up [button]          Release mouse button
+  wheel <dy> [dx]      Scroll mouse wheel
+
+Movement Options:
+  --duration <ms>       Target total duration, including browser response time
+  --steps <n>           Number of  …le eased curve
+  --seed <n>            Seed for the human movement path
+
+Steps share one schedule; a slow browser can extend the requested duration.
+
+
+-> [44 chars] "{\"x\":465,\"y\":214,\"w\":180,\"h\":160}"
+
+$ agent-browser eval '(function(){const r=document.querySelectorAll(".example .figure")[2].querySelector("img").getBoundingClientRect(); return JSON.stringify({x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)})})()' 2>&1
+-> [24 chars] "{\"x\":455,\"y\":214}"
+
+$ agent-browser mouse move 455 214 2>&1 && agent-browser eval '(function(){const cap=document.querySelectorAll(".example .figure")[2].querySelector(".figcaption"); return JSON.stringify({display:getComputedStyle(cap).display, hoverMatch: cap.closest(".figure").matches(":hover")})})()' 2>&1
+-> [53 chars] ✓ Done
+"{\"display\":\"block\",\"hoverMatch\":true}"
+
+SAY: The hover is now active (display: block, `:hover` matches). Reading the tooltip content and capturing proof:
+$ agent-browser eval '(function(){const cap=document.querySelectorAll(".example .figure")[2].querySelector(".figcaption"); const a=cap.querySelector("a"); return JSON.stringify({name:cap.querySelector("h5").textContent.trim(), linkText:a.textContent.trim(), href:a.getAttribute("href"), hrefAbs:a.href})})()' 2>&1
+$ agent-browser screenshot /tmp/hover3_visible.png 2>&1
+-> [140 chars] "{\"name\":\"name: user3\",\"linkText\":\"View profile\",\"href\":\"/users/3\",\"hrefAbs\":\"https://the-internet.herokuapp.com/users/3\"}"
+
+-> [46 chars] ✓ Screenshot saved to /tmp/hover3_visible.png
+
+SAY: Done. Using the `agent-browser` CLI on the hovers page, I hovered over the third avatar (via `hover` then a persistent `mouse move` to its center), confirmed the tooltip became visible (`.figcaption` display switched to `block` and `.figure` matched `:hover`), and read the tooltip contents:
+
+- **Name shown:** `name: user3`
+- **'View profile' link href:** `/users/3` (absolute: `https://the-internet.herokuapp.com/users/3`)
+- Screenshot saved to `/tmp/hover3_visible.png`
+
+ANSWER: name: user3, View 

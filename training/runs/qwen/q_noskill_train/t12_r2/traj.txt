@@ -1,0 +1,113 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r2", "correct": true, "score": 0.932, "wtok": 45539, "out_tok": 1765, "turns": 15, "secs": 94, "timed_out": false, "curl": false, "answer": "Heading after upload: \"File Uploaded!\"; the page displays the uploaded file name \"skillopt-note.txt\"."}
+
+$ echo "Test content for skillopt note" > skillopt-note.txt && cat skillopt-note.txt && agent-browser --help 2>&1 | head -50
+-> [2314 chars] Test content for skillopt note
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/upload && agent-browser snapshot
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -40
+-> [13 chars] (empty page)
+
+$ agent-browser open https://the-internet.herokuapp.com/upload; echo "exit=$?"; sleep 3; agent-browser snapshot 2>&1 | head -40
+-> [103 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+exit=1
+(empty page)
+
+$ agent-browser eval "document.title" 2>&1; agent-browser eval "location.href" 2>&1
+-> [47 chars] ""
+"https://the-internet.herokuapp.com/upload"
+
+$ agent-browser eval "document.readyState" 2>&1; agent-browser eval "document.documentElement.outerHTML.length" 2>&1; sleep 5; agent-browser eval "document.body ? document.body.innerText.slice(0,300) : 'no body'" 2>&1
+-> [168 chars] "loading"
+118
+"File Uploader\n\nChoose a file on your system and then click upload. Or, drag and drop a file into the area below.\n\n\n\nPowered by Elemental Selenium"
+
+$ agent-browser snapshot 2>&1 | head -30
+-> [514 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - generic
+    - heading "File Uploader" [level=3, ref=e2]
+    - paragraph
+      - StaticText "Choose a file on your system and then click upload. Or, drag and drop a file into the area below."
+    - form
+      - button "Choose File" [ref=e3]: No file chosen
+      - LineBreak "\n"
+      - button "Upload" [ref=e4]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e5]
+
+$ agent-browser upload "input[type=file]" "$(pwd)/skillopt-note.txt"; echo "exit=$?"
+-> [14 chars] ✓ Done
+exit=0
+
+$ agent-browser click @e4; echo "exit=$?"; sleep 3; agent-browser eval "document.body.innerText.slice(0,500)" 2>&1
+-> [150 chars] ✓ Done
+exit=0
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:15
+
+
+Command exited with code 1
+$ sleep 4; agent-browser eval "document.title + ' | ' + location.href" 2>&1; agent-browser snapshot 2>&1 | head -30
+-> [72 chars] "The Internet | https://the-internet.herokuapp.com/upload"
+(empty page)
+
+$ agent-browser eval "document.readyState"; sleep 6; agent-browser eval "document.body ? document.body.innerText : 'no body'" 2>&1
+-> [20 chars] "loading"
+"no body"
+
+$ agent-browser eval "document.documentElement.outerHTML.slice(0,1500)" 2>&1
+-> [430 chars] "<html class=\"no-js\" lang=\"en\"><!--<![endif]--><head>\n    <script src=\"/js/vendor/298279967.js\"></script>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width\">\n    <title>The Internet</title>\n    <link href=\"/css/app.css\" rel=\"stylesheet\">\n    <link href=\"/css/font-awesome.css\" rel=\"stylesheet\">\n    <script src=\"/js/vendor/jquery-1.11.3.min.js\"></script></head></html>"
+
+$ agent-browser eval "location.reload()"; sleep 8; agent-browser eval "document.readyState + ' | ' + (document.body ? document.body.innerText.slice(0,400) : 'no body')" 2>&1
+-> [83 chars] null
+"complete | File Uploaded!\nskillopt-note.txt\nPowered by Elemental Selenium"
+
+$ agent-browser snapshot 2>&1 | head -20; agent-browser eval "document.querySelector('h3') ? document.querySelector('h3').textContent : document.querySelector('h1,h2,h4') ? 'other heading' : 'none'" 2>&1
+-> [297 chars] - generic
+  - link "Fork me on GitHub" [ref=e6]
+    - image "Fork me on GitHub"
+  - heading "File Uploaded!" [level=3, ref=e7]
+  - StaticText "skillopt-note.txt"
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e8]
+"File Uploaded!"
+
+SAY: Done. Here's what happened:
+
+1. **Created the file**: `skillopt-note.txt` in the working directory.
+2. **Opened** https://the-internet.herokuapp.com/upload with `agent-browser open` (first load was slow, but the "File Uploader" page came up).
+3. **Set the file** via `agent-browser upload "input[type=file]" .../skillopt-note.txt` (the form's "Choose File" input).
+4. **Clicked** the "Upload" button (`@e4`) and waited for the result page to render.
+
+Result shown on the page after uploading:
+
+- **He

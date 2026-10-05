@@ -1,0 +1,64 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r3", "correct": false, "score": 0.0, "wtok": 21343, "out_tok": 936, "turns": 6, "secs": 8, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the category has 20 books total."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_17/index.html"; agent-browser snapshot -i
+-> [141 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_17/index.html
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser snapshot -i | head -50
+-> [1538 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e3]
+- link "Home" [ref=e4]
+- link "Books" [ref=e5]
+- link "Travel" [ref=e7]
+- link "Mystery" [ref=e8]
+- link "Historical Fiction" [ref=e9]
+- link "Sequential Art" [ref=e10]
+- link "Classics" [ref=e11]
+- link "Philosophy" [ref=e12]
+- link "Romance" [ref=e13]
+- link "Womens Fiction" [ref=e14]
+- link "Fiction" [ref=e15]
+- link "Childrens" [ref=e16]
+- link "Religion" [ref=e17]
+- link "Nonfiction" [ …ref=e48]
+- link "Suspense" [ref=e49]
+- link "Short Stories" [ref=e50]
+- link "Novels" [ref=e51]
+- link "Health" [ref=e52]
+- link "Politics" [ref=e53]
+
+$ agent-browser click @e9; agent-browser get attr 'h1' innerText; agent-browser eval --stdin <<'JS'
+JSON.stringify({title: document.querySelector('h1').textContent, next: !!document.querySelector('ul.pagination li.next a'), articles: document.querySelectorAll('article.product_pod').length, bodySample: document.body.innerText.slice(0,300)})
+JS
+-> [547 chars] ✓ Done
+✗ Element not found: h1. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"title\":\"Historical Fiction\",\"next\":false,\"articles\":20,\"bodySample\":\"Books to Scrape We love being scraped!\\nHome  Books Historical Fiction\\nBooks\\nTravel\\nMystery\\nHistorical Fiction\\nSequential Art\\nClassics\\nPhilosophy\\nRomance\\nWomens Fiction\\nFiction\\nChildrens\\nReligion\\nNonfiction\\nMusic\\nDefault\\nScience Fiction\\nSports and Games\\nAdd a comment\\nFantasy\\nNew Adult\\nYoung Adult\\nSci\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({url: location.href, pag: (document.querySelector('ul.pagination')||{}).textContent, articles: document.querySelectorAll('article.product_pod').length})
+JS
+-> [116 chars] "{\"url\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"articles\":20}"
+
+SAY: The Historical Fiction category fits on a single page (no pagination, 20 books). Now let me count the one-star ratings:
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify((function(){
+  const arts = [...document.querySelectorAll('article.product_pod')];
+  const byStar = {};
+  let oneStarBooks = [];
+  arts.forEach(a => {
+    const s = [...a.querySelectorAll('p.star-rating')].map(p => p.className.replace('star-rating','').trim());
+    s.forEach(star => byStar[star] = (byStar[star]||0)+1);
+    if (s.includes('One')) oneStarBooks.push(a.querySelector('h3 a').textContent.trim());
+  });
+  return {total: arts.length, byStar, oneCount: oneStarBooks.length, oneStarBooks};
+})())
+JS
+-> [253 chars] "{\"total\":20,\"byStar\":{\"One\":5,\"Three\":3,\"Five\":5,\"Four\":3,\"Two\":4},\"oneCount\":5,\"oneStarBooks\":[\"Tipping the Velvet\",\"The House by the ...\",\"The Invention of Wings\",\"Girl With a Pearl ...\",\"The Guernsey Literary and ...\"]}"
+
+SAY: Done. The Historical Fiction category on books.toscrape.com has exactly one page (no pagination) containing 20 books. Of those, 5 books carry a one-star rating (Tipping the Velvet, The House by the Sea, The Invention of Wings, Girl With a Pearl Earring, and The Guernsey Literary and Potato Peel Pie Society). The remaining distribution: 5 five-star, 4 two-star, 3 three-star, 3 four-star.
+
+ANSWER: 5 books have a one-star rating; the category has 20 books total.

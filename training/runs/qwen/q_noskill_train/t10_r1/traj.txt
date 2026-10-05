@@ -1,0 +1,136 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r1", "correct": true, "score": 0.923, "wtok": 51570, "out_tok": 1746, "turns": 13, "secs": 74, "timed_out": false, "curl": false, "answer": "PDF, CSV, Excel"}
+
+$ which agent-browser; agent-browser --help 2>&1 | head -50
+-> [2342 chars] /home/user/.nvm/versions/node/v24.21.0/bin/agent-browser
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, prote … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu 2>&1 | head -20
+-> [83 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+$ agent-browser snapshot 2>&1 | head -60
+-> [13 chars] (empty page)
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu 2>&1 | head; sleep 3; agent-browser snapshot 2>&1 | head -60
+-> [96 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(empty page)
+
+$ env | grep -i -E "agent_browser|browser|AGENT" | sed 's/\(KEY\|TOKEN\|SECRET\)=.*/\1=***/i'; agent-browser --help 2>&1 | sed -n '50,120p'
+-> [3936 chars] PI_CODING_AGENT=true
+AI_AGENT=pi
+PWD=/home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_train/t10_r1
+AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_train-t10_r1
+AGENT_BROWSER_SESSION=so-q_noskill_train-t10_r1
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_train-t10_r1
+PATH=<scrubbed> …art recording re-renders via onCommitFiberRoot
+  react renders stop [--json] Stop and print render profile
+  react suspense [--only-dynamic] [--json]
+
+$ agent-browser get url; agent-browser get title; agent-browser get html 2>&1 | head -5
+-> [135 chars] https://the-internet.herokuapp.com/jqueryui/menu
+The Internet
+Missing arguments for: get html
+Usage: agent-browser get html <selector>
+
+$ agent-browser wait 3000; agent-browser get text body 2>&1 | head -30
+-> [551 chars] ✓ Done
+JQueryUI - Menu
+
+JQuery UI Menus are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them.
+
+Another 'fun' aspect is that the visibility of elements is actually not in the html itself, but done magically by JQuery so you cannot trust exactly what the html is telling you. A user cannot fire click events at certain UI elements, but you might -- if you have a big enough hammer to hit it with.
+
+Disabled
+Enabled
+Powered by Elemental Selenium
+
+SAY: The page is loaded now. Let me take a snapshot to get element refs.
+$ agent-browser snapshot 2>&1 | head -80
+-> [1054 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e2]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e4]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of elements is actually not in the html itself, but done magic …      - link "Enabled" [ref=e8]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e9]
+
+$ agent-browser hover e6; agent-browser wait 800; agent-browser snapshot 2>&1 | head -100
+-> [1313 chars] ✓ Done
+✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e2]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e4]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of elements is actually not in the html itself,  …k "Back to JQuery UI" [ref=e13]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e9]
+
+SAY: The Enabled submenu is open showing "Downloads" and "Back to JQuery UI". Now hover over Downloads to open its submenu.
+$ agent-browser hover e10; agent-browser wait 800; agent-browser snapshot 2>&1 | sed -n '10,40p'
+-> [963 chars] ✓ Done
+✓ Done
+  - menu [ref=e3] focusable [tabindex]
+    - menuitem "Disabled" [disabled, ref=e5]
+      - StaticText "• "
+      - link "Disabled" [disabled, ref=e7]
+    - menuitem "Enabled" [ref=e6]
+      - StaticText "• "
+      - link "Enabled" [ref=e8]
+      - menu
+        - menuitem "Downloads" [ref=e10]
+          - StaticText "◦ "
+          - link "Downloads" [ref=e12]
+          - menu
+            - menuitem "PDF" [ref=e14]
+              - StaticText "■ "
+              - link "PDF" [ref=e17] …k "Back to JQuery UI" [ref=e13]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e9]
+
+SAY: The Downloads submenu is open. Let me verify the visible items directly:
+$ agent-browser get text ".ui-menu:visible .ui-menu-item"; agent-browser screenshot /tmp/menu.png 2>&1 | tail -1
+-> [37 chars] 
+✓ Screenshot saved to /tmp/menu.png
+
+$ agent-browser eval "Array.from(document.querySelectorAll('.ui-menu')).filter(m => m.style.display !== 'none' && m.offsetParent !== null).map(m => Array.from(m.querySelectorAll(':scope > .ui-menu-item > a')).map(a => a.textContent.trim()).join(' | ')).join('\n')"
+-> [71 chars] "Disabled | Enabled\nDownloads | Back to JQuery UI\nPDF | CSV | Excel"
+
+SAY: Verified via the accessibility snapshot and a DOM check of visible menus. After hovering **Enabled** (which reveals "Downloads" and "Back to JQuery UI"), then hovering **Downloads**, the Downloads submenu opens showing three items: **PDF**, **CSV**, **Excel** — confirmed by the visible-menu text check: `PDF | CSV | Excel`.
+
+ANSWER: PDF, CSV, Excel

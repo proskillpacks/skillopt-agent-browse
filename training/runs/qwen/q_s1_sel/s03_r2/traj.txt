@@ -1,0 +1,61 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r2", "correct": false, "score": 0.0, "wtok": 45071, "out_tok": 2267, "turns": 11, "secs": 41, "timed_out": false, "curl": false, "answer": "0 books have a one-star rating out of 26 total books in the Historical Fiction category."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_17/index.html" && agent-browser eval "document.querySelectorAll('.post h3 a').length"
+-> [99 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_17/index.html
+0
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "Array.from(document.querySelectorAll('ul.categories li a, .nav a')).filter(a=>/Historical/i.test(a.textContent)).map(a=>a.href).join(' | ')"
+-> [238 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html | https://books.toscrape.com/catalogue/category/books/historical_42/index.html"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval "(()=>{const last=document.querySelector('li.next a'); const pages=last?parseInt(last.closest('li').textContent.trim(),10):1; const count=document.querySelectorAll('.post').length; return JSON.stringify({pages, booksOnPage:count});})()"
+-> [172 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"pages\":null,\"booksOnPage\":0}"
+
+$ agent-browser eval "document.querySelectorAll('article, .book_wrapper, li.post, .row li').length + '|' + document.body.innerText.slice(0,500)"
+-> [548 chars] "93|Books to Scrape We love being scraped!\nHome  Books Historical Fiction\nBooks\nTravel\nMystery\nHistorical Fiction\nSequential Art\nClassics\nPhilosophy\nRomance\nWomens Fiction\nFiction\nChildrens\nReligion\nNonfiction\nMusic\nDefault\nScience Fiction\nSports and Games\nAdd a comment\nFantasy\nNew Adult\nYoung Adult\nScience\nPoetry\nParanormal\nArt\nPsychology\nAutobiography\nParenting\nAdult Fiction\nHumor\nHorror\nHistory\nFood and Drink\nChristian Fiction\nBusiness\nBiography\nThriller\nContemporary\nSpirituality\nAcademic\nSelf He"
+
+$ agent-browser eval "(()=>{const cards=Array.from(document.querySelectorAll('.row')).filter(r=>r.querySelector('h3 a')); const one=cards.filter(c=>c.querySelector('.star-rating.one')).length; const pager=document.querySelector('li.next a'); const pages=pager?parseInt(pager.textContent.trim(),10):1; return JSON.stringify({cards:cards.length, one, pages});})()"
+-> [41 chars] "{\"cards\":2,\"one\":0,\"pages\":null}"
+
+$ agent-browser eval "(()=>{const rows=document.querySelectorAll('.row'); const uls=document.querySelectorAll('.post ul li, ol li'); const nextLi=Array.from(document.querySelectorAll('li')).filter(l=>l.classList.contains('next')||l.textContent.trim()==='Last'); return JSON.stringify({rows:rows.length, next:nextLi.map(l=>l.textContent.trim()), sample:document.body.innerText.slice(500,1500)});})()"
+-> [1305 chars] "{\"rows\":3,\"next\":[\"next\"],\"sample\":\"lp\\nHistorical\\nChristian\\nSuspense\\nShort Stories\\nNovels\\nHealth\\nPolitics\\nCultural\\nErotica\\nCrime\\nHistorical Fiction\\n26 results - showing 1 to 20.\\nWarning! This is a demo website for web scraping purposes. Prices and ratings here were randomly assigned and have no real meaning.\\n\\n    \\n\\nTipping the Velvet\\n\\n£53.74\\n\\n In stock\\n\\nAdd to basket\\n\\n    \\n\\nForever and Forever: The ...\\n\\n£29.69\\n\\n In stock\\n\ …\\nAdd to basket\\n\\n    \\n\\nThe Constant Princess (The ...\\n\\n£16.62\\n\\n In stock\\n\\nAdd to basket\\n\\n    \\n\\nThe Invention of Wing\"}"
+
+SAY: The page says "26 results - showing 1 to 20", so there are 2 pages. Page 1 had 0 one-star books. Now page 2:
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html?paged=2"; agent-browser eval "(()=>{const rows=Array.from(document.querySelectorAll('.row')).filter(r=>r.querySelector('h3')); const one=rows.filter(r=>r.querySelector('.star-rating.one')).length; const res=document.body.innerText.match(/(\\d+) results - showing (\\d+) to (\\d+)/); return JSON.stringify({cards:rows.length, one, res:res&&res[0]});})()"; agent-browser close
+-> [227 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html?paged=2
+"{\"cards\":2,\"one\":0,\"res\":\"26 results - showing 1 to 20\"}"
+✓ Browser closed
+
+SAY: The `?paged=` URL didn't work. Let me navigate via the actual pager link:
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval "(()=>{const nextLi=document.querySelector('li.next'); const a=nextLi?nextLi.querySelector('a'):null; return JSON.stringify({liText:nextLi&&nextLi.textContent.trim(), href:a&&a.getAttribute('href'), liHtml:nextLi&&nextLi.outerHTML.slice(0,300)});})()"
+-> [264 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"liText\":\"next\",\"href\":\"page-2.html\",\"liHtml\":\"<li class=\\\"next\\\"><a href=\\\"page-2.html\\\">next</a></li>\"}"
+
+$ agent-browser click "li.next a"; agent-browser wait "li.next" ; agent-browser eval "(()=>{const url=location.href; const rows=Array.from(document.querySelectorAll('.row')).filter(r=>r.querySelector('h3')); const one=rows.filter(r=>r.querySelector('.star-rating.one')).length; const res=document.body.innerText.match(/(\\d+) results[^\n]*/); const nextLi=document.querySelector('li.next'); return JSON.stringify({url, cards:rows.length, one, res:res&&res[0], hasNext:!!nextLi});})()"
+-> [222 chars] ✓ Done
+✗ Wait timed out after 25000ms
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\",\"cards\":2,\"one\":0,\"res\":\"26 results - showing 21 to 26.\",\"hasNext\":false}"
+
+SAY: We're on page 2 ("showing 21 to 26"). Let me verify the star counts robustly on both pages (the `.row` selector was behaving oddly):
+$ agent-browser eval "JSON.stringify({ones:document.querySelectorAll('.star-rating.one').length, twos:document.querySelectorAll('.star-rating.two').length, stars:document.querySelectorAll('.star-rating').length, inStock:document.querySelectorAll('button.btn-primary').length})"; agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; agent-browser eval "JSON.stringify({ones:document.querySelectorAll('.star-rating.one').length, inStock:document.querySelectorAll('button.btn-primary').length})"; agent-browser close
+-> [234 chars] "{\"ones\":0,\"twos\":0,\"stars\":6,\"inStock\":6}"
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"ones\":0,\"inStock\":20}"
+✓ Browser closed
+
+SAY: Verified across both pages of the Historical Fiction category:
+
+- **Page 1** (showing 1 to 20): 20 books, 0 with a one-star rating
+- **Page 2** (showing 21 to 26): 6 books, 0 with a one-star rating
+- **Total**: 26 books in the category, **0** with a one-star rating
+
+ANSWER: 0 books have a one-star rating out of 26 total books in the Historical Fiction category.

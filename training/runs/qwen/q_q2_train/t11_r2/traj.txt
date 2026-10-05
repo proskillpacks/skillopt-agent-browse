@@ -1,0 +1,63 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r2", "correct": true, "score": 0.959, "wtok": 27036, "out_tok": 1051, "turns": 8, "secs": 8, "timed_out": false, "curl": false, "answer": "You selected a context menu"}
+
+$ agent-browser open https://the-internet.herokuapp.com/context_menu; agent-browser eval "window.__alerts=[]; window.alert=m=>window.__alerts.push(String(m))"; agent-browser snapshot -i
+-> [184 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/context_menu
+{}
+- link "Fork me on GitHub" [ref=e1]
+- heading "Context Menu" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser get box .cm-text
+-> [140 chars] ✗ Element not found: .cm-text. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('div')].filter(d=>getComputedStyle(d).borderStyle.includes('dashed')).map(d=>d.outerHTML.slice(0,300)))
+JS
+-> [168 chars] "[\"<div id=\\\"hot-spot\\\" style=\\\"border-style: dashed; border-width: 5px; width: 250px; height: 150px;\\\" oncontextmenu=\\\"displayMessage()\\\">\\n  </div>\"]"
+
+$ agent-browser get box #hot-spot; agent-browser eval "const s=document.createElement('script');s.textContent='displayMessage.toString()';s.onload=()=>window.__fn=s.textContent;document.head.appendChild(s);" ; agent-browser eval "document.toString ? 1 : 'ok'" 2>/dev/null; agent-browser eval "new Function('return displayMessage.toString()')()"
+-> [99 chars] Missing arguments for: get box
+Usage: agent-browser get box <selector>
+
+
+Command exited with code 1
+$ agent-browser get box --help 2>&1 | head -30
+-> [1090 chars] agent-browser get - Retrieve information from elements or page
+
+Usage: agent-browser get <subcommand> [args]
+
+Retrieves various types of information from elements or the page.
+
+Subcommands:
+  text <selector>            Get text content of element
+  html <selector>            Get inner HTML of element
+  value <selector>           Get value of input element
+  attr <selector> <name>     Get attribute value
+  title                      Get page title
+  url                        Get current URL
+  co … get value "#email-input"
+  agent-browser get attr "#link" href
+  agent-browser get title
+  agent-browser get url
+  agent-browser get count "li.item"
+
+$ agent-browser get box "#hot-spot"
+-> [51 chars] x:      15
+y:      179.875
+width:  250
+height: 150
+
+$ agent-browser mouse move 140 255; agent-browser mouse down right; agent-browser mouse up right; agent-browser eval "JSON.stringify(window.__alerts)"
+-> [57 chars] ✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+
+SAY: Right-clicked inside the dashed box on https://the-internet.herokuapp.com/context_menu. The JavaScript alert fired with the message: `You selected a context menu`
+
+ANSWER: You selected a context menu

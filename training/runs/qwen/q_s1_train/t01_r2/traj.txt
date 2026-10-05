@@ -1,0 +1,71 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r2", "correct": true, "score": 0.933, "wtok": 44675, "out_tok": 2700, "turns": 10, "secs": 154, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+SAY: The `open` timed out but the page likely loaded. Let me wait for the Start button and continue:
+$ agent-browser wait "#start" && agent-browser click "#start" && agent-browser wait --fn "document.getElementById('done') && document.getElementById('done').textContent.trim() !== ''" --timeout 10000; agent-browser get text "#done"
+-> [182 chars] ✓ Done
+✓ Done
+✗ Wait timed out after 10000ms
+✗ Element not found: #done. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+SAY: The element may have a different id. Let me inspect the page:
+$ agent-browser get text "#content"; agent-browser eval "JSON.stringify([...document.getElementById('content').querySelectorAll('div')].map(d=>({id:d.id,html:d.innerHTML})))"
+-> [386 chars] Dynamically Loaded Page Elements
+Example 2: Element rendered after the fact
+
+
+Start
+
+"[{\"id\":\"\",\"html\":\"\\n  <h3>Dynamically Loaded Page Elements</h3>\\n  <h4>Example 2: Element rendered after the fact</h4>\\n\\n  <br>\\n\\n  <div id=\\\"start\\\">\\n    <button>Start</button>\\n  </div>\\n\\n\\n  <br>\\n\"},{\"id\":\"start\",\"html\":\"\\n    <button>Start</button>\\n  \"}]"
+
+SAY: The click hit the div, not the button. Let me click the actual button and poll for the loaded text:
+$ agent-browser click "#start button" && agent-browser wait --fn "var d=document.getElementById('done')||document.getElementById('loading'); d && d.textContent.trim() && d.textContent.trim() !== '...'" --timeout 15000; agent-browser eval "JSON.stringify({done:(document.getElementById('done')||{}).textContent, loading:(document.getElementById('loading')||{}).textContent})"
+-> [43 chars] ✓ Done
+✗ Wait timed out after 15000ms
+"{}"
+
+SAY: The page's scripts may not have attached due to the earlier slow load. Let me reload and retry:
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start button" && agent-browser click "#start button" && agent-browser wait --fn "document.querySelector('#loading') !== null || document.querySelector('#done') !== null" --timeout 10000; agent-browser wait --fn "(document.getElementById('done')&&document.getElementById('done').textContent.trim()!=='...') || (document.getElementById('loading')&&document.getElementById('loading').textContent.trim()!=='...')" --timeout 15000; agent-browser eval "JSON.stringify({done:(document.getElementById('done')||{}).textContent, loading:(document.getElementById('loading')||{}).textContent})"
+-> [164 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+✗ Wait timed out after 10000ms
+✗ Wait timed out after 15000ms
+"{}"
+
+$ agent-browser eval "JSON.stringify({html:document.getElementById('content').innerHTML, hasLoading:!!document.getElementById('loading'), hasDone:!!document.getElementById('done'), readyState:document.readyState})"; agent-browser eval "document.querySelector('#start button').click(); 'clicked'"
+-> [812 chars] "{\"html\":\"\\n        <script>\\n  $(function(){\\n    $('#start button').click(function(){\\n      $('#start').hide();\\n      $('#start').before(\\\"<div id='loading'>Loading... <img src='/img/ajax-loader.gif'></div>\\\");\\n      setTimeout(function() {\\n        $('#loading').hide();\\n        $('#loading').before(\\\"<div id='finish' style='display:none'><h4>Hello World!</h4></div>\\\")\\n        $('#finish').show();\\n      } , 5000 );\\n    });\\n  });\\n</script>\\n\\n<div class=\\\"ex …button>Start</button>\\n  </div>\\n\\n\\n  <br>\\n</div>\\n\\n      \",\"hasLoading\":false,\"hasDone\":false,\"readyState\":\"complete\"}"
+"clicked"
+
+SAY: I can see the mechanism now — after a 5-second delay, `#finish` shows "Hello World!". I just triggered the click via JS. Now wait for it:
+$ agent-browser wait --fn "document.getElementById('finish') && document.getElementById('finish').style.display !== 'none'" --timeout 10000; agent-browser eval "JSON.stringify({finishText:document.getElementById('finish').innerText, loadingText:(document.getElementById('loading')||{}).innerText})"; agent-browser close
+-> [156 chars] ✗ Wait timed out after 10000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:61
+✓ Browser closed
+
+SAY: I closed the browser — the handler clearly didn't fire earlier (no `#loading` div appeared). Let me redo the flow from scratch and verify step by step:
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start button" && agent-browser click "#start button"; sleep 2; agent-browser eval "JSON.stringify({loadingExists:!!document.getElementById('loading'), startHidden: document.getElementById('start').style.display==='none', finishExists:!!document.getElementById('finish'), startHtml:document.getElementById('start').parentElement.innerHTML.slice(-300)})"
+-> [484 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+✓ Done
+✓ Done
+"{\"loadingExists\":true,\"startHidden\":true,\"finishExists\":false,\"startHtml\":\"\\n  <h3>Dynamically Loaded Page Elements</h3>\\n  <h4>Example 2: Element rendered after the fact</h4>\\n\\n  <br>\\n\\n  <div id=\\\"loading\\\">Loading... <img src=\\\"/img/ajax-loader.gif\\\"></div><div id=\\\"start\\\" style=\\\"display: none;\\\">\\n    <button>Start</button>\\n  </div>\\n\\n\\n  <br>\\n\"}"
+
+SAY: The click worked this time — "Loading..." is showing. Now wait 5+ seconds for the final text:
+$ agent-browser wait --fn "var f=document.getElementById('finish'); f && f.style.display!=='none' && f.textContent.trim()!==''" --timeout 12000; agent-browser eval "document.getElementById('finish').textContent.trim()"; agent-browser close
+-> [63 chars] ✗ Wait timed out after 12000ms
+"Hello World!"
+✓ Browser closed
+
+SAY: Done. The page flow: clicking **Start** hides the button and shows a "Loading..." div with a spinner; after a 5-second delay, the loading div is replaced by a `#finish` element that renders the text **"Hello World!"** (as an `<h4>`).
+
+ANSWER: Hello World!

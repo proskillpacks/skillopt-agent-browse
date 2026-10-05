@@ -1,0 +1,51 @@
+TASK t02: On https://the-internet.herokuapp.com/javascript_alerts : click 'Click for JS Confirm' and choose Cancel, and note the Result text shown on the page. Then click 'Click for JS Prompt', enter the text skillopt-42 and confirm, and note the Result text. Report both Result texts.
+EXPECT: ['you clicked: cancel', 'you entered: skillopt-42']
+RESULT: {"id": "t02_r3", "correct": true, "score": 0.957, "wtok": 28838, "out_tok": 1233, "turns": 9, "secs": 58, "timed_out": false, "curl": false, "answer": "Confirm (Cancel): \"You clicked: Cancel\"; Prompt (\"skillopt-42\", confirmed): \"You entered: skillopt-42\""}
+
+$ agent-browser open "https://the-internet.herokuapp.com/javascript_alerts"; agent-browser eval "JSON.stringify({confirmBtn: !!document.querySelector('button[onclick=\"jsConfirm()\"], button[onclick*=\"jsConfirm\"]'), buttons: Array.from(document.querySelectorAll('button')).map(b=>b.textContent)})"; agent-browser get text #h2 2>/dev/null || agent-browser get text "#content h2"; agent-browser get text "#result"
+-> [224 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"{\"confirmBtn\":false,\"buttons\":[]}"
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/javascript_alerts"; agent-browser wait "#content h2"; agent-browser get text "#content h2"; agent-browser get text "#result"
+-> [217 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/javascript_alerts
+✗ Wait timed out after 25000ms
+✗ Element not found: #content h2. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+$ agent-browser eval "JSON.stringify({url: location.href, title: document.title, body: document.body?document.body.innerText.slice(0,500):null, buttons: Array.from(document.querySelectorAll('button')).map(b=>b.textContent.trim())})"
+-> [426 chars] "{\"url\":\"https://the-internet.herokuapp.com/javascript_alerts\",\"title\":\"The Internet\",\"body\":\"JavaScript Alerts\\n\\nHere are some examples of different JavaScript alerts which can be troublesome for automation\\n\\nClick for JS Alert\\nClick for JS Confirm\\nClick for JS Prompt\\nResult:\\n\\nPowered by Elemental Selenium\",\"buttons\":[\"Click for JS Alert\",\"Click for JS Confirm\",\"Click for JS Prompt\"]}"
+
+$ agent-browser click "text=Click for JS Confirm"; agent-browser dialog dismiss; agent-browser get text "#result"
+-> [194 chars] ✗ Element not found: text=Click for JS Confirm. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('button')).map(b=>({t:b.textContent.trim(), oc:b.getAttribute('onclick')})))"
+-> [166 chars] "[{\"t\":\"Click for JS Alert\",\"oc\":\"jsAlert()\"},{\"t\":\"Click for JS Confirm\",\"oc\":\"jsConfirm()\"},{\"t\":\"Click for JS Prompt\",\"oc\":\"jsPrompt()\"}]"
+
+$ agent-browser click "button[onclick='jsConfirm()']"; agent-browser dialog dismiss; agent-browser get text "#result"
+-> [162 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "I am a JS Confirm" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+You clicked: Cancel
+
+$ agent-browser click "button[onclick='jsPrompt()']"; agent-browser dialog accept "skillopt-42"; agent-browser get text "#result"
+-> [165 chars] ✓ Done
+⚠ A JavaScript prompt dialog is blocking the page: "I am a JS prompt" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+You entered: skillopt-42
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Done. Both operations completed in the real browser via `agent-browser`:
+
+1. **Click for JS Confirm → Cancel**: Result text shown: `You clicked: Cancel`
+2. **Click for JS Prompt → entered "skillopt-42" → OK**: Result text shown: `You entered: skillopt-42`
+
+ANSWER: Confirm (Cancel): "You clicked: Cancel"; Prompt ("skillopt-42", confirmed): "You entered: skillopt-42"

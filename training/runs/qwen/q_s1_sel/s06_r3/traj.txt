@@ -1,0 +1,55 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r3", "correct": true, "score": 0.954, "wtok": 30543, "out_tok": 1538, "turns": 9, "secs": 79, "timed_out": false, "curl": false, "answer": "After Remove, the message was \"It's gone!\"; after Enable the message was \"It's enabled!\" and the input value was \"hello\"."}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_controls
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser wait "form#ab_testing_description, #remove-button" ; agent-browser snapshot -i
+-> [355 chars] ✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Dynamic Controls" [level=4, ref=e2]
+- heading "Remove/add" [level=4, ref=e3]
+- checkbox [checked=false, ref=e8]
+- button "Remove" [ref=e5]
+- heading "Enable/disable" [level=4, ref=e4]
+- textbox [disabled, ref=e6]
+- button "Enable" [ref=e7]
+- link "Elemental Selenium" [ref=e9]
+
+$ agent-browser click "button#remove-button" ; agent-browser wait "body:not(:has(#checkbox))" --timeout 15000 2>/dev/null; agent-browser eval "JSON.stringify({flash: document.getElementById('flash') ? document.getElementById('flash').innerText : null, checkboxGone: !document.getElementById('checkbox'), enableBtn: document.getElementById('enable-button').innerText})"
+-> [261 chars] ✗ Element not found: button#remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:213
+
+
+Command exited with code 1
+$ agent-browser click @e5 ; agent-browser eval "JSON.stringify([...document.querySelectorAll('button')].map(b=>b.id))"
+-> [21 chars] ✓ Done
+"[\"\",\"\"]"
+
+$ agent-browser eval "JSON.stringify({checkboxGone: !document.querySelector('input[type=checkbox]'), flash: (document.getElementById('flash')||{}).innerText || null, msg: (document.getElementById('dynamic_controls_message')||{}).innerText || null, bodyText: document.querySelector('#ab-testing, #content, main') ? 'found' : 'none'})"
+-> [78 chars] "{\"checkboxGone\":false,\"flash\":null,\"msg\":null,\"bodyText\":\"found\"}"
+
+$ agent-browser wait --fn "!document.querySelector('input[type=checkbox]')" --timeout 15000 ; agent-browser eval "JSON.stringify({checkboxGone: !document.querySelector('input[type=checkbox]'), flash: (document.getElementById('flash')||{}).innerText || null, msg: (document.getElementById('message')||{}).innerText || null, btns: [...document.querySelectorAll('button')].map(b=>b.innerText)})"
+-> [99 chars] true
+"{\"checkboxGone\":true,\"flash\":null,\"msg\":\"It's gone!\",\"btns\":[\"Add\",\"Enable\"]}"
+
+SAY: The checkbox has been removed, and the displayed message is **"It's gone!"**. Next, I'll click Enable, wait until the input field becomes enabled, and then type into it:
+$ agent-browser click "(//button[contains(text(),'Enable')])[1]" 2>/dev/null || agent-browser eval "(function(){[...document.querySelectorAll('button')].find(b=>b.innerText==='Enable').click();return 'clicked'})()"; agent-browser wait --fn "(function(){var i=document.querySelector('input[type=text], #enable-textbox'); return i && !i.disabled})()" --timeout 15000 ; agent-browser fill "input#enable-textbox" "hello" 2>/dev/null || agent-browser eval "(function(){var i=document.querySelector('input[type=text]');var s=window.getSelection();i.value='hello';i.dispatchEvent(new Event('input',{bubbles:true}));return i.value})()"; agent-browser eval "JSON.stringify({msg: (document.getElementById('message')||{}).innerText || null, value: (document.querySelector('input[type=text]')||{}).value, disabled: (document.querySelector('input[type=text]')||{}).disabled})"
+-> [92 chars] "clicked"
+true
+"hello"
+"{\"msg\":\"It's enabled!\",\"value\":\"hello\",\"disabled\":false}"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Task complete in a real browser via `agent-browser`:
+
+1. **Remove** → waited for the checkbox to disappear; the message shown: **"It's gone!"**
+2. **Enable** → waited until the text input was enabled, typed `hello`; the message shown: **"It's enabled!"** and the input's value is **"hello"** (disabled: false)
+
+ANSWER: After Remove, the message was "It's gone!"; after Enable the message was "It's enabled!" and the input value was "hello".

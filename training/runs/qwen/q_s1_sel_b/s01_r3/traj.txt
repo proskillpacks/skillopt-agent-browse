@@ -1,0 +1,37 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r3", "correct": true, "score": 0.971, "wtok": 19118, "out_tok": 741, "turns": 7, "secs": 81, "timed_out": false, "curl": false, "answer": "user3, href=/users/3 (https://the-internet.herokuapp.com/users/3)"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser eval "document.querySelectorAll('.hoverable').length"
+-> [85 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+0
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait ".hoverable"; agent-browser eval "document.querySelectorAll('.hoverable').length"
+-> [92 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✗ Wait timed out after 25000ms
+0
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait ".hoverable"; agent-browser eval "document.querySelectorAll('.hoverable').length"
+-> [92 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✗ Wait timed out after 25000ms
+0
+
+$ agent-browser eval "JSON.stringify({url:location.href, body:document.body.innerHTML.slice(0,500)})"
+-> [674 chars] "{\"url\":\"https://the-internet.herokuapp.com/hovers\",\"body\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\" class=\\\"large-12 columns\\\">\\n        <style>\\n.figure {\\n  float: left;\\n  padding-right: 20px;\\n}\\n\\n.figcaption\"}"
+
+$ agent-browser eval "document.getElementById('content').innerHTML"
+-> [955 chars] "\n        <style>\n.figure {\n  float: left;\n  padding-right: 20px;\n}\n\n.figcaption {\n  display: none;\n}\n\n.figure:hover .figcaption {\n  display: block;\n}\n</style>\n\n<div class=\"example\">\n  <h3>Hovers</h3>\n  <p>Hover over the image for additional information</p>\n  \n  <div class=\"figure\">\n    <img src=\"/img/avatar-blank.jpg\" alt=\"User Avatar\">\n    <div class=\"figcaption\">\n      <h5>name: user1</h5>\n      <a href=\"/users/1\">View profile</a>\n    </div>\n  </div>\n  \ …n    <div class=\"figcaption\">\n      <h5>name: user3</h5>\n      <a href=\"/users/3\">View profile</a>\n    </div>\n  </div>\n  \n</div>\n\n      "
+
+$ agent-browser hover ".figure:nth-child(3) img" ; agent-browser eval "var f=document.querySelectorAll('.figure')[2]; JSON.stringify({name:f.querySelector('h5').textContent, href:f.querySelector('a').getAttribute('href')})"; agent-browser close
+-> [75 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"/users/3\"}"
+✓ Browser closed
+
+SAY: Hovered over the third avatar on the hovers page. Its figcaption displays:
+
+- **Name:** user3
+- **View profile href:** `/users/3` (i.e. https://the-internet.herokuapp.com/users/3)
+
+ANSWER: user3, href=/users/3 (https://the-internet.herokuapp.com/users/3)

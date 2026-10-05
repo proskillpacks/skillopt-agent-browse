@@ -1,0 +1,99 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r6", "correct": true, "score": 0.94, "wtok": 39944, "out_tok": 1688, "turns": 9, "secs": 12, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; archived with receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const items = [...document.querySelectorAll('[class*="message"], li, .msg, article')];
+  return JSON.stringify(items.slice(0,30).map(el => el.textContent.trim().slice(0,120)));
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const m = document.body.querySelector('#messages, .messages, main, ul, table');
+  return JSON.stringify(document.body.innerHTML.slice(0, 2000));
+})()
+JS
+-> [2309 chars] "\"\\n<h1>Inbox</h1><p id=\\\"count\\\">Showing 24 of 60</p><div id=\\\"list\\\"><div class=\\\"row\\\"><span class=\\\"from\\\">Alex A.</span><span class=\\\"subj\\\">Invoice #100</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Femi H.</span><span class=\\\"subj\\\">Lunch order #113</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Kai C.</span><span class=\\\"subj\\\">On-call swap #126</span><button>Archive</button></div><di …pan><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Dana K.</span><span class=\\\"subj\\\">Design review #295</span>\""
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('.row')].map(r => r.querySelector('.from').textContent + '|' + r.querySelector('.subj').textContent);
+  const priya = rows.filter(r => r.startsWith('Priya N.'));
+  return JSON.stringify({priya, total: rows.length, hasNext: document.querySelector('button[class*="next"], a[href*="next"]') ? true : null, bodyTail: document.body.innerHTML.slice(-500)});
+})()
+JS
+-> [573 chars] "{\"priya\":[],\"total\":24,\"hasNext\":null,\"bodyTail\":\")=>{if(confirm('Archive this message?')){r.remove();const t=document.getElementById('toast');t.textContent='Archived. Receipt #A-'+(i*137+1000);t.style.display='block';}};\\nlist.appendChild(r);}document.getElementById('count').textContent='Showing '+shown+' of '+msgs.length;if(shown>=msgs.length)document.getElementById('sentinel').textContent='End of inbox';}\\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\\n</script>\\n\"}"
+
+SAY: The inbox loads via infinite scroll. Let me scroll to load all 60 messages and find Priya N.'s.
+$ agent-browser eval --stdin <<'JS'
+(async () => {
+  for (let i = 0; i < 20; i++) {
+    const count = document.getElementById('count').textContent;
+    if (/End of inbox/.test(document.getElementById('sentinel').textContent)) break;
+    document.getElementById('sentinel').scrollIntoView();
+    await new Promise(r => setTimeout(r, 900));
+    if (document.getElementById('count').textContent === count) break;
+  }
+  const rows = [...document.querySelectorAll('.row')];
+  const priya = rows.filter(r => r.querySelector('.from').textContent === 'Priya N.')
+    .map(r => r.querySelector('.from').textContent + '|' + r.querySelector('.subj').textContent);
+  return JSON.stringify({count: document.getElementById('count').textContent, priya, total: rows.length});
+})()
+JS
+-> [115 chars] "{\"count\":\"Showing 60 of 60\",\"priya\":[\"Priya N.|Q3 vendor audit — rescheduled to the 19th\"],\"total\":60}"
+
+SAY: Found it. Now archive it — the archive handler uses `confirm()`, so I'll handle the dialog in the same call.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const row = [...document.querySelectorAll('.row')].find(r => r.querySelector('.from').textContent === 'Priya N.');
+  return JSON.stringify(row ? [...document.querySelectorAll('.row')].indexOf(row) : null);
+})()
+JS
+-> [5 chars] "44"
+
+$ agent-browser click ".row:nth-child(45) button" ; agent-browser dialog accept ; agent-browser get text #toast
+-> [247 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+Missing arguments for: get text
+Usage: agent-browser get text <selector>
+
+
+Command exited with code 1
+$ agent-browser get text "#toast"; agent-browser eval --stdin <<'JS'
+(() => {
+  const row = [...document.querySelectorAll('.row')].find(r => r.querySelector('.from').textContent === 'Priya N.');
+  return JSON.stringify({stillThere: !!row, count: document.getElementById('count').textContent});
+})()
+JS
+-> [82 chars] Archived. Receipt #A-7028
+"{\"stillThere\":false,\"count\":\"Showing 60 of 60\"}"
+
+SAY: Done. Here's the summary:
+
+- **Message from Priya N.** (found after scrolling the infinite list to load all 60 messages):
+  - **Subject:** "Q3 vendor audit — rescheduled to the 19th"
+- **Archived:** clicked the row's Archive button and accepted the "Archive this message?" confirmation dialog.
+- **Receipt shown afterwards:** "Archived. Receipt #A-7028" (the message row was removed from the list).
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; archived with receipt #A-7028

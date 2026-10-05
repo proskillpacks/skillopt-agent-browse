@@ -1,0 +1,46 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r4", "correct": true, "score": 0.967, "wtok": 21983, "out_tok": 605, "turns": 7, "secs": 120, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"
+-> [67 chars] ✗ CDP command timed out: Page.navigate
+
+
+Command exited with code 1
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" && break; sleep 5; done; agent-browser wait "#column-a"
+-> [113 chars] ✓ 
+  https://the-internet.herokuapp.com/drag_and_drop
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const els = [...document.querySelectorAll('li')].map(li => li.textContent.trim());
+  return JSON.stringify(els);
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval "document.querySelector('body').innerHTML.slice(0,2000)"
+-> [136 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerHTML')
+    at <anonymous>:1:31
+
+
+Command exited with code 1
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" && break; sleep 5; done; agent-browser wait "#column-a"; agent-browser eval "document.querySelector('body').innerHTML.slice(0,2000)"
+-> [2373 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+✓ Done
+"\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet …n[].forEach.call(cols, function(col) {\n  col.addEventListener('dragstart', handleDragStart, false);\n  col.addEventListener('dragenter', handleDrag"
+
+SAY: Page loaded. Now performing the drag:
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "document.querySelector('#columns').textContent.replace(/\s+/g,'')"
+-> [12 chars] ✓ Done
+"BA"
+
+SAY: The drag was performed. After the drop, the boxes swapped their header contents: the left box (originally A) now shows **B**, and the right box (originally B) now shows **A**, as confirmed by reading `#columns` content ("BA", left to right).
+
+ANSWER: B, A

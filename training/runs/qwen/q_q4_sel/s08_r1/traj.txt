@@ -1,0 +1,184 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": true, "score": 0.847, "wtok": 102109, "out_tok": 5047, "turns": 12, "secs": 93, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser snapshot -i
+-> [5436 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfiction" [r …"It's Only the Himalayas" [level=3, ref=e75]
+  - link "It's Only the Himalayas" [ref=e115]
+- button "Add to basket" [ref=e135]
+- link "next" [ref=e5]
+
+$ url="https://books.tscrape.com/"; url="https://books.toscrape.com/"
+agent-browser open "$url" >/dev/null
+mkdir -p /tmp/books
+url="$url"; i=0
+while :; do
+  i=$((i+1))
+  agent-browser wait "li.col-xs-6" >/dev/null 2>&1 || true
+  agent-browser eval --stdin >/dev/null <<'JS' || true
+(() => {})()
+JS
+  agent-browser eval --stdin > /tmp/books/page_$i.json <<'JS'
+(() => {
+  const books = [...document.querySelectorAll("li.col-xs-6")].map(li => {
+    const a = li.querySelector("h3 a");
+    const p = li.querySelector(".price_color");
+    return { title: a ? a.getAttribute("title") : (a ? a.textContent : null), price: p ? p.textContent.trim() : null };
+  });
+  const next = document.querySelector(".pagination a[rel=next]");
+  const total = document.querySelector(".page_indicators li");
+  return JSON.stringify({ books, total: total ? total.textContent.trim() : null });
+})()
+JS
+  next=$(agent-browser e
+-> [408 chars] pages done: 1
+"{\"books\":[{\"title\":\"A Light in the Attic\",\"price\":\"£51.77\"},{\"title\":\"Tipping the Velvet\",\"price\":\"£53.74\"},{\"title\":\"Soumission\",\"price\":\"£50.10\"},{\"title\":\"Sharp Objects\",\"price\":\"£47.82\"},{\"title\":\"Sapiens: A Brief History of Humankind\",\"price\":\"£54.23\"},{\"title\":\"The Requiem Red\",\"price\":\"£22.65\"},{\"title\":\"The Dirty Little Secrets of
+SAY: The loop stopped after one page. Let me check why the "next" href eval failed:
+$ agent-browser eval '(() => { const a = document.querySelector(".pagination a[rel=next]"); return a ? new URL(a.getAttribute("href"), location.origin).href : null; })()'
+-> [5 chars] null
+
+$ agent-browser eval '(() => { const ul = document.querySelector(".pagination"); return ul ? ul.outerHTML : "NO .pagination"; })()'
+-> [17 chars] "NO .pagination"
+
+$ agent-browser eval '(() => { const links = [...document.querySelectorAll("a")]; const nxt = links.filter(a => a.textContent.trim().toLowerCase() === "next"); return JSON.stringify(nxt.map(a => ({ href: a.getAttribute("href"), cls: a.className, parent: a.parentElement ? a.parentElement.tagName + "." + a.parentElement.className : null }))); })()'
+-> [77 chars] "[{\"href\":\"catalogue/page-2.html\",\"cls\":\"\",\"parent\":\"LI.next\"}]"
+
+SAY: The next link is `li.next a`. Rerunning the loop:
+$ rm -rf /tmp/books; mkdir -p /tmp/books
+url="https://books.toscrape.com/"
+agent-browser open "$url" >/dev/null
+url="$url"; i=0
+while :; do
+  i=$((i+1))
+  agent-browser wait "li.col-xs-6" >/dev/null 2>&1 || true
+  agent-browser eval --stdin > /tmp/books/page_$i.json <<'JS'
+(() => {
+  const books = [...document.querySelectorAll("li.col-xs-6")].map(li => {
+    const a = li.querySelector("h3 a");
+    const p = li.querySelector(".price_color");
+    return { title: a ? a.getAttribute("title") : (a ? a.textContent : null), price: p ? p.textContent.trim() : null };
+  });
+  const active = document.querySelector("li.active");
+  return JSON.stringify({ books, pageInfo: active ? active.textContent.trim() : null });
+})()
+JS
+  next=$(agent-browser eval '(() => { const a = document.querySelector("li.next a"); return a ? new URL(a.getAttribute("href"), location.origin).href : null; })()')
+  if [ -z "$nex
+-> [93 chars] ✗ Navigation failed: net::ERR_NAME_NOT_RESOLVED
+pages: 2
+"{\"books\":[],\"pageInfo\":null}"
+
+
+SAY: The eval output includes JSON quotes around the URL. Fixing by stripping quotes:
+$ rm -rf /tmp/books; mkdir -p /tmp/books
+url="https://books.toscrape.com/"
+agent-browser open "$url" >/dev/null
+url="$url"; i=0
+while :; do
+  i=$((i+1))
+  agent-browser wait "li.col-xs-6" >/dev/null 2>&1 || true
+  agent-browser eval --stdin > /tmp/books/page_$i.json <<'JS'
+(() => {
+  const books = [...document.querySelectorAll("li.col-xs-6")].map(li => {
+    const a = li.querySelector("h3 a");
+    const p = li.querySelector(".price_color");
+    return { title: a ? a.getAttribute("title") : (a ? a.textContent : null), price: p ? p.textContent.trim() : null };
+  });
+  const active = document.querySelector("li.active");
+  return JSON.stringify({ books, pageInfo: active ? active.textContent.trim() : null });
+})()
+JS
+  next=$(agent-browser eval '(() => { const a = document.querySelector("li.next a"); return a ? new URL(a.getAttribute("href"), location.origin).href : null; })()')
+  next="${next%
+-> [190 chars] pages: 3
+35 /tmp/books/page_3.json
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+$ for f in /tmp/books/page_*.json; do echo "== $f"; head -c 200 "$f"; echo; done
+-> [511 chars] == /tmp/books/page_1.json
+"{\"books\":[{\"title\":\"A Light in the Attic\",\"price\":\"£51.77\"},{\"title\":\"Tipping the Velvet\",\"price\":\"£53.74\"},{\"title\":\"Soumission\",\"price\":\"£50.10\"},{\"title\":\"Sharp Obj
+== /tmp/books/page_2.json
+"{\"books\":[{\"title\":\"In Her Wake\",\"price\":\"£12.84\"},{\"title\":\"How Music Works\",\"price\":\"£37.32\"},{\"title\":\"Foolproof Preserving: A Guide to Small Batch Jams, Jellies, Pickles, C
+== /tmp/books/page_3.json
+"{\"books\":[],\"pageInfo\":null}"
+
+
+$ agent-browser eval 'location.href'
+-> [41 chars] "https://books.toscrape.com/page-3.html"
+
+SAY: Found the bug: I resolved the relative href against the origin instead of the current page. Fixing and rerunning from scratch:
+$ rm -rf /tmp/books; mkdir -p /tmp/books
+url="https://books.toscrape.com/"
+agent-browser open "$url" >/dev/null
+url="$url"; i=0
+while :; do
+  i=$((i+1))
+  agent-browser wait "li.col-xs-6" >/dev/null 2>&1 || true
+  agent-browser eval --stdin > /tmp/books/page_$i.json <<'JS'
+(() => {
+  const books = [...document.querySelectorAll("li.col-xs-6")].map(li => {
+    const a = li.querySelector("h3 a");
+    const p = li.querySelector(".price_color");
+    return { title: a ? a.getAttribute("title") : (a ? a.textContent : null), price: p ? p.textContent.trim() : null };
+  });
+  const active = document.querySelector("li.active");
+  return JSON.stringify({ books, pageInfo: active ? active.textContent.trim() : null });
+})()
+JS
+  next=$(agent-browser eval '(() => { const a = document.querySelector("li.next a"); return a ? new URL(a.getAttribute("href"), location.href).href : null; })()')
+  next="${next%\"
+-> [224 chars] pages: 50
+"https://books.toscrape.com/catalogue/page-50.html"
+total books collected: 1000
+page info seen: {'All products'}
+empty pages: []
+below 12.00: 44
+cheapest: {'title': 'An Abundance of Katherines', 'price': '£10.00'}
+
+SAY: Collected all 50 pages (1000 books, no empties). Let me verify the cheapest price has no tie:
+$ python3 - <<'EOF'
+import json
+books=json.load(open('/tmp/books/all.json'))
+minp=min(float(b['price'].replace('£','')) for b in books)
+ties=[b for b in books if float(b['price'].replace('£',''))==minp]
+print('min price:', minp, 'count at min:', len(ties))
+for b in ties: print(b)
+below=[b for b in books if float(b['price'].replace('£',''))<12.00]
+print('below 12:', len(below))
+print('lowest few:', sorted(below, key=lambda b: float(b['price'].replace('£','')))[:5])
+# sanity: no missing prices
+print('missing prices:', sum(1 for b in books if not b['price']), 'missing titles:', sum(1 for b in books if not b['title']))
+EOF
+-> [460 chars] min price: 10.0 count at min: 1
+{'title': 'An Abundance of Katherines', 'price': '£10.00'}
+below 12: 44
+lowest few: [{'title': 'An Abundance of Katherines', 'price': '£10.00'}, {'title': 'The Origin of Species', 'price': '£10.01'}, {'title': 'The Tipping Point: How Little Things Can Make a Big Difference', 'price': '£10.02'}, {'title': 'Patience', 'price': '£10.16'}, {'title': 'Greek Mythic History', 'price': '£10.23'}]
+missing prices: 0 missing titles: 0
+
+SAY: I walked all 50 pages of the catalogue in the live browser (following the "next" pagination link each time), extracting every book's title and price via `agent-browser` DOM queries — 1,000 books total, no missing data.
+
+**Results:**
+- Books priced **less than £12.00**: **44** (of 1,000 in the full catalogue)
+- Cheapest book (unique minimum): **An Abundance of Katherines — £10.00** (next closest is "The Origin of Species" at £10.01, so no tie)
+
+ANSWER: 44 books cost less than £12.00; the single c

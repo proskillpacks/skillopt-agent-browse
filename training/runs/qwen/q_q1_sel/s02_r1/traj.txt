@@ -1,0 +1,56 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r1", "correct": true, "score": 0.978, "wtok": 14527, "out_tok": 386, "turns": 5, "secs": 29, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/login; agent-browser wait "input[name=username]"; agent-browser snapshot -i
+-> [309 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e3]
+- link "Login" [ref=e4]
+- textbox "Username Password" [ref=e5]
+- textbox [ref=e6]
+- button "Login" [ref=e2]
+- link "GoodReads.com" [ref=e7]
+- link "Zyte" [ref=e8]
+
+$ agent-browser fill @e5 "admin"; agent-browser fill @e6 "12345"; agent-browser click @e2; agent-browser wait "text=Quotes"
+-> [80 chars] ✓ Done
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser snapshot -i
+-> [2011 chars] https://quotes.toscrape.com/
+- heading "Quotes to Scrape" [level=1, ref=e9]
+  - link "Quotes to Scrape" [ref=e41]
+- link "Logout" [ref=e42]
+- link "(about)" [ref=e10]
+- link "(Goodreads page)" [ref=e11]
+- link "change" [ref=e43]
+- link "deep-thoughts" [ref=e44]
+- link "thinking" [ref=e45]
+- link "world" [ref=e46]
+- link "(about)" [ref=e12]
+- link "(Goodreads page)" [ref=e13]
+- link "abilities" [ref=e47]
+- link "choices" [ref=e48]
+- link "(about)" [ref=e14]
+- link "(Goodreads page)" [ref=e15]
+- l …hip" [ref=e37]
+- link "friends" [ref=e38]
+- link "truth" [ref=e39]
+- link "simile" [ref=e40]
+- link "GoodReads.com" [ref=e73]
+- link "Zyte" [ref=e74]
+
+SAY: Logged in. The first quote's "(Goodreads page)" link is `@e11`:
+$ agent-browser get attr @e11 href
+-> [54 chars] http://goodreads.com/author/show/9810.Albert_Einstein
+
+SAY: Logged in successfully (Logout link now shown), and the "(Goodreads page)" link for the first quote on page 1 (Albert Einstein) points to:
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

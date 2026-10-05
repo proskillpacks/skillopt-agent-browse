@@ -1,0 +1,42 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r3", "correct": true, "score": 0.961, "wtok": 26258, "out_tok": 1052, "turns": 7, "secs": 116, "timed_out": false, "curl": false, "answer": "Name: user3, 'View profile' href: https://the-internet.herokuapp.com/users/3"}
+
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/hovers" && break; sleep 3; done; agent-browser snapshot -i
+-> [275 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+SAY: The page is slow to load. Let me check its state and wait for the hovers container.
+$ agent-browser wait "#container" 2>&1; agent-browser snapshot -i 2>&1 | head -30
+-> [141 chars] ✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e1]
+- heading "Hovers" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+SAY: The images aren't interactive so they don't appear in the snapshot. Let me inspect the DOM directly:
+$ agent-browser eval "document.querySelector('h3').textContent + ' | ' + document.querySelector('ul').outerHTML.slice(0,300)"
+-> [136 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'outerHTML')
+    at <anonymous>:1:80
+
+
+Command exited with code 1
+$ agent-browser eval "document.querySelector('body').innerHTML.slice(0,2000)"
+-> [1718 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <style>\n.figure {\n  float: left; …ign: center;\">Powered by <a target=\"_blank\" href=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n"
+
+SAY: The page loaded (the container is a `div.figure` list, not `#container`). Now let me actually hover over the third avatar and read the revealed tooltip:
+$ agent-browser hover ".figure:nth-child(4) img" 2>&1 || agent-browser hover ".example .figure:nth-of-type(3) img" 2>&1; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.figure .figcaption')).map(f => ({visible: getComputedStyle(f).display, text: f.innerText, href: f.querySelector('a').getAttribute('href')})))"
+-> [311 chars] ✓ Done
+"[{\"visible\":\"none\",\"text\":\"\\n      name: user1\\n      View profile\\n    \",\"href\":\"/users/1\"},{\"visible\":\"block\",\"text\":\"name: user2\\nView profile\",\"href\":\"/users/2\"},{\"visible\":\"none\",\"text\":\"\\n      name: user3\\n      View profile\\n    \",\"href\":\"/users/3\"}]"
+
+$ agent-browser hover "div.example div.figure:nth-of-type(3) img" && agent-browser eval "JSON.stringify((() => { const f = document.querySelectorAll('.figure .figcaption')[2]; return {visible: getComputedStyle(f).display, name: f.querySelector('h5').textContent, href: f.querySelector('a').getAttribute('href')}; })())"
+-> [80 chars] ✓ Done
+"{\"visible\":\"block\",\"name\":\"name: user3\",\"href\":\"/users/3\"}"
+
+SAY: Hovering over the third avatar reveals its hidden figcaption, which shows:
+
+- **Name shown:** `name: user3`
+- **View profile link href:** `/users/3` (i.e. `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: Name: user3, 'View profile' href: https://the-internet.herokuapp.com/users/3

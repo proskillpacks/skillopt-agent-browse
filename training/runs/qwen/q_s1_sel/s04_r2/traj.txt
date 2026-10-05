@@ -1,0 +1,56 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r2", "correct": true, "score": 0.94, "wtok": 40250, "out_tok": 901, "turns": 6, "secs": 10, "timed_out": false, "curl": false, "answer": "49 wins; GF = 269"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser snapshot -i; agent-browser close 2>/dev/null || true
+-> [6599 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+✓ Browser closed
+
+SAY: I closed the browser prematurely. Let me redo the flow: open, search for Bruins, then read the results.
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser fill "#search_query" "Bruins"; agent-browser click "#search_button"; agent-browser wait --text "Boston Bruins"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('table table tr, table tr')).map(r=>Array.from(r.cells).map(c=>c.textContent.trim())).filter(r=>r.length))"; agent-browser close
+-> [2658 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✗ Element not found: #search_query. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #search_button. Verify the selector, role, or name is correct and the element exists in the DOM.
+Boston Bruins
+"[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Go …\"37\",\"\",\"0.388\",\"296\",\"305\",\"-9\"],[\"Chicago Blackhawks\",\"1991\",\"36\",\"29\",\"\",\"0.45\",\"257\",\"236\",\"21\"]]"
+✓ Browser closed
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser eval "JSON.stringify({inputs:Array.from(document.querySelectorAll('input')).map(i=>({id:i.id,name:i.name,type:i.type,placeholder:i.placeholder,form:i.form&&i.form.action})),forms:Array.from(document.querySelectorAll('form')).map(f=>({action:f.action,method:f.method}))})"
+-> [535 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+"{\"inputs\":[{\"id\":\"q\",\"name\":\"q\",\"type\":\"text\",\"placeholder\":\"Search for Teams\",\"form\":\"https://www.scrapethissite.com/pages/forms/\"},{\"id\":\"\",\"name\":\"\",\"type\":\"submit\",\"placeholder\":\"\",\"form\":\"https://www.scrapethissite.com/pages/forms/\"}],\"forms\":[{\"action\":\"https://www.scrapethissite.com/pages/forms/\",\"method\":\"get\"}]}"
+
+$ agent-browser fill "#q" "Bruins"; agent-browser click "input[type=submit]"; agent-browser wait --text "Boston Bruins"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('table table tr')).map(r=>Array.from(r.cells).map(c=>c.textContent.trim())))"; agent-browser close
+-> [50 chars] ✓ Done
+✓ Done
+Boston Bruins
+"[]"
+✓ Browser closed
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser fill "#q" "Bruins"; agent-browser click "input[type=submit]"; agent-browser wait --text "Boston Bruins"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('tr')).map(r=>Array.from(r.cells).map(c=>c.textContent.trim())).filter(r=>r.length))"; agent-browser close
+-> [2042 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+✓ Done
+✓ Done
+Boston Bruins
+"[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45\",\"270\",\"275\",\"-5\"],[\"Boston Bruins\",\"1992\",\"5 …,\"25\",\"11\",\"0.561\",\"246\",\"195\",\"51\"],[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+✓ Browser closed
+
+SAY: Searched "Bruins" via the page's search box. For the 2011 season, the Boston Bruins row reads: Wins = 49, Goals For (GF) = 269.
+
+ANSWER: 49 wins; GF = 269

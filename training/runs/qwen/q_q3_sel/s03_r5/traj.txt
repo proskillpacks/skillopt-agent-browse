@@ -1,0 +1,122 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r5", "correct": true, "score": 0.943, "wtok": 37748, "out_tok": 2352, "turns": 7, "secs": 40, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the category has 26 books total."}
+
+$ agent-browser open "https://books.toscrape.com/" && agent-browser wait "a.nav-link" ; agent-browser eval --stdin <<'JS'
+(() => {
+  const cats = [...document.querySelectorAll('.catalog-box h2 a')].map(a => ({name: a.textContent.trim(), href: a.getAttribute('href')}));
+  return JSON.stringify(cats);
+})()
+JS
+-> [109 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('a')].map(a => a.getAttribute('href')).filter(Boolean);
+  return JSON.stringify(links.slice(0, 60));
+})()
+JS
+-> [3056 chars] "[\"index.html\",\"index.html\",\"catalogue/category/books_1/index.html\",\"catalogue/category/books/travel_2/index.html\",\"catalogue/category/books/mystery_3/index.html\",\"catalogue/category/books/historical-fiction_4/index.html\",\"catalogue/category/books/sequential-art_5/index.html\",\"catalogue/category/books/classics_6/index.html\",\"catalogue/category/books/philosophy_7/index.html\",\"catalogue/category/books/romance_8/index.html\",\"catalogue/category/books/womens-fiction_9/index.html\ …-velvet_999/index.html\",\"catalogue/soumission_998/index.html\",\"catalogue/soumission_998/index.html\",\"catalogue/sharp-objects_997/index.html\"]"
+
+SAY: Found the category link. Now let me walk all pages of the Historical Fiction category.
+$ for i in 1 2 3 4 5 6 7 8 9 10; do
+  for r in 1 2 3; do
+    agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" && break
+    sleep 3
+  done
+  data=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const articles = document.querySelectorAll('article.product_pod');
+  const total = document.getElementById('content') ? document.getElementById('content').textContent.match(/(\d+)\s*results?/i) : null;
+  const counts = {};
+  let one = 0;
+  articles.forEach(a => {
+    const star = a.querySelector('.star-rating');
+    const cls = star ? star.className : 'none';
+    const level = cls.replace('star-rating','').trim();
+    counts[level] = (counts[level]||0)+1;
+    if (level === 'One') one++;
+  });
+  const next = document.querySelector('.btn-next');
+  return JSON.stringify({resultsText: total ? total[0] : null, onThisPage: articles.length, counts, one,
+-> [348 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"resultsText\":null,\"onThisPage\":20,\"counts\":{\"One\":5,\"Three\":3,\"Five\":5,\"Four\":3,\"Two\":4},\"one\":5,\"next\":null}"
+jq: error (at <stdin>:1): Cannot index string with string "next"
+NO MORE PAGES
+
+SAY: Page 1 shows 20 books. Let me verify whether there's a pagination/next link on the page.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const pager = document.querySelector('div.pager');
+  const links = pager ? [...pager.querySelectorAll('a')].map(a => a.getAttribute('href')) : null;
+  const allNext = [...document.querySelectorAll('a')].filter(a => /next/i.test(a.textContent)).map(a => a.getAttribute('href'));
+  return JSON.stringify({pager, links, allNext});
+})()
+JS
+-> [64 chars] "{\"pager\":null,\"links\":null,\"allNext\":[\"page-2.html\"]}"
+
+$ results=$(for p in 2 3 4 5 6 7 8 9 10; do
+  url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"
+  for r in 1 2 3; do
+    agent-browser open "$url" 2>&1 | head -1; code=$?
+    if [ $code -eq 0 ]; then break; fi
+    sleep 3
+  done
+  d=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const articles = document.querySelectorAll('article.product_pod');
+  const counts = {};
+  let one = 0;
+  articles.forEach(a => {
+    const star = a.querySelector('.star-rating');
+    const level = star ? star.className.replace('star-rating','').trim() : 'none';
+    counts[level] = (counts[level]||0)+1;
+    if (level === 'One') one++;
+  });
+  const allNext = [...document.querySelectorAll('a')].filter(a => a.textContent.trim()==='next').map(a => a.getAttribute('href'));
+  return JSON.stringify({page: articles.length, counts, one, next: allNext.length ? allNext[0] : null});
+})
+-> [98 chars] /bin/bash: -c: line 25: unexpected EOF while looking for matching `''
+
+
+Command exited with code 2
+$ for p in 2 3 4 5 6 7 8 9 10; do
+  url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"
+  for r in 1 2 3; do
+    agent-browser open "$url" 2>&1 | head -1
+    if [ $? -eq 0 ]; then break; fi
+    sleep 3
+  done
+  d=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const articles = document.querySelectorAll('article.product_pod');
+  const counts = {};
+  let one = 0;
+  articles.forEach(a => {
+    const star = a.querySelector('.star-rating');
+    const level = star ? star.className.replace('star-rating','').trim() : 'none';
+    counts[level] = (counts[level]||0)+1;
+    if (level === 'One') one++;
+  });
+  const allNext = [...document.querySelectorAll('a')].filter(a => a.textContent.trim()==='next').map(a => a.getAttribute('href'));
+  return JSON.stringify({page: articles.length, counts, one, next: allNext.length ? allNext[0] : null});
+})()
+JS
+)
+  echo "$d"
+  
+-> [135 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+"{\"page\":6,\"counts\":{\"Five\":3,\"Three\":2,\"Four\":1},\"one\":0,\"next\":null}"
+
+SAY: Done. Results across both pages of the Historical Fiction category:
+
+- **Page 1:** 20 books — 5 One★, 4 Two★, 3 Three★, 3 Four★, 5 Five★ (next link → page-2.html)
+- **Page 2:** 6 books — 3 Five★, 2 Three★, 1 Four★, 0 One★ (no next link)
+
+**Total books: 26** (20 + 6). **One-star books: 5**.
+
+ANSWER: 5 books have a one-star rating; the category has 26 books total.

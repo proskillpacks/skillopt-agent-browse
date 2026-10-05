@@ -1,0 +1,146 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r4", "correct": true, "score": 0.919, "wtok": 53795, "out_tok": 3554, "turns": 9, "secs": 88, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open https://books.toscrape.com/ && agent-browser snapshot -i | head -50
+-> [1537 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+- link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfiction" [r …ref=e47]
+- link "Suspense" [ref=e48]
+- link "Short Stories" [ref=e49]
+- link "Novels" [ref=e50]
+- link "Health" [ref=e51]
+- link "Politics" [ref=e52]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const links = [...document.querySelectorAll('.pager a')].map(a => a.textContent.trim());
+  const n = document.querySelectorAll('.book_block').length;
+  return JSON.stringify({links, booksOnPage: n});
+})()
+JS
+-> [43 chars] "{\"links\":[\"next\"],\"booksOnPage\":0}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const pods = document.querySelectorAll('.product_pod');
+  const prices = [...document.querySelectorAll('.product_pod .price_color')].map(e => e.textContent.trim());
+  return JSON.stringify({count: pods.length, samplePrices: prices.slice(0,3)});
+})()
+JS
+-> [69 chars] "{\"count\":20,\"samplePrices\":[\"£51.77\",\"£53.74\",\"£50.10\"]}"
+
+$ cd /tmp && rm -f books.jsonl
+agent-browser eval --stdin <<'JS'
+(() => {
+  const next = [...document.querySelectorAll('a')].find(a => a.textContent.trim().toLowerCase() === 'next');
+  return next ? next.getAttribute('href') : 'NONE';
+})()
+JS
+-> [24 chars] "catalogue/page-2.html"
+
+$ cd /tmp && cat > collect.sh <<'EOF'
+set -u
+OUT=/tmp/books.jsonl
+fetch() {
+agent-browser eval --stdin <<'JS'
+(() => {
+  const out = [];
+  for (const pod of document.querySelectorAll('.product_pod')) {
+    const a = pod.querySelector('a h3');
+    const p = pod.querySelector('.price_color');
+    const title = a ? a.textContent.trim() : (p ? p.closest('h3')?.textContent.trim() : '');
+    out.push({title, price: p.textContent.replace(/[£,]/g,'').trim()});
+  }
+  return JSON.stringify(out);
+})()
+JS
+}
+# Page 1 (already loaded)
+agent-browser eval --stdin > /tmp/page1.json <<'JS'
+(() => {
+  const out = [];
+  for (const pod of document.querySelectorAll('.product_pod')) {
+    const a = pod.querySelector('h3 a');
+    const p = pod.querySelector('.price_color');
+    out.push({title: a.textContent.trim(), price: p.textContent.replace(/[£,]/g,'').trim()});
+  }
+  return JSON.stringify(out);
+})()
+JS
+tail 
+-> [19 chars] 3 /tmp/books.jsonl
+
+$ cd /tmp && head -c 500 books.jsonl; echo; echo ---; cat -A books.jsonl | head -5 | cut -c1-200
+-> [910 chars] {\"title\":\"A Light in the ...\",\"price\":\"51.77\"},{\"title\":\"Tipping the Velvet\",\"price\":\"53.74\"},{\"title\":\"Soumission\",\"price\":\"50.10\"},{\"title\":\"Sharp Objects\",\"price\":\"47.82\"},{\"title\":\"Sapiens: A Brief History ...\",\"price\":\"54.23\"},{\"title\":\"The Requiem Red\",\"price\":\"22.65\"},{\"title\":\"The Dirty Little Secrets ...\",\"price\":\"33.34\"},{\"title\":\"The Coming Woman: A ...\",\"price\":\"17.93\"},{\"title\":\"The Boys in the ...\",\"price\":\"22.6 …le\":\"How Music Works\",\"price\":\"37.32\"},{\"title\":\"Foolproof Preserving: A Guide ...\",\"price\":\"30.52\"},{\"title\":\"Chase Me (Paris N
+]$
+
+SAY: The loop logic got flaky. Let me redo with explicit page URLs:
+$ cd /tmp && rm -f books.jsonl && cat > collect2.sh <<'EOF'
+fetch() {
+agent-browser eval --stdin <<'JS'
+(() => {
+  const out = [];
+  for (const pod of document.querySelectorAll('.product_pod')) {
+    const a = pod.querySelector('h3 a');
+    const p = pod.querySelector('.price_color');
+    out.push({title: a.textContent.trim(), price: p.textContent.replace(/[£,]/g,'').trim()});
+  }
+  return JSON.stringify(out);
+})()
+JS
+}
+for i in $(seq 1 55); do
+  if [ $i -eq 1 ]; then
+    agent-browser open "https://books.toscrape.com/" >/dev/null 2>&1 || true
+  else
+    agent-browser open "https://books.toscrape.com/catalogue/page-$i.html" >/dev/null 2>&1 || true
+  fi
+  agent-browser wait ".product_pod" >/dev/null 2>&1 || true
+  data=$(fetch)
+  # strip the outer JSON string quotes -> it is a JS string like "[{...}]" possibly escaped
+  n=$(printf '%s' "$data" | python3 -c "import sys,json; d=sys.stdin.read
+-> [50 chars] stopped at page 51
+pages done
+50 /tmp/books.jsonl
+
+$ python3 - <<'EOF'
+import json
+books=[]
+for line in open('/tmp/books.jsonl'):
+    books += json.loads(line)
+print("total books:", len(books))
+under = [b for b in books if float(b['price']) < 12.0]
+print("under 12.00:", len(under))
+cheapest = min(books, key=lambda b: float(b['price']))
+print("cheapest:", cheapest)
+# sanity: any ties at min price?
+minp = min(float(b['price']) for b in books)
+print("ties at min:", [b for b in books if float(b['price'])==minp])
+EOF
+-> [175 chars] total books: 1000
+under 12.00: 44
+cheapest: {'title': 'An Abundance of Katherines', 'price': '10.00'}
+ties at min: [{'title': 'An Abundance of Katherines', 'price': '10.00'}]
+
+SAY: Walked all 50 pages of the catalogue in the browser (1,000 books total, 20 per page).
+
+**Results:**
+- Books costing less than £12.00: **44**
+- Cheapest book (unique, no tie): **An Abundance of Katherines — £10.00**
+
+ANSWER: 44 books cost less than £12.00; the cheapest book is "An Abundance of Katherines" at £10.00.

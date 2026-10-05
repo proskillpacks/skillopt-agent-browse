@@ -1,0 +1,90 @@
+TASK t04: Start at https://quotes.toscrape.com/js/ and use the Next link to go to the third page. Report the author of the first quote on page 3.
+EXPECT: ['pablo neruda']
+RESULT: {"id": "t04_r3", "correct": true, "score": 0.957, "wtok": 28345, "out_tok": 525, "turns": 8, "secs": 10, "timed_out": false, "curl": false, "answer": "Pablo Neruda"}
+
+$ agent-browser open https://quotes.toscrape.com/js/ && agent-browser snapshot
+-> [2574 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/js/
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e2]
+- paragraph
+  - link "Login" [ref=e3]
+- StaticText "“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”"
+- StaticText "by "
+- StaticText "Albert Einstein"
+- generic
+  - StaticText "Tags: change deep-thoughts thinking world"
+- StaticText "“It is our choices, Harry, that show what we truly are, far m …agraph
+    - StaticText "Quotes by: "
+    - link "GoodReads.com" [ref=e4]
+  - paragraph
+    - StaticText "Made with ❤ by "
+    - link "Zyte" [ref=e5]
+
+$ agent-browser click e6 && agent-browser snapshot
+-> [129 chars] ✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e7]
+  - link "Quotes to Scrape" [ref=e8]
+- paragraph
+  - link "Login" [ref=e9]
+
+$ sleep 2 && agent-browser snapshot
+-> [4354 chars] - heading "Quotes to Scrape" [level=1, ref=e7]
+  - link "Quotes to Scrape" [ref=e8]
+- paragraph
+  - link "Login" [ref=e9]
+- StaticText "“This life is what you make it. No matter what, you're going to mess up sometimes, it's a universal truth. But the good part is you get to decide how you're going to mess it up. Girls will be your friends - they'll act like it anyway. But just remember, some come, some go. The ones that stay with you through everything - they're your true best friends. Don't let …raph
+    - StaticText "Quotes by: "
+    - link "GoodReads.com" [ref=e10]
+  - paragraph
+    - StaticText "Made with ❤ by "
+    - link "Zyte" [ref=e11]
+
+SAY: This is page 2. Clicking Next once more to reach page 3.
+$ agent-browser click e13 && sleep 2 && agent-browser snapshot
+-> [2756 chars] ✓ Done
+- heading "Quotes to Scrape" [level=1, ref=e14]
+  - link "Quotes to Scrape" [ref=e15]
+- paragraph
+  - link "Login" [ref=e16]
+- StaticText "“I love you without knowing how, or when, or from where. I love you simply, without problems or pride: I love you in this way because I do not know any other way of loving but this, in which there is no I or you, so intimate that your hand upon my chest is my hand, so intimate that when I fall asleep your eyes close.”"
+- StaticText "by "
+- StaticText " …raph
+    - StaticText "Quotes by: "
+    - link "GoodReads.com" [ref=e17]
+  - paragraph
+    - StaticText "Made with ❤ by "
+    - link "Zyte" [ref=e18]
+
+$ agent-browser url
+-> [49 chars] Unknown command: url
+
+
+Command exited with code 1
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser eval "location.href"
+-> [41 chars] "https://quotes.toscrape.com/js/page/3/"
+
+SAY: Navigated to `https://quotes.toscrape.com/js/page/3/` by clicking Next twice on the JS-rendered site. The first quote on page 3 is the "I love you without knowing how, or when, or from where…" quote by Pablo Neruda.
+
+ANSWER: Pablo Neruda

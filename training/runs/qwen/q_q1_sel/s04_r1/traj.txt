@@ -1,0 +1,52 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r1", "correct": true, "score": 0.964, "wtok": 23861, "out_tok": 507, "turns": 4, "secs": 5, "timed_out": false, "curl": false, "answer": "2011 Boston Bruins: 49 wins, 269 GF"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill @e9 "Bruins"; agent-browser click @e10; agent-browser wait --text "Boston Bruins"; agent-browser snapshot -i | head -60
+-> [1738 chars] ✓ Done
+✓ Done
+Boston Bruins
+- link "Sandbox" [ref=e249]
+- link "Lessons" [ref=e250]
+- link "FAQ" [ref=e251]
+- link "Login" [ref=e252]
+- heading "Hockey Teams: Forms, Searching and Pagination 21 items" [level=1, ref=e248]
+- link "8 video lessons" [ref=e253]
+- link "http://www.opensourcesports.com/hockey/" [ref=e254]
+- textbox "Search for Teams:  " [ref=e255]: Bruins
+- button "Search" [ref=e256]
+- columnheader "Team Name" [ref=e257]
+- columnheader "Year" [ref=e258]
+- columnheader "Wins" [ref=e259] …=e299]
+- cell "27" [ref=e300]
+- cell "18" [ref=e301]
+- cell "0.562" [ref=e302]
+- cell "150" [ref=e303]
+- cell "127" [ref=e304]
+- cell "23" [ref=e305]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('tbody tr')].map(r=>{const c=[...r.cells].map(x=>x.textContent.trim());return {year:c[1],wins:c[2],gf:c[6]};}).filter(r=>r.year===String(Number(r.year))))
+JS
+-> [1075 chars] "[{\"year\":\"1990\",\"wins\":\"44\",\"gf\":\"299\"},{\"year\":\"1991\",\"wins\":\"36\",\"gf\":\"270\"},{\"year\":\"1992\",\"wins\":\"51\",\"gf\":\"332\"},{\"year\":\"1993\",\"wins\":\"42\",\"gf\":\"289\"},{\"year\":\"1994\",\"wins\":\"27\",\"gf\":\"150\"},{\"year\":\"1995\",\"wins\":\"40\",\"gf\":\"282\"},{\"year\":\"1996\",\"wins\":\"26\",\"gf\":\"234\"},{\"year\":\"1997\",\"wins\":\"39\",\"gf\":\"221\"},{\"year\":\"1998\",\"wins\":\"39\",\"gf\":\"214\"},{\"year\":\"1999\",\"wins\":\"24\",\"gf …ar\":\"2009\",\"wins\":\"39\",\"gf\":\"206\"},{\"year\":\"2010\",\"wins\":\"46\",\"gf\":\"246\"},{\"year\":\"2011\",\"wins\":\"49\",\"gf\":\"269\"}]"
+
+SAY: Searched "Bruins" in the box (21 results, all Boston Bruins). The 2011 row shows **Wins = 49**, **Goals For = 269**.
+
+ANSWER: 2011 Boston Bruins: 49 wins, 269 GF

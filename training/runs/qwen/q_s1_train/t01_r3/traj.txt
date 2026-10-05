@@ -1,0 +1,73 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r3", "correct": true, "score": 0.956, "wtok": 29316, "out_tok": 1377, "turns": 9, "secs": 204, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser click "button"; agent-browser wait --text "Hello World!" ; agent-browser get text "#loaded"
+-> [280 chars] ✗ Element not found: button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: #loaded. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start button"; agent-browser click "#start button"; agent-browser wait "#loaded"; agent-browser get text "#loaded"; agent-browser close
+-> [243 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #loaded. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start button"; agent-browser click "#start button"; agent-browser wait --fn "document.getElementById('loaded') && document.getElementById('loaded').style.display !== 'none'"; agent-browser eval "JSON.stringify({text: document.getElementById('loaded').innerText, html: document.getElementById('loaded').outerHTML})"; agent-browser close
+-> [343 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+✗ Element not found: #start button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:56
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start"; agent-browser get text "#content h2"; agent-browser close
+-> [209 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+✓ Done
+✗ Element not found: #content h2. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start"; agent-browser click "#start"; agent-browser wait "#loaded"; agent-browser get text "#loaded"; agent-browser close
+-> [243 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #loaded. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start"; agent-browser eval "document.getElementById('start').click(); 'clicked'"; agent-browser eval "new Promise(r=>setTimeout(()=>r(JSON.stringify({loaded: document.getElementById('loaded') && document.getElementById('loaded').outerHTML, content: document.getElementById('content').innerHTML})), 5000))"; agent-browser close
+-> [858 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+✓ Done
+"clicked"
+"{\"loaded\":null,\"content\":\"\\n        <script>\\n  $(function(){\\n    $('#start button').click(function(){\\n      $('#start').hide();\\n      $('#start').before(\\\"<div id='loading'>Loading... <img src='/img/ajax-loader.gif'></div>\\\");\\n      setTimeout(function() {\\n        $('#loading').hide();\\n        $('#loading').before(\\\"<div id='finish' style='display:none'><h4>Hello World!</h4></div>\\\ … fact</h4>\\n\\n  <br>\\n\\n  <div id=\\\"start\\\">\\n    <button>Start</button>\\n  </div>\\n\\n\\n  <br>\\n</div>\\n\\n      \"}"
+✓ Browser closed
+
+SAY: The element with id `start` is a div, and the element that appears is `#finish` (not `#loaded`). Let's click the actual button and wait:
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_loading/2"; agent-browser wait "#start button"; agent-browser click "#start button"; agent-browser wait "#finish"; agent-browser get text "#finish"; agent-browser eval "document.querySelector('#finish h4').innerText"; agent-browser close
+-> [136 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+✓ Done
+✓ Done
+✓ Done
+Hello World!
+"Hello World!"
+✓ Browser closed
+
+SAY: Done. After clicking **Start**, the page shows a "Loading..." spinner, and ~5 seconds later an element (`#finish`, containing an `<h4>`) appears with the text:
+
+**Hello World!**
+
+ANSWER: Hello World!

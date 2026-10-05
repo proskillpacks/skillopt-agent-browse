@@ -1,0 +1,154 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07_r2", "correct": true, "score": 0.888, "wtok": 74499, "out_tok": 3608, "turns": 13, "secs": 51, "timed_out": false, "curl": false, "answer": "A Year in Provence (Provence #1) \u2014 \u00a356.88"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/travel_4/index.html"; agent-browser wait ".product_price"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.col-xs-6')].map(el=>({t:el.querySelector('h3 a').innerText,p:el.querySelector('.price_color').innerText})))"
+-> [120 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/travel_4/index.html
+✗ Wait timed out after 25000ms
+"[]"
+
+SAY: 404 on that URL. Let me find the actual Travel category link from the site.
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait ".sidebar"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.sidebar .nav a')].map(a=>a.href))"; agent-browser close
+-> [4179 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"[\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\",\"https://books.toscrape …e.com/catalogue/category/books/erotica_50/index.html\",\"https://books.toscrape.com/catalogue/category/books/crime_51/index.html\"]"
+✓ Browser closed
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html" >/dev/null; agent-browser wait ".product_price"
+ALL="[]"
+for p in 1 2 3 4 5 6 7 8 9 10; do
+  R=$(agent-browser eval "JSON.stringify([...document.querySelectorAll('.col-xs-6')].map(el=>({t:el.querySelector('h3 a').innerText,p:parseFloat(el.querySelector('.price_color').innerText.replace('£','').trim()))}))")
+  ALL=$(echo "$ALL" | python3 -c "import sys,json; a=json.load(sys.stdin); a+=json.load(sys.stdin) if 'if $R' else None" 2>/dev/null || true)
+  agent-browser eval "JSON.stringify($R)" >/dev/null
+done
+-> [547 chars] ✓ Done
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+
+SAY: That loop was messy. Let me redo it cleanly.
+$ set -e
+agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html" >/dev/null
+agent-browser wait ".product_price"
+ALL="[]"
+for p in 1 2 3 4 5 6 7 8 9 10; do
+  JS='JSON.stringify([...document.querySelectorAll(".col-xs-6")].map(el=>({t:el.querySelector("h3 a").innerText,p:parseFloat(el.querySelector(".price_color").innerText)})))'
+  R=$(agent-browser eval "$JS")
+  ALL=$(python3 -c "
+import json,sys
+a=json.loads(sys.argv[1]); b=json.loads(sys.argv[2])
+print(json.dumps(a+b))" "$ALL" "$R")
+  if ! agent-browser eval 'JSON.stringify(!!document.querySelector("li.nox"))' | grep -q true; then break; fi
+  agent-browser eval 'document.querySelector("li.nox a").click(); null' >/dev/null
+  agent-browser wait ".product_price"
+  sleep 0.5
+done
+echo "$ALL"
+agent-browser close
+-> [166 chars] ✓ Done
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+TypeError: can only concatenate list (not "str") to list
+
+
+Command exited with code 1
+$ JS='JSON.stringify([...document.querySelectorAll(".col-xs-6")].map(el=>({t:el.querySelector("h3 a").innerText,p:parseFloat(el.querySelector(".price_color").innerText)})))'
+agent-browser eval "$JS" | head -c 400
+-> [398 chars] "[{\"t\":\"It's Only the Himalayas\",\"p\":null},{\"t\":\"Full Moon over Noah’s ...\",\"p\":null},{\"t\":\"See America: A Celebration ...\",\"p\":null},{\"t\":\"Vagabonding: An Uncommon Guide ...\",\"p\":null},{\"t\":\"Under the Tuscan Sun\",\"p\":null},{\"t\":\"A Summer In Europe\",\"p\":null},{\"t\":\"The Great Railway Bazaar\",\"p\":null},{\"t\":\"A Year in Provence ...\",\"p\":null},{\"t\":\
+SAY: The output is double-encoded and prices need `£` stripped. Fixing:
+$ set -e
+JS='JSON.stringify([...document.querySelectorAll(".col-xs-6")].map(el=>({t:el.querySelector("h3 a").innerText,p:parseFloat(el.querySelector(".price_color").innerText.replace("£","").trim()))}))'
+ALL="[]"
+for p in 1 2 3 4 5 6 7 8 9 10; do
+  R=$(agent-browser eval "$JS")
+  ALL=$(python3 -c "
+import json,sys
+a=json.loads(json.loads(sys.argv[1]) if sys.argv[1].startswith('\"') else sys.argv[1])
+b=json.loads(json.loads(sys.argv[2]) if sys.argv[2].startswith('\"') else sys.argv[2])
+print(json.dumps(a+b))" "$ALL" "$R")
+  if [ "$(agent-browser eval 'JSON.stringify(!!document.querySelector("li.nox"))')" = 'true' ] || [ "$p" = 10 ]; then break; fi
+  agent-browser eval 'document.querySelector("li.nox a").click(); null' >/dev/null
+  agent-browser wait ".product_price"
+done
+python3 -c "
+import json,sys
+books=json.loads(sys.argv[1])
+best=max(books,key=lambda b:b['p'])
+print(len(books),'books; t
+-> [82 chars] ✗ Evaluation error: SyntaxError: Unexpected token ')'
+
+
+Command exited with code 1
+$ JS='JSON.stringify([...document.querySelectorAll(".col-xs-6")].map(el=>({t:el.querySelector("h3 a").innerText,p:parseFloat(el.querySelector(".price_color").innerText.replace("£","").trim()))}))'
+agent-browser eval "$JS" | head -c 300
+-> [54 chars] ✗ Evaluation error: SyntaxError: Unexpected token ')'
+
+$ agent-browser eval 'JSON.stringify(document.querySelectorAll(".col-xs-6").length)'
+agent-browser eval 'JSON.stringify(parseFloat("5.5".replace("x",""))) '
+agent-browser eval 'JSON.stringify(document.querySelector(".col-xs-6").querySelector(".price_color").innerText.replace("£",""))'
+-> [23 chars] "11"
+"5.5"
+"\"45.17\""
+
+$ agent-browser eval 'JSON.stringify([...document.querySelectorAll(".col-xs-6")].map(el=>({t:el.innerText.slice(0,10)})))' | head -c 200
+echo ---
+agent-browser eval 'JSON.stringify([...document.querySelectorAll(".col-xs-6")].map(el=>({t:el.querySelector("h3 a").innerText,p:parseFloat(el.querySelector(".price_color").innerText.replace("£","").trim()))}))' | head -c 300
+-> [258 chars] "[{\"t\":\"    \\n\\nIt's\"},{\"t\":\"    \\n\\nFull\"},{\"t\":\"    \\n\\nSee \"},{\"t\":\"    \\n\\nVaga\"},{\"t\":\"    \\n\\nUnde\"},{\"t\":\"    \\n\\nA Su\"},{\"t\":\"    \\n\\nThe \"},{\"t\":\"---
+✗ Evaluation error: SyntaxError: Unexpected token ')'
+
+SAY: The arrow-function syntax seems to break eval's parser when nested. Switching to function syntax:
+$ set -e
+JS='JSON.stringify(Array.prototype.map.call(document.querySelectorAll(".col-xs-6"), function(el){ var t=el.querySelector("h3 a").innerText; var p=parseFloat(el.querySelector(".price_color").innerText.replace("£","").trim()); return {t:t,p:p}; }))'
+agent-browser eval "$JS" | head -c 300
+-> [298 chars] "[{\"t\":\"It's Only the Himalayas\",\"p\":45.17},{\"t\":\"Full Moon over Noah’s ...\",\"p\":49.43},{\"t\":\"See America: A Celebration ...\",\"p\":48.87},{\"t\":\"Vagabonding: An Uncommon Guide ...\",\"p\":36.94},{\"t\":\"Under the Tuscan Sun\",\"p\":37.33},{\"t\":\"A Summer In Europe\",\"p\":44.
+$ set -e
+JS='JSON.stringify(Array.prototype.map.call(document.querySelectorAll(".col-xs-6"), function(el){ var t=el.querySelector("h3 a").getAttribute("title"); var p=parseFloat(el.querySelector(".price_color").innerText.replace("£","").trim()); return {t:t,p:p}; }))'
+agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html" >/dev/null
+agent-browser wait ".product_price"
+ALL="[]"
+for p in 1 2 3; do
+  R=$(agent-browser eval "$JS")
+  ALL=$(python3 -c "
+import json,sys
+def dec(s):
+    v=json.loads(s)
+    if isinstance(v,str): v=json.loads(v)
+    return v
+print(json.dumps(dec(sys.argv[1])+dec(sys.argv[2])))" "$ALL" "$R")
+  HASNEXT=$(agent-browser eval 'JSON.stringify(!!document.querySelector("li.nox"))')
+  [ "$HASNEXT" = '"true"' ] || [ "$HASNEXT" = 'true' ] || break
+  agent-browser eval 'document.querySelector("li.nox a").click(); null' >/dev/null
+  agent-br
+-> [287 chars] ✓ Done
+11 books; most expensive: {'t': 'A Year in Provence (Provence #1)', 'p': 56.88}
+56.88 A Year in Provence (Provence #1)
+49.43 Full Moon over Noah’s Ark: An Odyssey to Mount Ararat and Beyond
+48.87 See America: A Celebration of Our National Parks & Treasured Sites
+✓ Browser closed
+
+SAY: Got the data, but let me verify pagination handling was correct (only 11 books found).
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html" >/dev/null
+agent-browser wait ".product_price"
+agent-browser eval 'JSON.stringify({count:document.querySelectorAll(".col-xs-6").length, next:!!document.querySelector("li.nox"), pagination:document.querySelectorAll("ul.pagination li").length})'
+agent-browser close
+-> [73 chars] ✓ Done
+"{\"count\":11,\"next\":false,\"pagination\":0}"
+✓ Browser closed
+
+SAY: Done. The Travel category (11 books, single page, no pagination) was scraped in the real browser, and the most expensive book is:
+
+- **Title:** A Year in Provence (Provence #1)
+- **Price:** £56.88
+
+Runner-ups: Full Moon over Noah's Ark (£49.43), See America: A Celebration of Our National Parks (£48.87).
+
+ANSWER: A Year in Provence (Provence #1) — £56.88

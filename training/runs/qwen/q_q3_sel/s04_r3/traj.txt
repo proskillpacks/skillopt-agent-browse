@@ -1,0 +1,48 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r3", "correct": true, "score": 0.925, "wtok": 50192, "out_tok": 1176, "turns": 7, "secs": 38, "timed_out": false, "curl": false, "answer": "Wins: 49, Goals For (GF): 269"}
+
+$ for i in 1 2 3; do agent-browser open "https://www.scrapethissite.com/pages/forms/" && break; sleep 3; done; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill 'input[name="term"]' "Bruins" 2>/dev/null || agent-browser fill "textbox" "Bruins"; agent-browser click @e10
+-> [118 chars] ✗ Element not found: textbox. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+
+SAY: The fill selectors failed, so the search submitted with an empty box. Let me find the right selector.
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('form')].map(f=>({action:f.action, inputs:[...f.querySelectorAll('input')].map(i=>({name:i.name,type:i.type,placeholder:i.placeholder}))})))"
+-> [207 chars] "[{\"action\":\"https://www.scrapethissite.com/pages/forms/\",\"inputs\":[{\"name\":\"q\",\"type\":\"text\",\"placeholder\":\"Search for Teams\"},{\"name\":\"\",\"type\":\"submit\",\"placeholder\":\"\"}]}]"
+
+$ agent-browser fill 'input[name="q"]' "Bruins" && agent-browser click 'input[type="submit"]'; agent-browser eval "JSON.stringify({url:location.href, rows:[...document.querySelectorAll('table tr')].map(tr=>[...tr.children].map(td=>td.textContent.trim()))})"
+-> [2318 chars] ✓ Done
+✓ Done
+"{\"url\":\"https://www.scrapethissite.com/pages/forms/?q=\",\"rows\":[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Buffalo Sabres\",\"1990\",\"31\",\"30\",\"\",\"0.388\",\"292\",\"278\",\"14\"],[\"Calgary Flames\",\"1990\",\"46\",\"26\",\"\",\"0.575\",\"344\",\"263\",\"81\"],[\"Chicago Blackhawks\",\"1990\",\"49\",\"23\",\"\ …\"1991\",\"31\",\"37\",\"\",\"0.388\",\"296\",\"305\",\"-9\"],[\"Chicago Blackhawks\",\"1991\",\"36\",\"29\",\"\",\"0.45\",\"257\",\"236\",\"21\"]]}"
+
+SAY: The table still shows unfiltered results (URL `?q=`). The submit click raced with the fill. Let me retry:
+$ agent-browser eval "document.querySelector('input[name=q]').value" ; agent-browser fill 'input[name="q"]' "Bruins" && agent-browser press "Enter" 2>/dev/null; agent-browser wait --url "q=Bruins" 2>/dev/null; agent-browser eval "JSON.stringify({url:location.href, input:document.querySelector('input[name=q]').value})"
+-> [166 chars] "Bruins"
+✓ Done
+✓ Done
+https://www.scrapethissite.com/pages/forms/?q=Bruins
+"{\"url\":\"https://www.scrapethissite.com/pages/forms/?q=Bruins\",\"input\":\"Bruins\"}"
+
+$ agent-browser eval "JSON.stringify({heading:document.querySelector('h1').textContent, pages:[...document.querySelectorAll('.pagination a, nav a')].map(a=>a.textContent.trim()), rows:[...document.querySelectorAll('table tr')].map(tr=>[...tr.children].map(td=>td.textContent.trim()))})"
+-> [2084 chars] "{\"heading\":\"\\n                            Hockey Teams: Forms, Searching and Pagination\\n                            21 items\\n                        \",\"pages\":[\"Scrape This Site\",\"Sandbox\",\"Lessons\",\"FAQ\",\"Login\"],\"rows\":[[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],[\"Boston Bruins\",\"1990\",\"44\",\"24\",\"\",\"0.55\",\"299\",\"264\",\"35\"],[\"Boston Bruins\",\"1991\",\"36\",\"32\",\"\",\"0.45 …,\"2010\",\"46\",\"25\",\"11\",\"0.561\",\"246\",\"195\",\"51\"],[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]}"
+
+SAY: The search for "Bruins" returned 21 items, all visible on one page. The 2011 season row shows: Boston Bruins, 2011, Wins **49**, GF **269**.
+
+ANSWER: Wins: 49, Goals For (GF): 269

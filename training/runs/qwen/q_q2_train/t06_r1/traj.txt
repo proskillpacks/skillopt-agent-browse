@@ -1,0 +1,115 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r1", "correct": true, "score": 0.922, "wtok": 51924, "out_tok": 1915, "turns": 11, "secs": 88, "timed_out": false, "curl": false, "answer": "5 books have a five-star rating; the category has 32 books in total."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/mystery_2/index.html"; agent-browser wait "#books_list"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  total: document.querySelector("#no_of_items")?.textContent,
+  books: [...document.querySelectorAll("#books_list li")].length,
+  next: [...document.querySelectorAll("ul.pager li a")].map(a => a.textContent),
+  url: location.href
+})
+JS
+-> [223 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/mystery_2/index.html
+✗ Wait timed out after 25000ms
+"{\"books\":0,\"next\":[],\"url\":\"https://books.toscrape.com/catalogue/category/mystery_2/index.html\"}"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait "nav"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll(".nav .menu li a")].filter(a => /mystery/i.test(a.textContent)).map(a => [a.textContent, a.getAttribute("href")]))
+JS
+-> [109 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  links: [...document.querySelectorAll("a")].slice(0,50).map(a => [a.textContent.trim(), a.getAttribute("href")]),
+  title: document.title
+})
+JS
+-> [3471 chars] "{\"links\":[[\"Books to Scrape\",\"index.html\"],[\"Home\",\"index.html\"],[\"Books\",\"catalogue/category/books_1/index.html\"],[\"Travel\",\"catalogue/category/books/travel_2/index.html\"],[\"Mystery\",\"catalogue/category/books/mystery_3/index.html\"],[\"Historical Fiction\",\"catalogue/category/books/historical-fiction_4/index.html\"],[\"Sequential Art\",\"catalogue/category/books/sequential-art_5/index.html\"],[\"Classics\",\"catalogue/category/books/classics_6/index.html\"],[\"Philosophy\ …/health_47/index.html\"],[\"Politics\",\"catalogue/category/books/politics_48/index.html\"]],\"title\":\"All products | Books to Scrape - Sandbox\"}"
+
+SAY: The Mystery category lives under `catalogue/category/books/mystery_3/`. Now let me walk all its pages:
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"; agent-browser wait "#no_of_items"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  total: document.querySelector("#no_of_items").textContent,
+  pager: [...document.querySelectorAll("ul.pager li")].map(li => li.textContent.trim() + (li.className ? " ["+li.className+"]" : "")),
+  fiveStars: [...document.querySelectorAll("#books_list li .star-rating")].filter(d => d.className.includes("Five")).length
+})
+JS
+-> [282 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/index.html
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:2:48
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  books: document.querySelectorAll("#books_list li").length,
+  text: (document.querySelector(".header_container, #content_inner")||document.body).innerText.slice(0, 300),
+  pager: [...document.querySelectorAll("ul.pager li")].map(li => li.className + ": " + li.textContent.trim())
+})
+JS
+-> [430 chars] "{\"books\":0,\"text\":\"Books to Scrape We love being scraped!\\nHome  Books Mystery\\nBooks\\nTravel\\nMystery\\nHistorical Fiction\\nSequential Art\\nClassics\\nPhilosophy\\nRomance\\nWomens Fiction\\nFiction\\nChildrens\\nReligion\\nNonfiction\\nMusic\\nDefault\\nScience Fiction\\nSports and Games\\nAdd a comment\\nFantasy\\nNew Adult\\nYoung Adult\\nScience\\nPoetry\",\"pager\":[\"current: Page 1 of 2\",\"next: next\"]}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  listItems: document.querySelectorAll("ol.row li, #books_list > li").length,
+  art: document.querySelectorAll(".col-xs-6, article").length,
+  sample: document.querySelector(".col-xs-6, ol li")?.outerHTML.slice(0,400)
+})
+JS
+-> [518 chars] "{\"listItems\":20,\"art\":40,\"sample\":\"<li class=\\\"col-xs-6 col-sm-4 col-md-3 col-lg-3\\\">\\n\\n\\n\\n\\n\\n\\n    <article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"../../../sharp-objects_997/index.html\\\"><img src=\\\"../../../../media/cache/32/51/3251cf3a3412f53f339e42cac2134093.jpg\\\" alt=\\\"Sharp Objects\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n            \"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  totalText: [...document.querySelectorAll("h3, p, .text-center")].map(e => e.textContent.trim()).filter(t => /result|item/i.test(t)).slice(0,5),
+  nextHref: document.querySelector("ul.pager li.next a")?.getAttribute("href"),
+  five: [...document.querySelectorAll("#books_list li .star-rating")].filter(d => d.className.includes("Five")).length,
+  ratings: [...document.querySelectorAll("#books_list li .star-rating")].map(d => d.className.replace("star-rating","").trim()).reduce((m,c) => (m[c]=(m[c]||0)+1, m), {})
+})
+JS
+-> [76 chars] "{\"totalText\":[],\"nextHref\":\"page-2.html\",\"five\":0,\"ratings\":{}}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  starDive: [...document.querySelectorAll(".star-rating")].slice(0,5).map(d => d.className),
+  count: document.querySelectorAll(".star-rating").length,
+  totalEl: document.querySelector("#no_of_items, [class*=no_of_items]")?.outerHTML,
+  h3s: [...document.querySelectorAll("h3")].map(h => h.textContent.trim())
+})
+JS
+-> [687 chars] "{\"starDive\":[\"star-rating Four\",\"star-rating One\",\"star-rating Four\",\"star-rating One\",\"star-rating Four\"],\"count\":20,\"h3s\":[\"Sharp Objects\",\"In a Dark, Dark ...\",\"The Past Never Ends\",\"A Murder in Time\",\"The Murder of Roger ...\",\"The Last Mile (Amos ...\",\"That Darkness (Gardiner and ...\",\"Tastes Like Fear (DI ...\",\"A Time of Torment ...\",\"A Study in Scarlet ...\",\"Poisonous (Max Revere Novels ...\",\"Murder at the 42nd ...\",\"Most Wanted\",\"Hide Away (Eve Duncan ...\",\"Boar Island (Anna Pigeon ...\",\"The Widow\",\"Playing with Fire\",\"What Happened on Beale ...\",\"The Bachelor Girl's Guide ...\",\"Delivering the Truth (Quaker ...\"]}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  five1: [...document.querySelectorAll(".star-rating.Five")].length,
+  totalLine: (document.querySelector("main, #content_inner")||document.body).innerText.match(/\d+\s*(results?|items?)/i)
+})
+JS
+-> [59 chars] "{\"five1\":3,\"totalLine\":[\"32 results\",\"results\"]}"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html"; agent-browser wait ".star-rating"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  books: document.querySelectorAll("ol.row li, #books_list li").length,
+  five2: [...document.querySelectorAll(".star-rating.Five")].length,
+  pager: [...document.querySelectorAll("ul.pager li")].map(li => li.className)
+})
+JS
+-> [187 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+✓ Done
+"{\"books\":12,\"five2\":2,\"pager\":[\"previous\",\"current\"]}"
+
+SAY: Done. The Mystery category spans 2 pages:
+
+- **Page 1**: 20 books, 3 five-star
+- **Page 2**: 12 books, 2 five-star (pager shows no further "next" link)
+
+Total: 20 + 12 = **32 books** (matching the site's "32 results" text), of which 3 + 2 = **5 books** have a five-star rating.
+
+ANSWER: 5 books have a five-star rating; the category has 32 books in total.

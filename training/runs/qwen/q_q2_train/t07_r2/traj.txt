@@ -1,0 +1,35 @@
+TASK t07: On https://books.toscrape.com/ open the 'Travel' category and report the title and price of its most expensive book.
+EXPECT: ['a year in provence', '56\\.88']
+RESULT: {"id": "t07_r2", "correct": true, "score": 0.969, "wtok": 20354, "out_tok": 702, "turns": 7, "secs": 6, "timed_out": false, "curl": false, "answer": "A Year in Provence (Provence #1) \u2014 \u00a356.88"}
+
+$ agent-browser open "https://books.toscrape.com/category/page-1.html"; agent-browser eval "document.querySelector('#content h1')?.textContent"
+-> [71 chars] ✓ 404 Not Found
+  https://books.toscrape.com/category/page-1.html
+null
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "JSON.stringify([...document.querySelectorAll('a')].filter(a=>/travel/i.test(a.textContent)).map(a=>a.href))"
+-> [153 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"; agent-browser eval "JSON.stringify([...document.querySelectorAll('li.page')].map(li=>li.querySelector('a')?.textContent))"
+-> [116 chars] ✓ Travel | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+"[]"
+
+$ agent-browser eval "JSON.stringify({count: document.querySelector('.hidden')?.textContent, books: [...document.querySelectorAll('article')].length, next: [...document.querySelectorAll('a')].filter(a=>/next/i.test(a.textContent)).map(a=>a.href)})"
+-> [29 chars] "{\"books\":11,\"next\":[]}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('article')].map(a=>({t:a.querySelector('h3 a')?.getAttribute('title'),p:a.querySelector('.price_color')?.textContent}))"
+-> [91 chars] ✗ Evaluation error: SyntaxError: missing ) after argument list
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('article')].map(a=>({t:a.querySelector('h3 a')?.getAttribute('title'),p:a.querySelector('.price_color')?.textContent})))
+JS
+-> [820 chars] "[{\"t\":\"It's Only the Himalayas\",\"p\":\"£45.17\"},{\"t\":\"Full Moon over Noah’s Ark: An Odyssey to Mount Ararat and Beyond\",\"p\":\"£49.43\"},{\"t\":\"See America: A Celebration of Our National Parks & Treasured Sites\",\"p\":\"£48.87\"},{\"t\":\"Vagabonding: An Uncommon Guide to the Art of Long-Term World Travel\",\"p\":\"£36.94\"},{\"t\":\"Under the Tuscan Sun\",\"p\":\"£37.33\"},{\"t\":\"A Summer In Europe\",\"p\":\"£44.34\"},{\"t\":\"The Great Railway Bazaar\",\"p\":\"£30.54\"},{\"t\" …:\"£23.21\"},{\"t\":\"Neither Here nor There: Travels in Europe\",\"p\":\"£38.95\"},{\"t\":\"1,000 Places to See Before You Die\",\"p\":\"£26.08\"}]"
+
+SAY: The Travel category (single page, 11 books) contains these titles and prices; the most expensive is **A Year in Provence (Provence #1)** at **£56.88**.
+
+ANSWER: A Year in Provence (Provence #1) — £56.88

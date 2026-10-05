@@ -1,0 +1,72 @@
+TASK t06: On https://books.toscrape.com/ open the 'Mystery' category. Across all pages of that category, how many books have a five-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b32\\b']
+RESULT: {"id": "t06_r2", "correct": true, "score": 0.954, "wtok": 30828, "out_tok": 989, "turns": 6, "secs": 32, "timed_out": false, "curl": false, "answer": "5 books are five-star out of 32 total books in the Mystery category."}
+
+$ agent-browser open https://books.toscrape.com/ ; agent-browser wait "h1"; agent-browser snapshot -i
+-> [5443 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+- link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfict …"It's Only the Himalayas" [level=3, ref=e75]
+  - link "It's Only the Himalayas" [ref=e115]
+- button "Add to basket" [ref=e135]
+- link "next" [ref=e5]
+
+$ agent-browser click e7; agent-browser wait "ol.breadcrumb"; agent-browser eval "JSON.stringify({url: location.href, total: document.querySelector('.pagination')?.textContent.trim(), count: document.querySelectorAll('.row.active').length, stars: [...document.querySelectorAll('p.star-rating.Three')].length})"
+-> [151 chars] ✓ Done
+✗ Wait timed out after 25000ms
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"count\":0,\"stars\":4}"
+
+SAY: The wait timed out but the page loaded (URL is the Mystery category). Let me inspect the actual markup.
+$ agent-browser eval --stdin <<'JS'
+const items = document.querySelectorAll('article.product_pod');
+const five = [...items].filter(a => a.querySelector('p.star-rating.Five')).length;
+JSON.stringify({
+  countOnPage: items.length,
+  five,
+  totalPages: [...document.querySelectorAll('li a, li span')].map(e=>e.textContent.trim()).join(' '),
+  pagination: document.querySelector('.pagination')?.textContent.trim(),
+  h1: document.querySelector('h1')?.textContent.trim()
+});
+JS
+-> [1093 chars] "{\"countOnPage\":20,\"five\":3,\"totalPages\":\"Home Books Books Travel Mystery Historical Fiction Sequential Art Classics Philosophy Romance Womens Fiction Fiction Childrens Religion Nonfiction Music Default Science Fiction Sports and Games Add a comment Fantasy New Adult Young Adult Science Poetry Paranormal Art Psychology Autobiography Parenting Adult Fiction Humor Horror History Food and Drink Christian Fiction Business Biography Thriller Contemporary Spirituality Academic Self Help Histori …The Widow  Playing with Fire  What Happened on Beale ...  The Bachelor Girl's Guide ...  Delivering the Truth (Quaker ... next\",\"h1\":\"Mystery\"}"
+
+SAY: Page 1 of Mystery: 20 books, 3 five-star. Now walk the next-page links.
+$ agent-browser eval --stdin <<'JS'
+const li = [...document.querySelectorAll('li')].find(l => l.textContent.trim() === 'next');
+li ? li.querySelector('a').href : JSON.stringify({noNext: true});
+JS
+-> [76 chars] "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html"; agent-browser wait "article.product_pod"; agent-browser eval --stdin <<'JS'
+const items = document.querySelectorAll('article.product_pod');
+const five = [...items].filter(a => a.querySelector('p.star-rating.Five')).length;
+const next = [...document.querySelectorAll('li a')].find(a => a.textContent.trim() === 'next');
+JSON.stringify({url: location.href, count: items.length, five, next: next ? next.href : null});
+JS
+-> [249 chars] ✓ Mystery | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html
+✓ Done
+"{\"url\":\"https://books.toscrape.com/catalogue/category/books/mystery_3/page-2.html\",\"count\":12,\"five\":2,\"next\":null}"
+
+SAY: Page 2 has 12 books (2 five-star) and no next page, so the category is complete.
+
+**Results (Mystery category, all pages):**
+- Page 1: 20 books, 3 five-star
+- Page 2: 12 books, 2 five-star
+- **Total: 32 books, 5 with a five-star rating**
+
+ANSWER: 5 books are five-star out of 32 total books in the Mystery category.

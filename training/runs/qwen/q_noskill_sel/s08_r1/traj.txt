@@ -1,0 +1,324 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": true, "score": 0.793, "wtok": 138007, "out_tok": 5911, "turns": 21, "secs": 111, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ agent-browser help 2>&1 | head -80
+-> [22 chars] Unknown command: help
+
+$ agent-browser --help 2>&1 | head -100; echo ---; agent-browser 2>&1 | head -50
+-> [6648 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://books.toscrape.com/ 2>&1; agent-browser eval "document.querySelector('.pagination') ? 'has pagination' : 'no pagination'"
+-> [89 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"no pagination"
+
+$ agent-browser eval "JSON.stringify({articles: document.querySelectorAll('.product_pod').length, next: !!document.querySelector('li.next a'), prev: !!document.querySelector('li.prev a')})"
+-> [49 chars] "{\"articles\":20,\"next\":true,\"prev\":false}"
+
+SAY: 20 books per page with a "next" link — I'll paginate through all pages, extracting title and price on each page.
+$ cd /tmp && rm -f books.jsonl
+agent-browser eval "JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))" > /tmp/p1.json
+head -c 300 /tmp/p1.json; echo
+-> [301 chars] "[{\"title\":\"A Light in the Attic\",\"price\":51.77},{\"title\":\"Tipping the Velvet\",\"price\":53.74},{\"title\":\"Soumission\",\"price\":50.1},{\"title\":\"Sharp Objects\",\"price\":47.82},{\"title\":\"Sapiens: A Brief History of Humankind\",\"price\":54.23},{\"title\":\"The Requiem Red\",\"pri
+
+SAY: Extraction works. Now I'll paginate through all pages, accumulating data:
+$ cd /tmp
+EXTRACT="JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))"
+i=1
+while true; do
+  hasnext=$(agent-browser eval "!!document.querySelector('li.next a')")
+  [ "$hasnext" != "true" ] && break
+  agent-browser click "li.next a" >/dev/null 2>&1
+  i=$((i+1))
+  echo "page $i"
+  agent-browser wait ".product_pod" >/dev/null 2>&1 || sleep 1
+  agent-browser eval "$EXTRACT" >> books_raw.jsonl
+  echo >> books_raw.jsonl
+  [ $i -ge 55 ] && break
+done
+wc -l books_raw.jsonl
+-> [192 chars] page 2
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'getAttribute')
+    at <anonymous>:1:119
+    at Array.map (<anonymous>)
+    at <anonymous>:1:63
+1 books_raw.jsonl
+
+$ agent-browser get url; agent-browser eval "JSON.stringify({pods:document.querySelectorAll('.product_pod').length, next:!!document.querySelector('li.next a'), title:document.title})"
+-> [134 chars] https://books.toscrape.com/catalogue/page-2.html
+"{\"pods\":20,\"next\":true,\"title\":\"All products | Books to Scrape - Sandbox\"}"
+
+SAY: Page 2 had loaded; the extraction just ran too early. Let me make the loop robust with retry:
+$ cd /tmp
+: > books_raw.jsonl
+EXTRACT="JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))"
+for i in $(seq 1 55); do
+  out=""
+  for attempt in 1 2 3 4 5; do
+    out=$(agent-browser eval "$EXTRACT" 2>/dev/null)
+    if echo "$out" | grep -q '^\["'; then break; fi
+    agent-browser wait ".product_pod" >/dev/null 2>&1 || true
+    sleep 0.5
+  done
+  if ! echo "$out" | grep -q '^\["'; then echo "FAILED on page $i"; break; fi
+  echo "$out" >> books_raw.jsonl
+  hasnext=$(agent-browser eval "!!document.querySelector('li.next a')")
+  [ "$hasnext" != "true" ] && break
+  agent-browser click "li.next a" >/dev/null 2>&1
+done
+echo "pages done: $i"; wc -l books_raw.jsonl
+-> [49 chars] FAILED on page 1
+pages done: 1
+0 books_raw.jsonl
+
+$ {'pods': 0}
+-> [122 chars] Validation failed for tool "bash":
+  - command: must have required properties command
+
+Received arguments:
+{
+  "pods": 0
+}
+$ agent-browser get url; agent-browser eval "JSON.stringify({pods:document.querySelectorAll('.product_pod').length, title:document.title, body:document.body.innerText.length})"
+-> [134 chars] https://books.toscrape.com/catalogue/page-2.html
+"{\"pods\":20,\"title\":\"All products | Books to Scrape - Sandbox\",\"body\":2070}"
+
+SAY: My grep pattern was wrong — JSON array starts with `[{"`, not `["`. Fixing:
+$ cd /tmp
+: > books_raw.jsonl
+EXTRACT="JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))"
+# start over from page 1
+agent-browser open https://books.toscrape.com/ >/dev/null
+for i in $(seq 1 55); do
+  out=""
+  for attempt in 1 2 3 4 5; do
+    out=$(agent-browser eval "$EXTRACT" 2>/dev/null)
+    case "$out" in '^[{']*) break;; esac
+    agent-browser wait ".product_pod" >/dev/null 2>&1 || true
+    sleep 0.5
+  done
+  case "$out" in '^[{']*) ;; *) echo "FAILED on page $i"; break;; esac
+  echo "$out" >> books_raw.jsonl
+  hasnext=$(agent-browser eval "!!document.querySelector('li.next a')")
+  [ "$hasnext" != "true" ] && break
+  agent-browser click "li.next a" >/dev/null 2>&1
+done
+echo "pages done: $i"; wc -l books_raw.j
+-> [49 chars] FAILED on page 1
+pages done: 1
+0 books_raw.jsonl
+
+$ cd /tmp
+out=$(agent-browser eval "JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}})" 2>/dev/null)
+echo "len=${#out}"; echo "$out" | head -c 200; echo; echo "$out" | od -c | head -3
+-> [28 chars] len=0
+
+
+0000000  \n
+0000001
+
+$ agent-browser eval "document.querySelectorAll('.product_pod').length" 2>&1 | head -5; echo ---; agent-browser eval "JSON.stringify([1,2,3])" 2>&1 | head -5
+-> [17 chars] 20
+---
+"[1,2,3]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))" 2>&1 | head -c 200
+-> [200 chars] "[{\"title\":\"A Light in the Attic\",\"price\":51.77},{\"title\":\"Tipping the Velvet\",\"price\":53.74},{\"title\":\"Soumission\",\"price\":50.1},{\"title\":\"Sharp Objects\",\"price\":47.82},{\"tit
+$ cd /tmp
+EXTRACT="JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))"
+agent-browser open https://books.toscrape.com/ 2>&1
+sleep 1
+out=$(agent-browser eval "$EXTRACT" 2>/dev/null)
+echo "len=${#out}"; head -c 100 <<<"$out"; echo
+-> [183 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+len=1368
+"[{\"title\":\"A Light in the Attic\",\"price\":51.77},{\"title\":\"Tipping the Velvet\",\"price\":5
+
+SAY: The issue was a missing wait after `open`. Rerunning the full loop with proper delays:
+$ cd /tmp
+: > books_raw.jsonl
+EXTRACT="JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))"
+agent-browser open https://books.toscrape.com/ >/dev/null 2>&1
+sleep 1
+for i in $(seq 1 55); do
+  out=""
+  for attempt in 1 2 3 4 5 6 7 8; do
+    out=$(agent-browser eval "$EXTRACT" 2>/dev/null)
+    case "$out" in '^[{']*) break;; esac
+    agent-browser wait ".product_pod" >/dev/null 2>&1 || true
+    sleep 1
+  done
+  case "$out" in '^[{']*) ;; *) echo "FAILED page $i"; break;; esac
+  echo "$out" >> books_raw.jsonl
+  hasnext=$(agent-browser eval "!!document.querySelector('li.next a')")
+  [ "$hasnext" != "true" ] && break
+  agent-browser click "li.next a" >/dev/null 2>&1
+  sleep 1
+  echo "page $i done"
+done
+echo "pages: $i"; w
+-> [41 chars] FAILED page 1
+pages: 1
+0 books_raw.jsonl
+
+$ cd /tmp
+EXTRACT="JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))"
+agent-browser open https://books.toscrape.com/ >/dev/null 2>&1
+for attempt in 1 2 3 4 5 6; do
+  out=$(agent-browser eval "$EXTRACT" 2>/dev/null)
+  echo "attempt $attempt: len=${#out} head=${out:0:20}"
+  case "$out" in '^[{']*) break;; esac
+  agent-browser wait ".product_pod" >/dev/null 2>&1 || echo "wait failed"
+  sleep 1
+done
+-> [276 chars] attempt 1: len=1368 head="[{\"title\":\"A Lig
+attempt 2: len=1368 head="[{\"title\":\"A Lig
+attempt 3: len=1368 head="[{\"title\":\"A Lig
+attempt 4: len=1368 head="[{\"title\":\"A Lig
+attempt 5: len=1368 head="[{\"title\":\"A Lig
+attempt 6: len=1368 head="[{\"title\":\"A Lig
+
+SAY: Found it — the output is a JSON-string-wrapped array (starts with `"[`), so my pattern checks were always wrong. Fixing:
+$ cd /tmp
+: > books_raw.jsonl
+EXTRACT="JSON.stringify([...document.querySelectorAll('.product_pod')].map(p=>{const a=p.querySelector('h3 a');return {title:a.getAttribute('title'), price:parseFloat(p.querySelector('.price_color').textContent.replace('£','').trim())}}))"
+agent-browser open https://books.toscrape.com/ >/dev/null 2>&1
+sleep 1
+for i in $(seq 1 55); do
+  out=""
+  for attempt in 1 2 3 4 5 6; do
+    out=$(agent-browser eval "$EXTRACT" 2>/dev/null)
+    if [ -n "$out" ] && [ "$(head -c 2 <<<"$out")" = '"[' ]; then break; fi
+    agent-browser wait ".product_pod" >/dev/null 2>&1 || true
+    sleep 1
+  done
+  if [ -z "$out" ] || [ "$(head -c 2 <<<"$out")" != '"[' ]; then echo "FAILED page $i"; break; fi
+  echo "$out" >> books_raw.jsonl
+  hasnext=$(agent-browser eval "!!document.querySelector('li.next a')")
+  [ "$hasnext" != "true" ] && break
+  agent-browser click "li.next a" >/dev/null 
+-> [657 chars] page 1 done
+page 2 done
+page 3 done
+page 4 done
+page 5 done
+page 6 done
+page 7 done
+page 8 done
+page 9 done
+page 10 done
+page 11 done
+page 12 done
+page 13 done
+page 14 done
+page 15 done
+page 16 done
+page 17 done
+page 18 done
+page 19 done
+page 20 done
+page 21 done
+page 22 done
+page 23 done
+page 24 done
+page 25 done
+page 26 done
+page 27 done
+page 28 done
+page 29 done
+page 30 done
+page 31 done
+page 32 done
+page 33 done
+page 34 done
+page 35 done
+page 36 done
+page 37 done
+page 38 done
+page 39 done
+page 40 done
+page 41 done
+page 42 done
+page 43 done
+page 44 done
+page 45 done
+page 46 done
+page 47 done
+page 48 done
+page 49 done
+pages: 50
+50 books_raw.jsonl
+
+SAY: All 50 pages captured (1000 books expected). Now computing the results:
+$ cd /tmp
+python3 - <<'EOF'
+import json
+books=[]
+for line in open('books_raw.jsonl'):
+    line=line.strip()
+    if not line: continue
+    arr=json.loads(json.loads(line))  # line is a JSON string containing a JSON array
+    books+=arr
+print("total books:", len(books))
+under12=[b for b in books if b['price'] < 12.00]
+print("under £12.00:", len(under12))
+cheapest=min(books, key=lambda b:b['price'])
+print("cheapest:", cheapest['title'], cheapest['price'])
+# sanity: cheapest prices
+for b in sorted(books, key=lambda x:x['price'])[:5]:
+    print(b['price'], b['title'])
+EOF
+-> [244 chars] total books: 1000
+under £12.00: 44
+cheapest: An Abundance of Katherines 10
+10 An Abundance of Katherines
+10.01 The Origin of Species
+10.02 The Tipping Point: How Little Things Can Make a Big Difference
+10.16 Patience
+10.23 Greek Mythic History
+
+$ cd /tmp
+python3 - <<'EOF'
+import json
+books=[]
+for line in open('books_raw.jsonl'):
+    line=line.strip()
+    if line: books+=json.loads(json.loads(line))
+exactly12=[b for b in books if b['price']==12.00]
+print("books exactly £12.00:", len(exactly12))
+dupes=len(books)-len(set(b['title'] for b in books))
+print("duplicate titles:", dupes)
+prices=sorted(b['price'] for b in books if b['price']<12.00)
+print("min under12:", prices[0], "max under12:", prices[-1], "count:", len(prices))
+EOF
+-> [89 chars] books exactly £12.00: 0
+duplicate titles: 1
+min under12: 10 max under12: 11.89 count: 44
+
+SAY: All 50 pages of the catalogue (1,000 books) were scraped in a real browser via `agent-browser`, extracting title + price from each `.product_pod` on every page.
+
+**Results:**
+- Books costing less than £12.00: **44**
+- Cheapest book: **"An Abundance of Katherines" at £10.00** (next cheapest is *The Origin of Species* at £10.01)
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00

@@ -1,0 +1,157 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r3", "correct": true, "score": 0.925, "wtok": 49861, "out_tok": 1923, "turns": 10, "secs": 72, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; Receipt #A-7028"}
+
+$ agent-browser open "http://localhost:8791/inbox.html" && agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('li, tr, [class*=msg], article, div')].filter(el => /Priya N\./.test(el.textContent));
+  const out = [];
+  document.querySelectorAll('*').forEach(() => {});
+  // find smallest elements containing "Priya N."
+  const cands = [...document.querySelectorAll('li, tr, article, .message, .msg, section, div')].filter(el => el.textContent.includes('Priya N.') && el.querySelectorAll('li, tr, article, section, .message, .msg').length === 0);
+  cands.slice(0,3).forEach(el => out.push(el.outerHTML.slice(0, 1200)));
+  return JSON.stringify(out);
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify(document.body.innerText.slice(0, 3000));
+})()
+JS
+-> [1004 chars] "\"Inbox\\n\\nShowing 24 of 60\\n\\nAlex A.\\nInvoice #100\\nArchive\\nFemi H.\\nLunch order #113\\nArchive\\nKai C.\\nOn-call swap #126\\nArchive\\nDana K.\\nRetro actions #139\\nArchive\\nIvo E.\\nRelease checklist #152\\nArchive\\nBo M.\\nDesign review #165\\nArchive\\nGus G.\\nHiring loop #178\\nArchive\\nLena B.\\nStandup notes #191\\nArchive\\nElif J.\\nTravel booking #204\\nArchive\\nJude D.\\nBudget draft #217\\nArchive\\nChen L.\\nInvoice #230\\nArchive\\nHana F.\\nLunch order #243\\nAr …\\nArchive\\nJude D.\\nLunch order #373\\nArchive\\nChen L.\\nOn-call swap #386\\nArchive\\nHana F.\\nRetro actions #399\\nArchive\\nLoading more…\""
+
+SAY: Priya N. isn't in the first 24 messages (there are 60 total, lazy-loading). Let me scroll to load more.
+$ for i in 1 2 3 4 5 6 7 8 9 10; do agent-browser press End; agent-browser wait --fn "document.body.innerText.includes('Priya N.') || /Showing 60 of 60/.test(document.body.innerText)" || true; agent-browser wait 500; done; agent-browser eval "document.body.innerText.length + ' | ' + document.body.innerText.slice(0,200)"
+-> [446 chars] ✓ Done
+✗ Wait timed out after 25000ms
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+✓ Done
+true
+✓ Done
+"2090 | Inbox\n\nShowing 60 of 60\n\nAlex A.\nInvoice #100\nArchive\nFemi H.\nLunch order #113\nArchive\nKai C.\nOn-call swap #126\nArchive\nDana K.\nRetro actions #139\nArchive\nIvo E.\nRelease checklist #152\nArchive\nBo M.\nD"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const all = document.body.innerText;
+  const i = all.indexOf('Priya N.');
+  return JSON.stringify({has: i >= 0, ctx: i >= 0 ? all.slice(Math.max(0, i - 200), i + 300) : all.slice(1500)});
+})()
+JS
+-> [618 chars] "{\"has\":true,\"ctx\":\"ive\\nKai C.\\nTravel booking #594\\nArchive\\nDana K.\\nBudget draft #607\\nArchive\\nIvo E.\\nInvoice #620\\nArchive\\nBo M.\\nLunch order #633\\nArchive\\nGus G.\\nOn-call swap #646\\nArchive\\nLena B.\\nRetro actions #659\\nArchive\\nPriya N.\\nQ3 vendor audit — rescheduled to the 19th\\nArchive\\nJude D.\\nDesign review #685\\nArchive\\nChen L.\\nHiring loop #698\\nArchive\\nHana F.\\nStandup notes #711\\nArchive\\nAlex A.\\nTravel booking #724\\nArchive\\nFemi H.\\nBudget draft #737\\nArchive\\nKai C.\\nInvoice #750\\nArchive\\nDana K.\\nLunch order #763\\nArchive\\nIvo E.\\n\"}"
+
+SAY: Found it. Subject: **"Q3 vendor audit — rescheduled to the 19th"**. Now archiving that message.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const btns = [...document.querySelectorAll('button')];
+  const priya = btns.filter(b => {
+    const block = b.closest('li, tr, article, [class*=msg]') || b.parentElement;
+    return block && block.textContent.includes('Priya N.') && !block.textContent.includes('Archive\n');
+  });
+  // pick the button whose nearest message block text is exactly sender+subject+Archive
+  let target = null;
+  btns.forEach(b => {
+    let el = b.parentElement;
+    for (let k = 0; k < 5 && el; k++) {
+      if (el.textContent.includes('Priya N.') && el.querySelectorAll('button').length === 1) { target = b; break; }
+      el = el.parentElement;
+    }
+    if (target) break;
+  });
+  if (!target) return JSON.stringify({err: 'not found', priyaCount: priya.length});
+  target.click();
+  return JSON.stringify({clicked: true});
+})()
+JS
+-> [85 chars] ✗ Evaluation error: SyntaxError: Illegal break statement
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const btns = [...document.querySelectorAll('button')];
+  let target = null;
+  for (const b of btns) {
+    let el = b.parentElement;
+    for (let k = 0; k < 5 && el && !target; k++) {
+      if (el.textContent.includes('Priya N.') && el.querySelectorAll('button').length === 1) { target = b; break; }
+      el = el.parentElement;
+    }
+  }
+  if (!target) return JSON.stringify({err: 'not found'});
+  target.click();
+  return JSON.stringify({clicked: true});
+})()
+JS
+-> [202 chars] ✗ CDP command timed out: Runtime.evaluate
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+
+
+Command exited with code 1
+$ agent-browser dialog accept; agent-browser eval --stdin <<'JS'
+(() => {
+  return JSON.stringify(document.body.innerText.slice(0, 2000));
+})()
+JS
+-> [2372 chars] ✓ Done
+"\"Inbox\\n\\nShowing 60 of 60\\n\\nAlex A.\\nInvoice #100\\nArchive\\nFemi H.\\nLunch order #113\\nArchive\\nKai C.\\nOn-call swap #126\\nArchive\\nDana K.\\nRetro actions #139\\nArchive\\nIvo E.\\nRelease checklist #152\\nArchive\\nBo M.\\nDesign review #165\\nArchive\\nGus G.\\nHiring loop #178\\nArchive\\nLena B.\\nStandup notes #191\\nArchive\\nElif J.\\nTravel booking #204\\nArchive\\nJude D.\\nBudget draft #217\\nArchive\\nChen L.\\nInvoice #230\\nArchive\\nHana F.\\nLunch order #2 …hive\\nElif J.\\nHiring loop #828\\nArchive\\nJude D.\\nStandup notes #841\\nArchive\\nChen L.\\nTravel booking #854\\nArchive\\nHana F.\\nBudget \""
+
+SAY: Message archived (Priya N. no longer in the list). Now checking for the receipt number.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const t = document.body.innerText;
+  const i = t.search(/receipt/i);
+  return JSON.stringify(i >= 0 ? t.slice(Math.max(0, i - 300), i + 400) : t.slice(1800));
+})()
+JS
+-> [372 chars] "\"Ivo E.\\nOn-call swap #776\\nArchive\\nBo M.\\nRetro actions #789\\nArchive\\nGus G.\\nRelease checklist #802\\nArchive\\nLena B.\\nDesign review #815\\nArchive\\nElif J.\\nHiring loop #828\\nArchive\\nJude D.\\nStandup notes #841\\nArchive\\nChen L.\\nTravel booking #854\\nArchive\\nHana F.\\nBudget draft #867\\nArchive\\nEnd of inbox\\nArchived. Receipt #A-7028\""
+
+SAY: Done. Summary:
+
+- **Priya N.'s subject:** "Q3 vendor audit — rescheduled to the 19th"
+- Archived her message and confirmed the dialog ("Archive this message?")
+- **Receipt number shown afterwards:** #A-7028
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; Receipt #A-7028

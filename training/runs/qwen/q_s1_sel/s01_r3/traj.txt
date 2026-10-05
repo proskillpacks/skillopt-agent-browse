@@ -1,0 +1,46 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r3", "correct": true, "score": 0.975, "wtok": 16833, "out_tok": 942, "turns": 5, "secs": 59, "timed_out": false, "curl": false, "answer": "name: user3, href: /users/3"}
+
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover "figure:nth-child(3) img"; agent-browser eval "JSON.stringify((()=>{const f=document.querySelectorAll('figure')[2];const a=f.querySelector('a');return {text:f.innerText.trim(), href:a?a.getAttribute('href'):null, abs:a?a.href:null};})())"; agent-browser close
+-> [369 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Element not found: figure:nth-child(3) img. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of undefined (reading 'querySelector')
+    at <anonymous>:1:79
+    at <anonymous>:1:188
+✓ Browser closed
+
+SAY: The page didn't fully load. Retrying once:
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait "figure:nth-child(3) img"; agent-browser hover "figure:nth-child(3) img"; agent-browser eval "JSON.stringify((()=>{const f=document.querySelectorAll('figure')[2];const a=f.querySelector('a');return {text:f.innerText.trim(), href:a?a.getAttribute('href'):null, abs:a?a.href:null};})())"; agent-browser close
+-> [376 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✗ Wait timed out after 25000ms
+✗ Element not found: figure:nth-child(3) img. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of undefined (reading 'querySelector')
+    at <anonymous>:1:79
+    at <anonymous>:1:188
+✓ Browser closed
+
+SAY: The selector may be wrong. Let me inspect the actual DOM:
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser wait --text "Hover"; agent-browser eval "JSON.stringify((()=>{const c=document.querySelector('#content');return c?c.innerHTML.slice(0,1500):document.body.innerHTML.slice(0,1500);})())"; agent-browser close
+-> [1151 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+Hover
+"\"\\n        <style>\\n.figure {\\n  float: left;\\n  padding-right: 20px;\\n}\\n\\n.figcaption {\\n  display: none;\\n}\\n\\n.figure:hover .figcaption {\\n  display: block;\\n}\\n</style>\\n\\n<div class=\\\"example\\\">\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcap …\\n      <h5>name: user3</h5>\\n      <a href=\\\"/users/3\\\">View profile</a>\\n    </div>\\n  </div>\\n  \\n</div>\\n\\n      \""
+✓ Browser closed
+
+SAY: The elements are `div.figure`, not `<figure>`. Now hovering over the third avatar:
+$ agent-browser open https://the-internet.herokuapp.com/hovers; agent-browser hover "div.figure:nth-of-type(3) img"; agent-browser eval "JSON.stringify((()=>{const f=document.querySelectorAll('div.figure')[2];const cap=f.querySelector('.figcaption');const a=f.querySelector('a');return {display:getComputedStyle(cap).display, name:f.querySelector('h5').innerText.trim(), href:a.getAttribute('href')};})())"; agent-browser close
+-> [156 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✓ Done
+"{\"display\":\"block\",\"name\":\"name: user3\",\"href\":\"/users/3\"}"
+✓ Browser closed
+
+SAY: Hover confirmed working — the figcaption only becomes `display: block` under `:hover`, and the computed style check verified it appeared while hovering.
+
+Results for the third avatar:
+- **Name shown:** user3
+- **'View profile' href:** `/users/3` (absolute: `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: name: user3, href: /users/3

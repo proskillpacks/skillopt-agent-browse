@@ -1,0 +1,66 @@
+TASK s01: On https://the-internet.herokuapp.com/hovers hover over the third avatar image. Report the name shown and the href of the 'View profile' link shown for it.
+EXPECT: ['user3', '/users/3']
+RESULT: {"id": "s01_r6", "correct": true, "score": 0.969, "wtok": 20347, "out_tok": 886, "turns": 6, "secs": 56, "timed_out": false, "curl": false, "answer": "name: user3; href: /users/3"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser eval --stdin <<'JS'
+(() => {
+  const figs = document.querySelectorAll('.hoverable');
+  const third = figs[2];
+  third.dispatchEvent(new MouseEvent('mouseover', {bubbles:true}));
+  third.dispatchEvent(new MouseEvent('mouseenter', {bubbles:true}));
+  return JSON.stringify({count: figs.length});
+})()
+JS
+-> [250 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Evaluation error: TypeError: Cannot read properties of undefined (reading 'dispatchEvent')
+    at <anonymous>:4:9
+    at <anonymous>:7:3
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/hovers"; agent-browser wait ".hoverable"; agent-browser eval --stdin <<'JS'
+(() => {
+  const figs = document.querySelectorAll('.hoverable');
+  return JSON.stringify({count: figs.length});
+})()
+JS
+-> [106 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/hovers
+✗ Wait timed out after 25000ms
+"{\"count\":0}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const imgs = document.querySelectorAll('img');
+  const divs = document.querySelectorAll('div');
+  return JSON.stringify({imgs: imgs.length, divs: divs.length, bodyClass: document.body.className, sample: document.querySelector('#content') ? document.querySelector('#content').innerHTML.slice(0, 600) : 'no #content'});
+})()
+JS
+-> [786 chars] "{\"imgs\":4,\"divs\":14,\"bodyClass\":\"\",\"sample\":\"\\n        <style>\\n.figure {\\n  float: left;\\n  padding-right: 20px;\\n}\\n\\n.figcaption {\\n  display: none;\\n}\\n\\n.figure:hover .figcaption {\\n  display: block;\\n}\\n</style>\\n\\n<div class=\\\"example\\\">\\n  <h3>Hovers</h3>\\n  <p>Hover over the image for additional information</p>\\n  \\n  <div class=\\\"figure\\\">\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\ …>\\n    <img src=\\\"/img/avatar-blank.jpg\\\" alt=\\\"User Avatar\\\">\\n    <div class=\\\"figcaption\\\">\\n      <h5>name: user2</h5>\\n     \"}"
+
+$ agent-browser hover ".figure:nth-of-type(3) img"; agent-browser eval --stdin <<'JS'
+(() => {
+  const figs = document.querySelectorAll('.figure');
+  const cap = figs[2].querySelector('.figcaption');
+  const name = cap.querySelector('h5').textContent.trim();
+  const href = cap.querySelector('a').getAttribute('href');
+  return JSON.stringify({name, href});
+})()
+JS
+-> [58 chars] ✓ Done
+"{\"name\":\"name: user3\",\"href\":\"/users/3\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const cap = document.querySelectorAll('.figure')[2].querySelector('.figcaption');
+  return JSON.stringify({display: getComputedStyle(cap).display});
+})()
+JS
+-> [26 chars] "{\"display\":\"block\"}"
+
+SAY: I opened the page and hovered the third avatar (`.figure:nth-of-type(3) img`). Its caption became visible (`display: block`) and contained:
+
+- **Name shown:** `name: user3`
+- **'View profile' link href:** `/users/3` (absolute: `https://the-internet.herokuapp.com/users/3`)
+
+ANSWER: name: user3; href: /users/3

@@ -1,0 +1,33 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r1", "correct": true, "score": 0.952, "wtok": 31744, "out_tok": 1588, "turns": 8, "secs": 85, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser eval "JSON.stringify({a: document.getElementById('drag-A')?.textContent, b: document.getElementById('drag-B')?.textContent})"
+-> [88 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"{}"
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#drag-A"; agent-browser eval "JSON.stringify({a: document.getElementById('drag-A')?.textContent, b: document.getElementById('drag-B')?.textContent})"
+-> [119 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+"{}"
+
+$ agent-browser eval "JSON.stringify({url: location.href, title: document.title, body: document.body?.innerText?.slice(0,300)})"
+-> [159 chars] "{\"url\":\"https://the-internet.herokuapp.com/drag_and_drop\",\"title\":\"The Internet\",\"body\":\"Drag and Drop\\nA\\nB\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser eval "JSON.stringify({ids: [...document.querySelectorAll('[id]')].map(e=>e.id), bin: document.querySelector('#trash-bin')?.innerHTML?.slice(0,400)})"
+-> [99 chars] "{\"ids\":[\"flash-messages\",\"content\",\"columns\",\"column-a\",\"column-b\",\"page-footer\"]}"
+
+$ agent-browser eval "JSON.stringify({colA: document.getElementById('column-a')?.innerHTML, colB: document.getElementById('column-b')?.innerHTML})"
+-> [68 chars] "{\"colA\":\"<header>A</header>\",\"colB\":\"<header>B</header>\"}"
+
+$ agent-browser eval "JSON.stringify({content: document.getElementById('content').outerHTML.slice(0,2000), draggables: document.querySelectorAll('[draggable]').length})"
+-> [2168 chars] "{\"content\":\"<div id=\\\"content\\\" class=\\\"large-12 columns\\\">\\n        <style>\\n.columns {\\n  width: 400px;\\n}\\n.column {\\n  height: 150px;\\n  width: 150px;\\n  float: left;\\n  border: 2px solid #666666;\\n  background-color: #ccc;\\n  margin-right: 5px;\\n  text-align: center;\\n  cursor: move;\\n}\\n.column.over {\\n  border: 2px dashed #000;\\n}\\n</style>\\n\\n<div class=\\\"example\\\">\\n  <h3>Drag and Drop</h3>\\n  <div id=\\\"columns\\\">\\n    <div class=\\\"column\\\" …tener('drop', handleDrop, false);\\n  col.addEventListener('dragend', handleDragEnd, false);\\n});\\n</script>\\n\\n      </div>\",\"draggables\":2}"
+
+SAY: This page uses HTML5 drag & drop on `#column-a` and `#column-b`. Let me perform the drag:
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify({a: document.getElementById('column-a').textContent, b: document.getElementById('column-b').textContent})"
+-> [35 chars] ✓ Done
+"{\"a\":\"B\",\"b\":\"A\"}"
+
+SAY: The drag succeeded. After dropping box A onto box B, the boxes swapped their contents: the left box (column-a) now shows header **B** and the right box (column-b) shows header **A**.
+
+ANSWER: B, A

@@ -1,0 +1,207 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09_r3", "correct": true, "score": 0.943, "wtok": 38186, "out_tok": 1010, "turns": 12, "secs": 12, "timed_out": false, "curl": false, "answer": "Quote ref NOR-2087, total \u20ac1470.00"}
+
+$ agent-browser open http://localhost:8791/shop.html 2>&1; agent-browser snapshot 2>&1 | head -100
+-> [667 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+- heading "We value your privacy" [level=2, ref=e4]
+- paragraph
+  - StaticText "We use cookies to improve your experience."
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Choose region…"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 1
+      - StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click e5 2>&1; agent-browser snapshot 2>&1 | head -60
+-> [621 chars] ✓ Done
+- heading "We value your privacy" [level=2, ref=e4]
+- paragraph
+  - StaticText "We use cookies to improve your experience."
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Choose region…"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 1
+      - StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click e6 2>&1; agent-browser snapshot 2>&1 | head -60
+-> [427 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Choose region…"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 1
+      - StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click e2 2>&1; agent-browser snapshot 2>&1 | head -80
+-> [427 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Choose region…"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 1
+      - StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser help 2>&1 | head -60
+-> [22 chars] Unknown command: help
+
+$ agent-browser 2>&1 | head -80
+-> [3508 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   …        Or:  cookies set --curl <file> [--domain <host>] (auto-detects JSON/cURL/Cookie-header files)
+  storage <local|session>    Manage web storage
+
+$ agent-browser select e2 Nordics 2>&1; agent-browser snapshot 2>&1 | head -40
+-> [858 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Choose region…"
+- generic
+  - generic [ref=e10] clickable [cursor:pointer, onclick]
+    - StaticText "Benelux"
+  - generic [ref=e11] clickable [cursor:pointer, onclick]
+    - StaticText "Nordics"
+  - generic [ref=e12] clickable [cursor:pointer, onclick]
+    - StaticText "Iberia"
+  - generic [ref=e13] clickable [cursor:pointer, onclick]
+   …- StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click e11 2>&1; agent-browser snapshot 2>&1 | head -40
+-> [410 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Nordics"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 1
+      - StaticText "1"
+- paragraph
+  - radio "Basic" [checked=true, ref=e7]
+  - radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [ref=e3]
+
+$ agent-browser fill e9 7 2>&1; agent-browser click e8 2>&1; agent-browser snapshot 2>&1 | head -30
+-> [417 chars] ✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Nordics"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 7
+      - StaticText "7"
+- paragraph
+  - radio "Basic" [checked=false, ref=e7]
+  - radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [ref=e3]
+
+$ agent-browser click e3 2>&1; sleep 1; agent-browser snapshot 2>&1 | head -50
+-> [438 chars] ✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Nordics"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 7
+      - StaticText "7"
+- paragraph
+  - radio "Basic" [checked=false, ref=e7]
+  - radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [ref=e3]
+- StaticText "Calculating…"
+
+$ sleep 2; agent-browser snapshot 2>&1 | head -60
+-> [515 chars] - heading "Request a quote" [level=1, ref=e1]
+- paragraph
+  - StaticText "Region"
+- generic [ref=e2] clickable [cursor:pointer, onclick]
+  - StaticText "Nordics"
+- paragraph
+  - LabelText
+    - StaticText "Quantity "
+    - spinbutton "Quantity" [ref=e9]: 7
+      - StaticText "7"
+- paragraph
+  - radio "Basic" [checked=false, ref=e7]
+  - radio "Pro" [checked=true, ref=e8]
+- button "Get quote" [ref=e3]
+- generic
+  - paragraph
+    - StaticText "Quote ref: NOR-2087"
+  - paragraph
+    - StaticText "Total: €1470.00"
+
+SAY: Quote received:
+
+- **Quote reference:** NOR-2087
+- **Total price:** €1470.00
+
+(Region: Nordics, Quantity: 7, Plan: Pro)
+
+ANSWER: Quote ref NOR-2087, total €1470.00

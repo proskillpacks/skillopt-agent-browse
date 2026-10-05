@@ -1,0 +1,67 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r6", "correct": true, "score": 0.933, "wtok": 44937, "out_tok": 834, "turns": 7, "secs": 7, "timed_out": false, "curl": false, "answer": "The Boston Bruins won 49 games and had a Goals For (GF) of 269 in the 2011 season."}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"; agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill "input" "Bruins"; agent-browser click "#search_button"; agent-browser get text "h1"; agent-browser snapshot -i | head -30
+-> [1153 chars] ✓ Done
+✗ Element not found: #search_button. Verify the selector, role, or name is correct and the element exists in the DOM.
+Hockey Teams: Forms, Searching and Pagination 25 items
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]: Bru …5]
+- cell "264" [ref=e26]
+- cell "35" [ref=e27]
+- cell "Buffalo Sabres" [ref=e28]
+- cell "1990" [ref=e29]
+- cell "31" [ref=e30]
+- cell "30" [ref=e31]
+
+$ agent-browser click "button"; agent-browser wait "h1"; agent-browser get text "h1"
+-> [172 chars] ✗ Element not found: button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Done
+Hockey Teams: Forms, Searching and Pagination 25 items
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('button, input[type=submit]')].map(b=>({tag:b.tagName,type:b.type,id:b.id,txt:b.textContent.trim()})))"
+-> [69 chars] "[{\"tag\":\"INPUT\",\"type\":\"submit\",\"id\":\"\",\"txt\":\"\"}]"
+
+$ agent-browser click 'input[type="submit"]'; agent-browser wait "h1"; agent-browser get text "h1"
+-> [69 chars] ✓ Done
+✓ Done
+Hockey Teams: Forms, Searching and Pagination 21 items
+
+SAY: Search applied (21 items). Now let me get the 2011 Boston Bruins row.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('table tr')].map(tr => [...tr.children].map(td => td.textContent.trim())).filter(c => c[0]);
+  const headers = rows[0];
+  const hits = rows.slice(1).filter(c => c[1] === "2011");
+  return JSON.stringify({headers, hits});
+})()
+JS
+-> [230 chars] "{\"headers\":[\"Team Name\",\"Year\",\"Wins\",\"Losses\",\"OT Losses\",\"Win %\",\"Goals For (GF)\",\"Goals Against (GA)\",\"+ / -\"],\"hits\":[[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]}"
+
+SAY: Found it: the Boston Bruins' 2011 row shows Wins = 49 and Goals For (GF) = 269.
+
+ANSWER: The Boston Bruins won 49 games and had a Goals For (GF) of 269 in the 2011 season.

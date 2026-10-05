@@ -1,0 +1,67 @@
+TASK t13: On https://quotes.toscrape.com/ , across all pages of the site, which author has the most quotes, and how many quotes do they have?
+EXPECT: ['albert einstein', '\\b10\\b']
+RESULT: {"id": "t13_r1", "correct": true, "score": 0.966, "wtok": 22426, "out_tok": 1978, "turns": 4, "secs": 13, "timed_out": false, "curl": false, "answer": "Albert Einstein, with 10 quotes"}
+
+$ rm -f /tmp/authors.txt; agent-browser open https://quotes.toscrape.com/ ; agent-browser wait ".quote"; agent-browser eval "document.querySelectorAll('.quote').length"; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.quote')).map(q=>q.querySelector('.author').textContent))" | tee /tmp/authors.txt; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('ul.pager li')).map(li=>li.textContent.trim()))"
+-> [266 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✓ Done
+10
+"[\"Albert Einstein\",\"J.K. Rowling\",\"Albert Einstein\",\"Jane Austen\",\"Marilyn Monroe\",\"Albert Einstein\",\"André Gide\",\"Thomas A. Edison\",\"Eleanor Roosevelt\",\"Steve Martin\"]"
+"[\"Next →\"]"
+
+SAY: Page 1 loaded with 10 quotes. Now let me loop through the remaining pages:
+$ for p in 2 3 4 5 6 7 8 9 10; do agent-browser open "https://quotes.toscrape.com/page/$p/" ; agent-browser wait ".quote" ; agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.quote')).map(q=>q.querySelector('.author').textContent))"; done; agent-browser close
+-> [2266 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/page/2/
+✓ Done
+"[\"Marilyn Monroe\",\"J.K. Rowling\",\"Albert Einstein\",\"Bob Marley\",\"Dr. Seuss\",\"Douglas Adams\",\"Elie Wiesel\",\"Friedrich Nietzsche\",\"Mark Twain\",\"Allen Saunders\"]"
+✓ Quotes to Scrape
+  https://quotes.toscrape.com/page/3/
+✓ Done
+"[\"Pablo Neruda\",\"Ralph Waldo Emerson\",\"Mother Teresa\",\"Garrison Keillor\",\"Jim Henson\",\"Dr. Seuss\",\"Albert Einstein\",\"J.K. Rowling\",\"Albert Einstein\",\"Bob Marley\"]"
+✓ Quot …e\",\"E.E. Cummings\",\"Khaled Hosseini\",\"Harper Lee\",\"Madeleine L'Engle\",\"Mark Twain\",\"Dr. Seuss\",\"George R.R. Martin\"]"
+✓ Browser closed
+
+SAY: All 10 pages scraped. Now aggregate the counts:
+$ cd /tmp && cat > pages.jsonl <<'EOF'
+["Albert Einstein","J.K. Rowling","Albert Einstein","Jane Austen","Marilyn Monroe","Albert Einstein","André Gide","Thomas A. Edison","Eleanor Roosevelt","Steve Martin"]
+["Marilyn Monroe","J.K. Rowling","Albert Einstein","Bob Marley","Dr. Seuss","Douglas Adams","Elie Wiesel","Friedrich Nietzsche","Mark Twain","Allen Saunders"]
+["Pablo Neruda","Ralph Waldo Emerson","Mother Teresa","Garrison Keillor","Jim Henson","Dr. Seuss","Albert Einstein","J.K. Rowling","Albert Einstein","Bob Marley"]
+["Dr. Seuss","J.K. Rowling","Bob Marley","Mother Teresa","J.K. Rowling","Charles M. Schulz","William Nicholson","Albert Einstein","Jorge Luis Borges","George Eliot"]
+["George R.R. Martin","C.S. Lewis","Marilyn Monroe","Marilyn Monroe","Albert Einstein","Marilyn Monroe","Marilyn Monroe","Martin Luther King Jr.","J.K. Rowling","James Baldwin"]
+["Jane Austen","Eleanor Roos
+-> [1145 chars]      10 Albert Einstein
+      9 J.K. Rowling
+      7 Marilyn Monroe
+      6 Mark Twain
+      6 Dr. Seuss
+      5 Jane Austen
+      5 C.S. Lewis
+      3 Bob Marley
+      2 Suzanne Collins
+      2 Ralph Waldo Emerson
+      2 Mother Teresa
+      2 George R.R. Martin
+      2 Ernest Hemingway
+      2 Eleanor Roosevelt
+      2 Charles Bukowski
+      1 William Nicholson
+      1 W.C. Fields
+      1 Thomas A. Edison
+      1 Terry Pratchett
+      1 Steve Martin
+      1 Stephenie Meyer
+      1 Pablo Neruda …uglas Adams
+      1 Charles M. Schulz
+      1 Ayn Rand
+      1 André Gide
+      1 Allen Saunders
+      1 Alfred Tennyson
+      1 Alexandre Dumas fils
+
+SAY: Scraped all 10 pages of quotes.toscrape.com (100 quotes total) in a real browser via `agent-browser`, then aggregated the author counts.
+
+**Albert Einstein** has the most quotes, with **10** (just ahead of J.K. Rowling with 9, and Marilyn Monroe with 7).
+
+ANSWER: Albert Einstein, with 10 quotes

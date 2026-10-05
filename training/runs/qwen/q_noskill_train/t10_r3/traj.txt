@@ -1,0 +1,136 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r3", "correct": true, "score": 0.952, "wtok": 32081, "out_tok": 955, "turns": 11, "secs": 101, "timed_out": false, "curl": false, "answer": "PDF, CSV, Excel"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu 2>&1
+-> [67 chars] ✗ CDP command timed out: Page.navigate
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -60
+-> [439 chars] - Iframe [ref=e1]
+  - image
+  - StaticText "Application error"
+  - paragraph
+    - StaticText "An error occurred in the application and your page could not be served. If you are the application owner, "
+    - link "check your logs for details" [ref=e2]
+    - StaticText ". You can do this from the Heroku CLI with the command"
+    - LineBreak "\n"
+    - code
+      - StaticText "heroku logs --tail"
+  - image
+  - link [ref=e3]
+    - image
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu 2>&1; agent-browser snapshot 2>&1 | head -40
+-> [96 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(empty page)
+
+$ sleep 5; agent-browser open https://the-internet.herokuapp.com/jqueryui/menu 2>&1; sleep 2; agent-browser snapshot 2>&1 | head -50
+-> [163 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+- generic
+  - link "Fork me on GitHub" [ref=e4]
+    - image "Fork me on GitHub"
+
+$ sleep 5; agent-browser snapshot 2>&1 | head -80
+-> [1037 chars] - generic
+  - link "Fork me on GitHub" [ref=e4]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e5]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e7]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of elements is actually not in the html itself, but done magic …    - link "Enabled" [ref=e11]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e12]
+
+$ agent-browser hover 'menuitem' 2>&1; agent-browser snapshot 2>&1 | head -80
+-> [1149 chars] ✗ Element not found: menuitem. Verify the selector, role, or name is correct and the element exists in the DOM.
+- generic
+  - link "Fork me on GitHub" [ref=e4]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e5]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e7]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - Static …    - link "Enabled" [ref=e11]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e12]
+
+$ agent-browser hover @e9 2>&1; sleep 1; agent-browser snapshot 2>&1 | sed -n '1,80p'
+-> [1269 chars] ✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e4]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e5]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e7]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of elements is actually not in the html itself, but don … "Back to JQuery UI" [ref=e16]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e12]
+
+$ agent-browser hover @e13 2>&1; sleep 1; agent-browser snapshot 2>&1 | sed -n '1,100p'
+-> [1584 chars] ✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e4]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e5]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e7]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of elements is actually not in the html itself, but don … "Back to JQuery UI" [ref=e16]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e12]
+
+SAY: The Downloads submenu is open. Let me verify visually with a screenshot.
+$ agent-browser screenshot /tmp/menu.png 2>&1; ls -la /tmp/menu.png
+-> [96 chars] ✓ Screenshot saved to /tmp/menu.png
+-rw-rw-r-- 1 user user 62688 Oct  5 12:37 /tmp/menu.png
+
+SAY: Navigated to the page, hovered **Enabled** to open its submenu (showing "Downloads" and "Back to JQuery UI"), then hovered **Downloads** to open its submenu. As displayed, the Downloads submenu contains exactly three items:
+
+1. PDF
+2. CSV
+3. Excel
+
+Screenshot confirmed at /tmp/menu.png.
+
+ANSWER: PDF, CSV, Excel

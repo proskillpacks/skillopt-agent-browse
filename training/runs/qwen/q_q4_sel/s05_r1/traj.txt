@@ -1,0 +1,83 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r1", "correct": true, "score": 0.925, "wtok": 50070, "out_tok": 2024, "turns": 10, "secs": 12, "timed_out": false, "curl": false, "answer": "Subject \"Q3 vendor audit \u2014 rescheduled to the 19th\"; receipt #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const items = [...document.querySelectorAll('.message, li, tr, .item')].filter(el => el.textContent.includes('Priya'));
+  return JSON.stringify(items.slice(0,3).map(el => el.outerHTML.slice(0,800)));
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval "document.querySelector('main, body').innerHTML.slice(0,3000)"
+-> [3152 chars] "\n<h1>Inbox</h1><p id=\"count\">Showing 24 of 60</p><div id=\"list\"><div class=\"row\"><span class=\"from\">Alex A.</span><span class=\"subj\">Invoice #100</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Femi H.</span><span class=\"subj\">Lunch order #113</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Kai C.</span><span class=\"subj\">On-call swap #126</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Dana K.</s …on>Archive</button></div><div class=\"row\"><span class=\"from\">Hana F.</span><span class=\"subj\">Retro actions #399</span><button>Archive</button"
+
+SAY: Priya N. isn't in the first page (24 of 60 shown). Let me check pagination.
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('a, button')].map(a => a.textContent.trim()).filter(t => /page|next|prev|old|new/i.test(t)))"; agent-browser get text body | grep -iE "page|next|prev" | head
+-> [5 chars] "[]"
+
+$ agent-browser eval "document.querySelector('main, body').innerHTML.slice(-1500)"
+-> [1584 chars] "chive</button></div></div><div id=\"sentinel\" style=\"height:40px\">Loading more…</div><div id=\"toast\" role=\"status\"></div>\n<script>\nconst first=[\"Alex\",\"Bo\",\"Chen\",\"Dana\",\"Elif\",\"Femi\",\"Gus\",\"Hana\",\"Ivo\",\"Jude\",\"Kai\",\"Lena\"],last=\"ABCDEFGHJKLM\";\nconst topics=[\"Invoice\",\"Standup notes\",\"Release checklist\",\"Lunch order\",\"Travel booking\",\"Design review\",\"On-call swap\",\"Budget draft\",\"Hiring loop\",\"Retro actions\"];\nconst msgs=[];for(let i=0;i< …ox';}\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\n</script>\n"
+
+SAY: I can see the data: Priya N. is at index 44 (needs scrolling). Let me load more rows, then click her Archive button and accept the confirmation dialog.
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  while (typeof shown !== 'undefined' ? false : false) {}
+  while (window.shown !== undefined && window.shown < 45) {}
+  // shown is a top-level let; fall back: call more via global scope
+  return JSON.stringify(typeof more);
+})()
+JS
+-> [15 chars] "\"function\""
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  while (document.querySelectorAll('.row').length < 45) more();
+  const rows = [...document.querySelectorAll('.row')];
+  const r = rows.find(r => r.children[0].textContent === 'Priya N.');
+  if (!r) return 'not found';
+  r.children[1].id = 'priya-subj';
+  r.children[2].id = 'priya-btn';
+  return JSON.stringify({subject: r.children[1].textContent, rows: rows.length});
+})()
+JS
+-> [74 chars] "{\"subject\":\"Q3 vendor audit — rescheduled to the 19th\",\"rows\":48}"
+
+SAY: Found it. Subject: **Q3 vendor audit — rescheduled to the 19th**. Now archive it and confirm:
+$ agent-browser click #priya-btn; agent-browser dialog accept; agent-browser get text #toast
+-> [117 chars] Missing arguments for: click
+Usage: agent-browser click <selector> [--new-tab] [--human]
+
+
+Command exited with code 1
+$ agent-browser click "#priya-btn"; agent-browser dialog accept; agent-browser get text "#toast"
+-> [172 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+Archived. Receipt #A-7028
+
+SAY: Done. Summary:
+
+1. **Priya N.'s message subject:** "Q3 vendor audit — rescheduled to the 19th"
+2. **Archived:** Clicked her Archive button, accepted the "Archive this message?" confirmation dialog
+3. **Receipt number shown:** `A-7028` (toast: "Archived. Receipt #A-7028")
+
+ANSWER: Subject "Q3 vendor audit — rescheduled to the 19th"; receipt #A-7028

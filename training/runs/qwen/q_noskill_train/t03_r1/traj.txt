@@ -1,0 +1,314 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r1", "correct": true, "score": 0.7, "wtok": 534972, "out_tok": 15532, "turns": 44, "secs": 241, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://the-internet.herokuapp.com/tables && agent-browser snapshot 2>&1 | grep -n -i "due" 
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ agent-browser snapshot 2>&1 | head -60
+-> [13 chars] (empty page)
+
+$ agent-browser eval "document.title + ' | ' + document.readyState" 2>&1; agent-browser open https://the-internet.herokuapp.com/tables 2>&1
+-> [124 chars] " | loading"
+✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ sleep 10; agent-browser eval "document.title + ' | ' + document.readyState + ' | ' + document.body.innerText.length" 2>&1
+-> [33 chars] "The Internet | complete | 1117"
+
+$ agent-browser snapshot 2>&1 | grep -n -i "due\|example 2" 
+-> [129 chars] 16:        - columnheader "Due" [ref=e57]
+55:  - heading "Example 2" [level=4, ref=e4]
+64:        - columnheader "Due" [ref=e71]
+
+$ agent-browser click e71 && sleep 1 && agent-browser click e71 && sleep 1 && agent-browser snapshot 2>&1 | sed -n '55,100p'
+-> [1566 chars] ✓ Done
+✓ Done
+  - heading "Example 2" [level=4, ref=e4]
+  - paragraph
+    - StaticText "Class and ID attributes to signify groupings of rows and columns"
+  - table
+    - rowgroup
+      - row
+        - columnheader "Last Name" [ref=e68]
+        - columnheader "First Name" [ref=e69]
+        - columnheader "Email" [ref=e70]
+        - columnheader "Due" [ref=e71]
+        - columnheader "Web Site" [ref=e72]
+        - columnheader "Action" [ref=e73]
+    - row
+      - cell "Smith" [ref=e29]
+      - cel …onway@earthlink.net" [ref=e49]
+      - cell "$50.00" [ref=e50]
+      - cell "http://www.timconway.com" [ref=e51]
+      - cell "edit delete" [ref=e52]
+
+$ agent-browser snapshot 2>&1 | sed -n '/Example 2/,/Example 3/p' | grep "cell" 
+-> [880 chars]       - cell "Smith" [ref=e29]
+      - cell "John" [ref=e30]
+      - cell "jsmith@example.com" [ref=e31]
+      - cell "$50.00" [ref=e32]
+      - cell "http://www.jsmith.com" [ref=e33]
+      - cell "edit delete" [ref=e34]
+      - cell "Bach" [ref=e35]
+      - cell "Frank" [ref=e36]
+      - cell "fbach@yahoo.com" [ref=e37]
+      - cell "$51.00" [ref=e38]
+      - cell "http://www.frank.com" [ref=e39]
+      - cell "edit delete" [ref=e40]
+      - cell "Doe" [ref=e41]
+      - cell "Jason" [ref=e42]
+     …onway@earthlink.net" [ref=e49]
+      - cell "$50.00" [ref=e50]
+      - cell "http://www.timconway.com" [ref=e51]
+      - cell "edit delete" [ref=e52]
+
+$ agent-browser eval "Array.from(document.querySelectorAll('table')).map((t,i)=>{const rows=Array.from(t.querySelectorAll('tbody tr')).map(r=>Array.from(r.cells).slice(0,4).map(c=>c.textContent.trim()).join(' | '));return 'TABLE'+i+':: '+rows.join(' ;; ');}).join('\n')" 2>&1
+-> [375 chars] "TABLE0:: Smith | John | jsmith@example.com | $50.00 ;; Bach | Frank | fbach@yahoo.com | $51.00 ;; Doe | Jason | jdoe@hotmail.com | $100.00 ;; Conway | Tim | tconway@earthlink.net | $50.00\nTABLE1:: Smith | John | jsmith@example.com | $50.00 ;; Bach | Frank | fbach@yahoo.com | $51.00 ;; Doe | Jason | jdoe@hotmail.com | $100.00 ;; Conway | Tim | tconway@earthlink.net | $50.00"
+
+SAY: The table appears to be back in original order. Let me check the current state and click the header to verify sorting behavior:
+$ agent-browser snapshot 2>&1 | grep -A2 -B2 'columnheader "Due"' | head -30
+-> [427 chars]         - columnheader "First Name" [ref=e55]
+        - columnheader "Email" [ref=e56]
+        - columnheader "Due" [ref=e57]
+        - columnheader "Web Site" [ref=e58]
+        - columnheader "Action" [ref=e59]
+--
+        - columnheader "First Name" [ref=e69]
+        - columnheader "Email" [ref=e70]
+        - columnheader "Due" [ref=e71]
+        - columnheader "Web Site" [ref=e72]
+        - columnheader "Action" [ref=e73]
+
+$ agent-browser click e71 && agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(r=>r.cells[3].textContent.trim()).join(' , ')" 2>&1
+-> [44 chars] ✓ Done
+"$50.00 , $51.00 , $100.00 , $50.00"
+
+$ agent-browser eval "
+const th = document.querySelectorAll('table')[1].querySelector('th:nth-child(3)');
+th.click();
+setTimeout(()=>{},0);
+'clicked via js: ' + Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(r=>r.cells[3].textContent.trim()).join(' , ')
+" 2>&1
+-> [53 chars] "clicked via js: $50.00 , $51.00 , $100.00 , $50.00"
+
+$ agent-browser eval "
+const t=document.querySelectorAll('table')[1];
+JSON.stringify({html: t.outerHTML.slice(0,400), scripts: Array.from(document.scripts).map(s=>s.src||s.textContent.slice(0,80))})" 2>&1
+-> [1079 chars] "{\"html\":\"<table id=\\\"table2\\\" class=\\\"tablesorter\\\">\\n    <thead>\\n      <tr>\\n        <th><span class=\\\"last-name\\\">Last Name</span></th>\\n        <th><span class=\\\"first-name\\\">First Name</span></th>\\n        <th><span class=\\\"email\\\">Email</span></th>\\n        <th><span class=\\\"dues\\\">Due</span></th>\\n        <th><span class=\\\"web-site\\\">Web Site</span></th>\\n        <th><span class=\\\"action\\\">Action</span></th>\\n      </tr>\\n  \",\"scripts\":[\"h …om/js/vendor/jquery.tablesorter.min.js\",\"\\n$(function(){\\n  $(\\\"#table1\\\").tablesorter();\\n  $(\\\"#table2\\\").tablesorter();\\n});\\n\"]}"
+
+$ agent-browser eval "
+const r={};
+r.jquery=window.jQuery?jQuery.fn.jquery:'none';
+r.tablesorter=window.jQuery?('tablesorter' in jQuery.fn)?'yes':'no':'-';
+const th=document.querySelectorAll('table')[1].querySelectorAll('th');
+r.thClasses=Array.from(th).map(t=>t.className);
+r.thHTML=th[3].outerHTML;
+JSON.stringify(r)" 2>&1
+-> [103 chars] ✗ Evaluation error: SyntaxError: Identifier 'th' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval "
+var r={};
+r.jquery=window.jQuery?jQuery.fn.jquery:'none';
+r.tablesorter=window.jQuery?('tablesorter' in jQuery.fn)?'yes':'no':'-';
+var ths=document.querySelectorAll('table')[1].querySelectorAll('th');
+r.thClasses=Array.from(ths).map(function(t){return t.className;});
+r.th4=ths[3].outerHTML;
+JSON.stringify(r)" 2>&1
+-> [152 chars] "{\"jquery\":\"1.11.3\",\"tablesorter\":\"no\",\"thClasses\":[\"\",\"\",\"\",\"\",\"\",\"\"],\"th4\":\"<th><span class=\\\"dues\\\">Due</span></th>\"}"
+
+$ agent-browser eval "
+var s=document.querySelector('script[src*=\"tablesorter\"]');
+s ? 'found: '+s.src : 'not in DOM'" 2>&1
+-> [80 chars] "found: https://the-internet.herokuapp.com/js/vendor/jquery.tablesorter.min.js"
+
+$ agent-browser eval "
+fetch('https://the-internet.herokuapp.com/js/vendor/jquery.tablesorter.min.js').then(function(r){return r.text().then(function(t){window.__ts=t; return r.status+' len='+t.length+' head='+t.slice(0,120);});})" 2>&1
+-> [147 chars] "200 len=16514 head=\n(function($){$.extend({tablesorter:new\nfunction(){var parsers=[],widgets=[];this.defaults={cssHeader:\"header\",cssAsc:\"h"
+
+$ agent-browser eval "
+var t=window.__ts;
+try{ (new Function(t+';return window.jQuery.fn.tablesorter?\"attached\":\"not-attached'))(); }catch(e){ 'ERR: '+e.message }" 2>&1
+-> [125 chars] ✗ Evaluation error: SyntaxError: Identifier 't' has already been declared
+    at <anonymous>:1:1
+
+
+Command exited with code 1
+$ agent-browser eval "
+try{ new Function(window.__ts+';return (typeof jQuery.fn.tablesorter)!==\"undefined\"?\"attached\":\"no\"')(); }catch(e){ 'ERR: '+e.message }" 2>&1
+-> [11 chars] "attached"
+
+SAY: The plugin failed to attach initially, but I can now initialize it on `#table2` and click the Due header:
+$ agent-browser eval "jQuery('#table2').tablesorter(); 'init done, header class: ' + document.querySelectorAll('table')[1].querySelector('th').className" 2>&1
+-> [34 chars] "init done, header class: header"
+
+$ agent-browser click e71 && agent-browser eval "var o1=Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(' , ');o1" 2>&1
+-> [44 chars] ✓ Done
+"$50.00 , $51.00 , $100.00 , $50.00"
+
+$ agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('th')).map(function(x){return x.className;}).join(' | ')" 2>&1
+-> [69 chars] "header | header | header | header headerSortDown | header | header"
+
+$ agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return Array.from(r.cells).map(function(c){return c.textContent.trim();}).join(' | ');}).join(' ;; ')" 2>&1
+-> [375 chars] "Smith | John | jsmith@example.com | $50.00 | http://www.jsmith.com | edit\n          delete ;; Conway | Tim | tconway@earthlink.net | $50.00 | http://www.timconway.com | edit\n          delete ;; Bach | Frank | fbach@yahoo.com | $51.00 | http://www.frank.com | edit\n          delete ;; Doe | Jason | jdoe@hotmail.com | $100.00 | http://www.jdoe.com | edit\n          delete"
+
+SAY: Now the table is sorted ascending. Clicking the Due header once more (second click):
+$ agent-browser click e71 && agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return Array.from(r.cells).slice(0,4).map(function(c){return c.textContent.trim();}).join(' | ');}).join(' ;; ')" 2>&1
+-> [186 chars] ✓ Done
+"Smith | John | jsmith@example.com | $50.00 ;; Conway | Tim | tconway@earthlink.net | $50.00 ;; Bach | Frank | fbach@yahoo.com | $51.00 ;; Doe | Jason | jdoe@hotmail.com | $100.00"
+
+$ agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('th')).map(function(x){return x.className;}).join(' | ')" 2>&1; agent-browser click e71; sleep 1; agent-browser eval "var cls=Array.from(document.querySelectorAll('table')[1].querySelectorAll('th')).map(function(x){return x.className;}).join(' | '); var rows=Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(', '); cls + ' :: ' + rows" 2>&1
+-> [178 chars] "header | header | header | header headerSortUp | header | header"
+✓ Done
+"header | header | header | header headerSortDown | header | header :: $50.00, $50.00, $51.00, $100.00"
+
+SAY: Let me redo this cleanly — reload the page, re-initialize, and click twice with observation after each click:
+$ agent-browser open https://the-internet.herokuapp.com/tables; sleep 12; agent-browser eval "document.readyState" 2>&1
+-> [94 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"complete"
+
+$ agent-browser eval "
+var attached = (window.jQuery && jQuery.fn.tablesorter) ? 'yes' : 'no';
+if (attached === 'no') { jQuery('#table1,#table2').tablesorter ? 'init ok' : (jQuery('#table1,#table2').tablesorter(), 'init after'); }
+attached" 2>&1
+-> [6 chars] "yes"
+
+$ agent-browser eval "
+var ths=document.querySelectorAll('table')[1].querySelectorAll('th');
+Array.from(ths).map(function(x){return x.className;}).join(' | ') + ' || rows: ' + Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(',')" 2>&1
+-> [92 chars] "header | header | header | header | header | header || rows: $50.00,$51.00,$100.00,$50.00"
+
+SAY: Fresh state confirmed. Now click the Example 2 'Due' header twice:
+$ agent-browser snapshot 2>&1 | grep 'Example 2' -A3; agent-browser snapshot 2>&1 | grep -n 'columnheader "Due"'
+-> [237 chars]   - heading "Example 2" [level=4, ref=e85]
+  - paragraph
+    - StaticText "Class and ID attributes to signify groupings of rows and columns"
+  - table
+16:        - columnheader "Due" [ref=e138]
+64:        - columnheader "Due" [ref=e152]
+
+$ agent-browser click e152 && agent-browser eval "document.querySelectorAll('table')[1].querySelectorAll('tbody tr')[0].cells[3].textContent.trim() + ' / ' + Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(',')" 2>&1
+-> [47 chars] ✓ Done
+"$50.00 / $50.00,$50.00,$51.00,$100.00"
+
+$ agent-browser click e152 && agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(' , ') + '  ||  first row: ' + Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr'))[0].cells[2].textContent.trim()" 2>&1
+-> [77 chars] ✓ Done
+"$50.00 , $50.00 , $51.00 , $100.00  ||  first row: jsmith@example.com"
+
+$ agent-browser eval "document.querySelectorAll('table')[1].querySelectorAll('th')[3].className" 2>&1; agent-browser click e152; agent-browser eval "document.querySelectorAll('table')[1].querySelectorAll('th')[3].className + ' :: ' + Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(' , ')" 2>&1
+-> [89 chars] "header headerSortUp"
+✓ Done
+"header headerSortUp :: $100.00 , $51.00 , $50.00 , $50.00"
+
+$ agent-browser click e152; agent-browser eval "document.querySelectorAll('table')[1].querySelectorAll('th')[3].className + ' :: ' + Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(' , ')" 2>&1
+-> [67 chars] ✓ Done
+"header headerSortUp :: $100.00 , $51.00 , $50.00 , $50.00"
+
+SAY: The toggle behavior seems off-by-one. Let me inspect the plugin source to understand:
+$ agent-browser eval "
+var src=window.__ts || 'missing';
+if(src==='missing'){ 'missing' } else {
+var i=src.indexOf('headerSort');
+src.slice(i-200, i+400);
+}" 2>&1
+-> [10 chars] "missing"
+
+$ agent-browser eval "
+fetch('https://the-internet.herokuapp.com/js/vendor/jquery.tablesorter.min.js').then(function(r){return r.text();}).then(function(txt){
+window.__ts2=txt;
+var out=[];
+var idx=txt.indexOf('headerSort');
+out.push('headerSort@'+idx+': '+txt.slice(idx-300,idx+300));
+var j=txt.indexOf('descending');
+out.push('descending@'+j+': '+txt.slice(j-200,j+300));
+out.join(' ==== ');
+})" 2>&1
+-> [5 chars] null
+
+$ agent-browser eval "fetch('https://the-internet.herokuapp.com/js/vendor/jquery.tablesorter.min.js').then(function(r){return r.text();}).then(function(txt){window.__ts2=txt; return 'stored len '+txt.length;})" 2>&1
+-> [19 chars] "stored len 16514"
+
+$ agent-browser eval "
+var txt=window.__ts2; var out=[];
+['descending','headerSort','bindEvents','click'].forEach(function(k){var i=txt.indexOf(k); if(i>=0) out.push('== '+k+' @'+i+':\n'+txt.slice(Math.max(0,i-250), i+350)); });
+out.join('\n');
+" 2>&1
+-> [1139 chars] "== headerSort @119:\n\n(function($){$.extend({tablesorter:new\nfunction(){var parsers=[],widgets=[];this.defaults={cssHeader:\"header\",cssAsc:\"headerSortUp\",cssDesc:\"headerSortDown\",cssChildRow:\"expand-child\",sortInitialOrder:\"asc\",sortMultiSortKey:\"shiftKey\",sortForce:null,sortAppend:null,sortLocaleCompare:true,textExtraction:\"simple\",parsers:{},widgets:[],widgetZebra:{css:[\"even\",\"odd\"]},headers:{},widthFixed:false,cancelSelection:true,sortList:[],headerList:[],dateFormat:\"u …is.count++%2;if(this.lockedOrder)this.order=this.lockedOrder;if(!e[config.sortMultiSortKey]){config.sortList=[];if(config.sortForce!=null){var a=con"
+
+$ agent-browser eval "
+var txt=window.__ts2; var i=txt.indexOf('this.count++');
+txt.slice(i, i+900);" 2>&1
+-> [905 chars] "this.count++%2;if(this.lockedOrder)this.order=this.lockedOrder;if(!e[config.sortMultiSortKey]){config.sortList=[];if(config.sortForce!=null){var a=config.sortForce;for(var j=0;j<a.length;j++){if(a[j][0]!=i){config.sortList.push(a[j]);}}}config.sortList.push([i,this.order]);}else{if(isValueInArray(i,config.sortList)){for(var j=0;j<config.sortList.length;j++){var s=config.sortList[j],o=config.headerList[s[0]];if(s[0]==i){o.count=s[1];o.count++;s[1]=o.count%2;}}}else{config.sortList.push([i,this.o …return false};return false;}});$this.bind(\"update\",function(){var me=this;setTimeout(function(){me.config.parsers=buildParserCache(me,$headers);ca"
+
+SAY: Found it — the sort applies inside a `setTimeout(..., 1)` so my immediate evals read stale state. Let me redo with proper waits:
+$ agent-browser open https://the-internet.herokuapp.com/tables; sleep 12; agent-browser eval "
+var ok = (window.jQuery && jQuery.fn.tablesorternot); 'x'" 2>&1; agent-browser eval "
+var st={};
+st.plugin = (window.jQuery && jQuery.fn.tablesorter)?'yes':'no';
+if(st.plugin==='yes'){ var h=document.querySelectorAll('table')[1].querySelectorAll('th')[0]; st.cls=h.className; }
+st.rows = Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(',');
+JSON.stringify(st);" 2>&1
+-> [147 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/tables
+"x"
+"{\"plugin\":\"yes\",\"cls\":\"header\",\"rows\":\"$50.00,$51.00,$100.00,$50.00\"}"
+
+$ agent-browser snapshot 2>&1 | grep -n 'columnheader "Due"'; echo ---; agent-browser click e152; sleep 2; agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(' , ') + '  [first row email: ' + document.querySelectorAll('table')[1].querySelectorAll('tbody tr')[0].cells[2].textContent.trim() + ']'"; echo ---; agent-browser click e152; sleep 2; agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(' , ') + '  [first row email: ' + document.querySelectorAll('table')[1].querySelectorAll('tbody tr')[0].cells[2].textContent.trim() + ']'"; echo ---; agent-browser eval "document.querySelectorAll('table')[1].querySelectorAll('th')[3].className"
+-> [295 chars] 16:        - columnheader "Due" [ref=e219]
+64:        - columnheader "Due" [ref=e233]
+---
+✗ Unknown ref: e152
+"$50.00 , $51.00 , $100.00 , $50.00  [first row email: jsmith@example.com]"
+---
+✗ Unknown ref: e152
+"$50.00 , $51.00 , $100.00 , $50.00  [first row email: jsmith@example.com]"
+---
+"header"
+
+SAY: Refs changed after reload — the Due header is now e233. Clicking it twice with proper waits:
+$ agent-browser click e233; sleep 2; agent-browser eval "'after 1st click: ' + Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(' , ')"; echo ---; agent-browser click e233; sleep 2; agent-browser eval "'after 2nd click: ' + Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return r.cells[3].textContent.trim();}).join(' , ') + '  [first row email: ' + document.querySelectorAll('table')[1].querySelectorAll('tbody tr')[0].cells[2].textContent.trim() + ']'; 'cls: ' + document.querySelectorAll('table')[1].querySelectorAll('th')[3].className"
+-> [99 chars] ✓ Done
+"after 1st click: $50.00 , $50.00 , $51.00 , $100.00"
+---
+✓ Done
+"cls: header headerSortUp"
+
+$ agent-browser eval "Array.from(document.querySelectorAll('table')[1].querySelectorAll('tbody tr')).map(function(r){return Array.from(r.cells).slice(0,4).map(function(c){return c.textContent.trim();}).join(' | ');}).join(' ;; ')"
+-> [179 chars] "Doe | Jason | jdoe@hotmail.com | $100.00 ;; Bach | Frank | fbach@yahoo.com | $51.00 ;; Smith | John | jsmith@example.com | $50.00 ;; Conway | Tim | tconway@earthlink.net | $50.00"
+
+$ agent-browser screenshot /tmp/tables_desc.png 2>&1; agent-browser eval "document.querySelectorAll('table')[1].querySelectorAll('tbody tr')[0].cells[2].textContent.trim()"
+-> [62 chars] ✓ Screenshot saved to /tmp/tables_desc.png
+"jdoe@hotmail.com"
+
+SAY: Done. Summary of what happened in the browser:
+
+1. Opened https://the-internet.herokuapp.com/tables and located the "Due" column header of the Example 2 table (`#table2`).
+2. Clicked the "Due" header twice (with waits, since the tablesorter plugin applies the sort in a 1 ms `setTimeout`). First click → ascending, second click → descending.
+3. After two clicks, the Example 2 rows are ordered by Due descending: `$100.00, $51.00, $50.00, $50.00`.
+4. The first data row is: **Doe | Jason | jdoe@hotma

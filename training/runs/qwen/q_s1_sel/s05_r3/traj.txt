@@ -1,0 +1,90 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r3", "correct": true, "score": 0.895, "wtok": 70016, "out_tok": 2660, "turns": 13, "secs": 43, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; archived, receipt number A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('button')).filter(b=>b.textContent.trim()==='Archive').map((b,i)=>{const row=b.closest('tr')||b.parentElement||b;return {i,html:row.outerHTML.slice(0,500)}}).slice(0,15))"
+-> [2481 chars] "[{\"i\":0,\"html\":\"<div class=\\\"row\\\"><span class=\\\"from\\\">Alex A.</span><span class=\\\"subj\\\">Invoice #100</span><button>Archive</button></div>\"},{\"i\":1,\"html\":\"<div class=\\\"row\\\"><span class=\\\"from\\\">Femi H.</span><span class=\\\"subj\\\">Lunch order #113</span><button>Archive</button></div>\"},{\"i\":2,\"html\":\"<div class=\\\"row\\\"><span class=\\\"from\\\">Kai C.</span><span class=\\\"subj\\\">On-call swap #126</span><button>Archive</button></div>\"},{\"i\":3,\ …div class=\\\"row\\\"><span class=\\\"from\\\">Kai C.</span><span class=\\\"subj\\\">Release checklist #282</span><button>Archive</button></div>\"}]"
+
+$ agent-browser eval "const rows=[...document.querySelectorAll('.row')];const p=rows.find(r=>r.querySelector('.from').textContent.trim()==='Priya N.');JSON.stringify({count:rows.length,priya:p?{subject:p.querySelector('.subj').textContent.trim(),idx:rows.indexOf(p)}:null})"
+-> [32 chars] "{\"count\":24,\"priya\":null}"
+
+$ agent-browser eval "document.body.innerText"; agent-browser snapshot -i
+-> [1648 chars] "Inbox\n\nShowing 24 of 60\n\nAlex A.\nInvoice #100\nArchive\nFemi H.\nLunch order #113\nArchive\nKai C.\nOn-call swap #126\nArchive\nDana K.\nRetro actions #139\nArchive\nIvo E.\nRelease checklist #152\nArchive\nBo M.\nDesign review #165\nArchive\nGus G.\nHiring loop #178\nArchive\nLena B.\nStandup notes #191\nArchive\nElif J.\nTravel booking #204\nArchive\nJude D.\nBudget draft #217\nArchive\nChen L.\nInvoice #230\nArchive\nHana F.\nLunch order #243\nArchive\nAlex A.\nOn-call swap #256\nArchiv …e20]
+- button "Archive" [ref=e21]
+- button "Archive" [ref=e22]
+- button "Archive" [ref=e23]
+- button "Archive" [ref=e24]
+- button "Archive" [ref=e25]
+
+SAY: The list is lazy-loading (24 of 60). Let me scroll to trigger loading more.
+$ for i in 1 2 3 4 5; do agent-browser eval "window.scrollTo(0,document.body.scrollHeight); 'ok'"; agent-browser wait --fn "[...document.querySelectorAll('.row')].some(r=>r.querySelector('.from').textContent.trim()==='Priya N.')||document.querySelectorAll('.row').length>=60"; done; agent-browser eval "const rows=[...document.querySelectorAll('.row')];JSON.stringify({count:rows.length,priya:rows.map((r,i)=>({i,from:r.querySelector('.from').textContent.trim(),subj:r.querySelector('.subj').textContent.trim()})).filter(m=>m.from==='Priya N.')})"
+-> [181 chars] "ok"
+✗ Wait timed out after 25000ms
+"ok"
+true
+"ok"
+true
+"ok"
+true
+"ok"
+true
+✗ Evaluation error: SyntaxError: Identifier 'rows' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval "(()=>{const rs=[...document.querySelectorAll('.row')];return JSON.stringify({count:rs.length,priya:rs.map((r,i)=>({i,from:r.querySelector('.from').textContent.trim(),subj:r.querySelector('.subj').textContent.trim()})).filter(m=>m.from==='Priya N.')})})()"
+-> [117 chars] "{\"count\":60,\"priya\":[{\"i\":44,\"from\":\"Priya N.\",\"subj\":\"Q3 vendor audit — rescheduled to the 19th\"}]}"
+
+SAY: Found Priya N.'s message: "Q3 vendor audit — rescheduled to the 19th". Now archiving:
+$ agent-browser eval "(()=>{const rs=[...document.querySelectorAll('.row')];const r=rs.find(r=>r.querySelector('.from').textContent.trim()==='Priya N.');r.querySelector('button').click();return 'clicked'})"
+-> [3 chars] {}
+
+$ agent-browser dialog accept 2>&1; agent-browser eval "(()=>{const rs=[...document.querySelectorAll('.row')];const r=rs.find(r=>r.querySelector('.from')&&r.querySelector('.from').textContent.trim()==='Priya N.');return r?'still there':'gone'})()"
+-> [78 chars] ✗ CDP error (Page.handleJavaScriptDialog): No dialog is showing
+"still there"
+
+$ agent-browser snapshot -i | grep -n "Archive" | sed -n '45p'; agent-browser click ".row:has(.from:is(:scope ~ *)):not(:has(*))" 2>/dev/null; echo ---
+-> [36 chars] 46:- button "Archive" [ref=e46]
+---
+
+$ agent-browser click e46; agent-browser dialog accept
+-> [146 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+
+$ agent-browser eval "document.body.innerText"; agent-browser snapshot -i
+-> [3981 chars] "Inbox\n\nShowing 60 of 60\n\nAlex A.\nInvoice #100\nArchive\nFemi H.\nLunch order #113\nArchive\nKai C.\nOn-call swap #126\nArchive\nDana K.\nRetro actions #139\nArchive\nIvo E.\nRelease checklist #152\nArchive\nBo M.\nDesign review #165\nArchive\nGus G.\nHiring loop #178\nArchive\nLena B.\nStandup notes #191\nArchive\nElif J.\nTravel booking #204\nArchive\nJude D.\nBudget draft #217\nArchive\nChen L.\nInvoice #230\nArchive\nHana F.\nLunch order #243\nArchive\nAlex A.\nOn-call swap #256\nArchiv …e56]
+- button "Archive" [ref=e57]
+- button "Archive" [ref=e58]
+- button "Archive" [ref=e59]
+- button "Archive" [ref=e60]
+- button "Archive" [ref=e61]
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Done. Summary of what happened in the browser:
+
+1. Opened `http://localhost:8791/inbox.html` — the inbox lazy-loads ("Showing 24 of 60").
+2. Scrolled to load all 60 messages; found the message from **Priya N.** with subject **"Q3 vendor audit — rescheduled to the 19th"**.
+3. Clicked its **Archive** button; the confirmation dialog "Archive this message?" appeared and I accepted it.
+4. The message was removed and the page showed **"Archived. Receipt #A-7028"**.
+
+ANSWER: Subject: "Q3 vendor audit —

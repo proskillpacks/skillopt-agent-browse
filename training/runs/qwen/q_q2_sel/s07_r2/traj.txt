@@ -1,0 +1,47 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r2", "correct": true, "score": 0.957, "wtok": 28407, "out_tok": 1575, "turns": 8, "secs": 66, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#column-a"; agent-browser eval "JSON.stringify([document.querySelector('#column-a ul li').textContent, document.querySelector('#column-b ul li').textContent])"
+-> [228 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:58
+
+
+Command exited with code 1
+$ agent-browser wait "#column-a ul li" ; agent-browser eval "JSON.stringify([document.querySelector('#column-a ul li').textContent.trim(), document.querySelector('#column-b ul li').textContent.trim()])"
+-> [169 chars] ✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:58
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop"; agent-browser wait "#column-a"; agent-browser eval "document.body.innerHTML.length; document.querySelector('#column-a') ? 'yes' : 'no'"
+-> [79 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+✓ Done
+"yes"
+
+$ agent-browser eval "JSON.stringify([document.querySelector('#column-a ul li').textContent.trim(), document.querySelector('#column-b ul li').textContent.trim()])"
+-> [138 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:58
+
+
+Command exited with code 1
+$ agent-browser eval "document.querySelector('#column-a').outerHTML.slice(0,500)"
+-> [84 chars] "<div class=\"column\" id=\"column-a\" draggable=\"true\"><header>A</header></div>"
+
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...document.querySelectorAll('#column-a header, #column-b header')].map(h=>h.textContent))"
+-> [23 chars] ✓ Done
+"[\"B\",\"A\"]"
+
+$ agent-browser eval "JSON.stringify([['A',document.getElementById('column-a').getBoundingClientRect().x],['B',document.getElementById('column-b').getBoundingClientRect().x]])"
+-> [27 chars] "[[\"A\",15],[\"B\",230]]"
+
+SAY: The drag was successful. After dropping box A onto box B, the boxes swapped positions:
+
+- Left box (at x=15) now shows header **B**
+- Right box (at x=230) now shows header **A**
+
+ANSWER: B, A

@@ -1,0 +1,260 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r2", "correct": true, "score": 0.825, "wtok": 116846, "out_tok": 6297, "turns": 13, "secs": 52, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest book is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/page-1.html"; agent-browser wait "article.product_pod"; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>({t:a.querySelector('h3 a').getAttribute('title'),p:a.querySelector('.price_color').textContent.trim()})))" > /tmp/b1.json; echo "page1: $(wc -c < /tmp/b1.json) bytes"; agent-browser eval "document.querySelector('li.next').textContent" 
+-> [126 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-1.html
+✓ Done
+page1: 1331 bytes
+"next"
+
+$ for p in $(seq 2 50); do agent-browser open "https://books.toscrape.com/catalogue/page-$p.html"; agent-browser wait "article.product_pod"; agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a=>({t:a.querySelector('h3 a').getAttribute('title'),p:a.querySelector('.price_color').textContent.trim()})))" > /tmp/b$p.json; done; agent-browser close; wc -c /tmp/b*.json | tail -1
+-> [5020 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-2.html
+✓ Done
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-3.html
+✓ Done
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-4.html
+✓ Done
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-5.html
+✓ Done
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-6.html
+✓  …ge-49.html
+✓ Done
+✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/page-50.html
+✓ Done
+✓ Browser closed
+139047 total
+
+$ head -c 200 /tmp/b1.json; echo; echo ---; python3 - <<'EOF'
+import json, re, glob
+
+books=[]
+for f in sorted(glob.glob('/tmp/b*.json')):
+    s=open(f).read().strip()
+    data=json.loads(s)
+    if isinstance(data,str): data=json.loads(data)
+    books.extend(data)
+
+print("total books:", len(books))
+def val(p): return float(p.replace('£','').replace(',',''))
+under=[b for b in books if val(b['p']) < 12.00]
+print("less than £12.00:", len(under))
+cheapest=min(books, key=lambda b: val(b['p']))
+print("cheapest:", cheapest['t'], cheapest['p'])
+# verify unique count
+print("unique titles:", len(set(b['t'] for b in books)))
+EOF
+-> [375 chars] "[{\"t\":\"A Light in the Attic\",\"p\":\"£51.77\"},{\"t\":\"Tipping the Velvet\",\"p\":\"£53.74\"},{\"t\":\"Soumission\",\"p\":\"£50.10\"},{\"t\":\"Sharp Objects\",\"p\":\"£47.82\"},{\"t\":\"Sapi
+---
+total books: 2011
+Traceback (most recent call last):
+  File "<stdin>", line 12, in <module>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+$ python3 - <<'EOF'
+import json
+s=open('/tmp/b1.json').read().strip()
+d=json.loads(s)
+print(type(d))
+if isinstance(d,str):
+    d=json.loads(d); print(type(d), len(d))
+print(d[:2] if not isinstance(d,str) else d[:80])
+EOF
+-> [123 chars] <class 'str'>
+<class 'list'> 20
+[{'t': 'A Light in the Attic', 'p': '£51.77'}, {'t': 'Tipping the Velvet', 'p': '£53.74'}]
+
+$ python3 - <<'EOF'
+import json, glob
+
+def load(s):
+    s=s.strip()
+    d=json.loads(s)
+    while isinstance(d,str):
+        d=json.loads(d)
+    return d
+
+books=[]
+for f in sorted(glob.glob('/tmp/b*.json')):
+    d=load(open(f).read())
+    if isinstance(d,str): d=[d]
+    books.extend(d)
+
+print("total books:", len(books), "unique:", len(set(b['t'] for b in books)))
+val=lambda p: float(p.replace('£',''))
+under=[b for b in books if val(b['p']) < 12.0]
+print("less than £12.00:", len(under))
+c=min(books, key=lambda b: val(b['p']))
+print("cheapest:", c['t'], c['p'])
+low5=sorted(books, key=lambda b: val(b['p']))[:5]
+print(low5)
+EOF
+-> [196 chars] Traceback (most recent call last):
+  File "<stdin>", line 16, in <module>
+  File "<stdin>", line 16, in <genexpr>
+TypeError: string indices must be integers, not 'str'
+
+
+Command exited with code 1
+$ python3 - <<'EOF'
+import json, glob
+for f in sorted(glob.glob('/tmp/b*.json')):
+    s=open(f).read().strip()
+    d=json.loads(s)
+    depth=0
+    while isinstance(d,str) and depth<5:
+        d=json.loads(d); depth+=1
+    if isinstance(d,str):
+        print(f, "still str after", depth, ":", d[:60])
+    elif not isinstance(d,list):
+        print(f, "not list:", type(d), str(d)[:60])
+    else:
+        for item in d:
+            if not isinstance(item,dict):
+                print(f, "item not dict:", repr(item)[:60]); break
+EOF
+echo done
+-> [306 chars] /tmp/b.json not list: <class 'dict'> {'handle': 'b', 'body_html': "<h2>How to choose your crème g
+/tmp/blocks.json not list: <class 'dict'> {'1': "Sorry, that is a rotten way to start the week. Stripe
+/tmp/bls.json not list: <class 'dict'> {'status': 'REQUEST_FAILED', 'responseTime': 0, 'message': [
+done
+
+$ python3 - <<'EOF'
+import json, glob, re
+
+files=sorted(glob.glob('/tmp/b*.json'), key=lambda f:int(re.search(r'(\d+)$',f).group(1)))
+books=[]
+for f in files:
+    d=json.loads(open(f).read().strip())
+    while isinstance(d,str): d=json.loads(d)
+    books.extend(d)
+
+print("files:", len(files), "total books:", len(books), "unique:", len(set(b['t'] for b in books)))
+val=lambda p: float(p.replace('£',''))
+under=[b for b in books if val(b['p']) < 12.0]
+print("less than £12.00:", len(under))
+c=min(books, key=lambda b: val(b['p']))
+print("cheapest:", c['t'], c['p'])
+print("5 cheapest:", [(b['t'],b['p']) for b in sorted(books,key=lambda b:val(b['p']))[:5]])
+EOF
+-> [198 chars] Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "<stdin>", line 3, in <lambda>
+AttributeError: 'NoneType' object has no attribute 'group'
+
+
+Command exited with code 1
+$ python3 - <<'EOF'
+import json, glob, re
+files=[f for f in glob.glob('/tmp/b*.json') if re.fullmatch(r'/tmp/b\d+\.json', f)]
+files.sort(key=lambda f:int(re.search(r'(\d+)$',f).group(1)))
+books=[]
+for f in files:
+    d=json.loads(open(f).read().strip())
+    while isinstance(d,str): d=json.loads(d)
+    books.extend(d)
+
+print("files:", len(files), "total books:", len(books), "unique:", len(set(b['t'] for b in books)))
+val=lambda p: float(p.replace('£',''))
+under=[b for b in books if val(b['p']) < 12.0]
+print("less than £12.00:", len(under))
+c=min(books, key=lambda b: val(b['p']))
+print("cheapest:", c['t'], c['p'])
+print("5 cheapest:", [(b['t'],b['p']) for b in sorted(books,key=lambda b:val(b['p']))[:5]])
+print("ties at min:", [b['t'] for b in books if val(b['p'])==val(c['p'])])
+EOF
+-> [198 chars] Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "<stdin>", line 3, in <lambda>
+AttributeError: 'NoneType' object has no attribute 'group'
+
+
+Command exited with code 1
+$ ls /tmp/b*.json | head -5; python3 -c "
+import glob,re
+fs=[f for f in glob.glob('/tmp/b*.json') if re.fullmatch(r'/tmp/b\d+\.json', f)]
+print(len(fs)); print([f for f in fs if not re.search(r'\d+$', f)])
+"
+-> [915 chars] /tmp/b10.json
+/tmp/b11.json
+/tmp/b12.json
+/tmp/b13.json
+/tmp/b14.json
+50
+['/tmp/b6.json', '/tmp/b18.json', '/tmp/b31.json', '/tmp/b25.json', '/tmp/b3.json', '/tmp/b38.json', '/tmp/b40.json', '/tmp/b29.json', '/tmp/b28.json', '/tmp/b1.json', '/tmp/b5.json', '/tmp/b23.json', '/tmp/b45.json', '/tmp/b37.json', '/tmp/b24.json', '/tmp/b41.json', '/tmp/b11.json', '/tmp/b15.json', '/tmp/b26.json', '/tmp/b8.json', '/tmp/b4.json', '/tmp/b27.json', '/tmp/b46.json', '/tmp/b42.json', '/tmp/b36.json', '/tmp/b …mp/b48.json', '/tmp/b30.json', '/tmp/b21.json', '/tmp/b16.json', '/tmp/b13.json', '/tmp/b43.json', '/tmp/b47.json', '/tmp/b39.json', '/tmp/b17.json']
+
+$ python3 - <<'EOF'
+import json, glob, re
+files=[f for f in glob.glob('/tmp/b*.json') if re.fullmatch(r'/tmp/b\d+\.json', f)]
+files.sort(key=lambda f:int(re.search(r'(\d+)\.json$', f).group(1)))
+books=[]
+for f in files:
+    d=json.loads(open(f).read().strip())
+    while isinstance(d,str): d=json.loads(d)
+    books.extend(d)
+
+print("files:", len(files), "total books:", len(books), "unique titles:", len(set(b['t'] for b in books)))
+val=lambda p: float(p.replace('£',''))
+under=[b for b in books if val(b['p']) < 12.0]
+print("less than £12.00:", len(under))
+c=min(books, key=lambda b: val(b['p']))
+print("cheapest:", c['t'], c['p'])
+print("5 cheapest:", [(b['t'],b['p']) for b in sorted(books,key=lambda b:val(b['p']))[:5]])
+EOF
+-> [342 chars] files: 50 total books: 1000 unique titles: 999
+less than £12.00: 44
+cheapest: An Abundance of Katherines £10.00
+5 cheapest: [('An Abundance of Katherines', '£10.00'), ('The Origin of Species', '£10.01'), ('The Tipping Point: How Little Things Can Make a Big Difference', '£10.02'), ('Patience', '£10.16'), ('Greek Mythic History', '£10.23')]
+
+$ python3 - <<'EOF'
+import json, glob, re
+files=[f for f in glob.glob('/tmp/b*.json') if re.fullmatch(r'/tmp/b\d+\.json', f)]
+files.sort(key=lambda f:int(re.search(r'(\d+)\.json$', f).group(1)))
+seen={}
+for f in files:
+    d=json.loads(open(f).read().strip())
+    while isinstance(d,str): d=json.loads(d)
+    for b in d:
+        seen.setdefault(b['t'],[]).append(f)
+dups={t:f for t,f in seen.items() if len(f)>1}
+print("duplicates:", dups)
+print("pages with !=20 books:", [(f, len(json.loads(json.loads(open(f).read().strip())))) for f in files if len(json.loads(json.loads(open(f).read().strip())))!=20])
+EOF
+-> [101 chars] duplicates: {'The Star-Touched Queen': ['/tmp/b12.json', '/tmp/b18.json']}
+pages with !=20 books: []
+
+$ python3 - <<'EOF'
+import json, glob, re
+files=[f for f in glob.glob('/tmp/b*.json') if re.fullmatch(r'/tmp/b\d+\.json', f)]
+files.sort(key=lambda f:int(re.search(r'(\d+)\.json$', f).group(1)))
+books=[]
+for f in files:
+    d=json.loads(open(f).read().strip())
+    while isinstance(d,str): d=json.loads(d)
+    books.extend(d)
+val=lambda p: float(p.replace('£',''))
+ties=[b['t'] for b in books if val(b['p'])==10.0]
+print("ties at £10.00:", ties)
+print("books priced exactly £12.00 (excluded):", sum(1 for b in books if val(b['p'])==12.0))
+print("under-12 price range:", min(val(b['p']) for b in books), max(val(b['p']) for b in books))
+EOF
+-> [122 chars] ties at £10.00: ['An Abundance of Katherines']
+books priced exactly £12.00 (excluded): 0
+under-12 price range: 10.0 59.99
+
+SAY: I scraped all 50 catalogue pages (20 books each, 1000 listings total) with `agent-browser`, extracting each book's title and price via `eval`, then aggregated the results.
+
+Results:
+- **Books costing less than £12.00:** 44
+- **Cheapest book:** *An Abundance of Katherines* at **£10.00** (unique minimum, no ties; runner-up is *The Origin of Species* at £10.01)
+
+ANSWER: 44 books cost less than £12.00; the cheapest book is "An Abundance of Katherines" at £10.00

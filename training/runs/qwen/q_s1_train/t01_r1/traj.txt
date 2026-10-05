@@ -1,0 +1,44 @@
+TASK t01: Go to https://the-internet.herokuapp.com/dynamic_loading/2 , click Start, and report the text that eventually appears.
+EXPECT: ['hello world!']
+RESULT: {"id": "t01_r1", "correct": true, "score": 0.977, "wtok": 15275, "out_tok": 783, "turns": 5, "secs": 117, "timed_out": false, "curl": false, "answer": "Hello World!"}
+
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2; agent-browser snapshot -i; agent-browser click "#start" ; agent-browser wait --text "Hello World"; agent-browser get text "#loader"
+-> [389 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+✗ Element not found: #start. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Element not found: #loader. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+SAY: The page didn't finish loading on the first attempt, so I'll retry once more.
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2; agent-browser wait "#start"; agent-browser click "#start"; agent-browser wait --text "Hello World" "#loader"; agent-browser get text "#loader"; agent-browser close
+-> [256 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+✗ Element not found: #loader. Verify the selector, role, or name is correct and the element exists in the DOM.
+✓ Browser closed
+
+SAY: The `#loader` selector didn't match — let me inspect the actual DOM.
+$ agent-browser open https://the-internet.herokuapp.com/dynamic_loading/2; agent-browser eval "JSON.stringify({html: document.querySelector('#message,#start,#loader,#content').outerHTML, ids:[...document.querySelectorAll('body *')].slice(0,20).map(e=>e.id)})"; agent-browser snapshot -i
+-> [1243 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/dynamic_loading/2
+"{\"html\":\"<div id=\\\"content\\\" class=\\\"large-12 columns\\\">\\n        <script>\\n  $(function(){\\n    $('#start button').click(function(){\\n      $('#start').hide();\\n      $('#start').before(\\\"<div id='loading'>Loading... <img src='/img/ajax-loader.gif'></div>\\\");\\n      setTimeout(function() {\\n        $('#loading').hide();\\n        $('#loading').before(\\\"<div id='finish' style='display:none'><h4>Hello W …el=3, ref=e2]
+- heading "Example 2: Element rendered after the fact" [level=4, ref=e3]
+- button "Start" [ref=e4]
+- link "Elemental Selenium" [ref=e5]
+
+SAY: The page loaded this time. Now clicking Start and waiting for the rendered element.
+$ agent-browser click "#start button"; agent-browser wait "#finish" --timeout 15000; agent-browser wait --text "Hello World!" --timeout 5000; agent-browser eval "document.querySelector('#finish').textContent"; agent-browser close
+-> [59 chars] ✓ Done
+✓ Done
+Hello World!
+"Hello World!"
+✓ Browser closed
+
+SAY: After clicking **Start**, the page shows "Loading…" for 5 seconds, then a new `#finish` div is inserted into the DOM containing the text:
+
+**Hello World!**
+
+ANSWER: Hello World!

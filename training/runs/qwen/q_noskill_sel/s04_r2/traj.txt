@@ -1,0 +1,253 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r2", "correct": true, "score": 0.949, "wtok": 33781, "out_tok": 1030, "turns": 7, "secs": 10, "timed_out": false, "curl": false, "answer": "2011 Boston Bruins: 49 wins, Goals For (GF) = 269"}
+
+$ agent-browser --help 2>&1 | head -50
+$ env | grep -i browser 2>&1; env | grep -i PI_ 2>&1 | head
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+-> [521 chars] AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPACE=so-q_noskill_sel-s04_r2
+AGENT_BROWSER_SESSION=so-q_noskill_sel-s04_r2
+AGENT_BROWSER_PROFILE=/home/user/snap/chromium/common/ab-so/so-q_noskill_sel-s04_r2
+AGENT_BROWSER_HEADED=1
+PI_CODING_AGENT=true
+PI_SKIP_VERSION_CHECK=1
+PI_REASONING_LEVEL=medium
+PI_PROVIDER=<scrubbed>
+PI_MODEL=qwen3.8-27b
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+PI_OFFLINE=1
+PI_SESSION_ID=<scrubbed>
+
+$ agent-browser skills get core 2>&1 | head -120
+$ agent-browser open https://www.scrapethissite.com/pages/forms/ 2>&1 | head -30
+-> [7936 chars] ---
+name: core
+description: Core agent-browser usage guide. Read this before running any agent-browser commands. Covers the snapshot-and-ref workflow, navigating pages, interacting with elements (click, fill, type, select), extracting text and data, taking screenshots, managing tabs, handling forms and auth, waiting for content, running multiple browser sessions in parallel, and troubleshooting common failures. Use when the user asks to interact with a website, fill a form, click something, extr …ord"] placeholder="Password"
+  @e5 [button type="submit"] "Continue"
+  @e6 [link] "Forgot password?"
+```
+
+For unstructured reading (no refs needed):
+
+
+-> [158 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+
+$ agent-browser snapshot -i 2>&1 | head -60
+-> [1710 chars] - link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10]
+- columnheader "Team Name" [ref=e11]
+- columnheader "Year" [ref=e12]
+- columnheader "Wins" [ref=e13]
+- columnheader "Losses" [ref=e14]
+- columnheader "OT Lo …ell "0.425" [ref=e56]
+- cell "273" [ref=e57]
+- cell "298" [ref=e58]
+- cell "-25" [ref=e59]
+- cell "Edmonton Oilers" [ref=e60]
+- cell "1990" [ref=e61]
+
+$ agent-browser fill @e9 "Bruins" 2>&1; agent-browser click @e10 2>&1; sleep 2
+-> [14 chars] ✓ Done
+✓ Done
+
+$ agent-browser read 2>&1 | head -60
+-> [673 chars] -
+
+Scrape This Site
+
+-
+
+Sandbox
+
+-
+
+Lessons
+
+-
+
+FAQ
+
+-
+
+Login
+
+#
+Hockey Teams: Forms, Searching and Pagination
+21 items
+
+Browse through a database of NHL team stats since 1990. Practice building a scraper that handles common website interface components.
+Take a look at how pagination and search elements change the URL as your browse. Build a web scraper that can conduct searches and paginate through the results.
+
+There are 8 video lessons that show you how to scrape this page.
+
+Data via
+http://www.opensourcesports.com/hockey/
+
+Search for Teams:
+
+Team Name
+
+Year
+
+Wins
+
+Losses
+
+OT Losses
+
+Win %
+
+Goals For (GF)
+
+Goals Against (GA)
+
++ / -
+
+Boston Bruins
+
+1990
+
+44
+
+24
+
+
+$ agent-browser read 2>&1 | grep -n -A40 "Boston Bruins"
+-> [2569 chars] 53:Boston Bruins
+54-
+55-1990
+56-
+57-44
+58-
+59-24
+60-
+61-0.55
+62-
+63-299
+64-
+65-264
+66-
+67-35
+68-
+69:Boston Bruins
+70-
+71-1991
+72-
+73-36
+74-
+75-32
+76-
+77-0.45
+78-
+79-270
+80-
+81-275
+82-
+83--5
+84-
+85:Boston Bruins
+86-
+87-1992
+88-
+89-51
+90-
+91-26
+92-
+93-0.607
+94-
+95-332
+96-
+97-268
+98-
+99-64
+100-
+101:Boston Bruins
+102-
+103-1993
+104-
+105-42
+106-
+107-29
+108-
+109-0.5
+110-
+111-289
+112-
+113-252
+114-
+115-37
+116-
+117:Boston Bruins
+118-
+119-1994
+120-
+121-27
+122-
+123-18
+124-
+125-0.562
+126-
+127-150
+128-
+129-12 …-4
+404-
+405-0.598
+406-
+407-269
+408-
+409-202
+410-
+411-67
+412-
+413-Per Page
+414-
+415-25
+416-50
+417-100
+418-
+419-Lessons and Videos © Hartley Brody 2023
+
+SAY: I found the 2011 season row for Boston Bruins via the search results.
+
+Column order is: Team Name, Year, Wins, Losses, OT Losses, Win %, Goals For (GF), Goals Against (GA), +/-
+
+For **Boston Bruins 2011**:
+- Year: 2011
+- Wins: **49**
+- Losses: 29
+- OT Losses: 4
+- Win %: 0.598
+- Goals For (GF): **269**
+- Goals Against (GA): 202
+- +/-: 67
+
+ANSWER: 2011 Boston Bruins: 49 wins, Goals For (GF) = 269

@@ -1,0 +1,83 @@
+TASK s06: On https://the-internet.herokuapp.com/dynamic_controls click Remove and report the message shown once the checkbox is gone. Then click Enable, wait until the text input is enabled, type hello into it, and report the message shown and the input's value.
+EXPECT: ["it's gone!", "it's enabled!", 'hello']
+RESULT: {"id": "s06_r2", "correct": true, "score": 0.92, "wtok": 53461, "out_tok": 2506, "turns": 13, "secs": 194, "timed_out": false, "curl": false, "answer": "After clicking Remove the message shown was \"It's gone!\". After clicking Enable and waiting for the input to become enabled, I typed \"hello\" into it; the message shown was \"It's enabled!\" and the input's value was \"hello\"."}
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser snapshot -i
+-> [57 chars] ✗ CDP command timed out: Page.navigate
+- Iframe [ref=e1]
+
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait "button"; agent-browser snapshot -i; agent-browser get text body
+-> [163 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+- Iframe [ref=e2]
+  - link "check your logs for details" [ref=e3]
+  - link [ref=e4]
+
+    
+  
+
+$ agent-browser eval "JSON.stringify({url: location.href, title: document.title})"; agent-browser wait "button" --timeout 15000 || true
+-> [131 chars] "{\"url\":\"https://the-internet.herokuapp.com/dynamic_controls\",\"title\":\"Application Error\"}"
+✗ Wait timed out after 15000ms
+
+$ agent-browser get text body; agent-browser eval "document.body.innerHTML.length"
+-> [12 chars] 
+    
+  
+93
+
+$ agent-browser eval "document.body.innerHTML"
+-> [101 chars] "\n    <iframe src=\"https://www.herokucdn.com/error-pages/application-error.html\"></iframe>\n  \n"
+
+SAY: The Heroku app returned an "Application Error" page. Let me retry the load.
+$ agent-browser open "https://the-internet.herokuapp.com/dynamic_controls"; agent-browser wait --fn "document.title.includes('The-Internet') || !!document.querySelector('button.remove-button')" --timeout 15000; agent-browser eval "JSON.stringify({title: document.title, hasBtn: !!document.querySelector('button.remove-button')})"
+-> [162 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 15000ms
+"{\"title\":\"The Internet\",\"hasBtn\":false}"
+
+$ agent-browser wait --fn "!!document.querySelector('.remove-button') || !!document.querySelector('button')" --timeout 20000; agent-browser eval "document.body.innerText.slice(0,400)"
+-> [233 chars] true
+"Dynamic Controls\n\nThis example demonstrates when elements (e.g., checkbox, input field, etc.) are changed asynchronously.\n\nRemove/add\n\n\n A checkbox\nRemove\n\n\nEnable/disable\n\n\nEnable\nPowered by Elemental Selenium"
+
+SAY: Page is loaded. Now clicking **Remove** and capturing the flash message:
+$ agent-browser click ".remove-button"; agent-browser wait --fn "document.querySelectorAll('input[type=checkbox]').length===0" --timeout 10000; agent-browser wait --fn "document.getElementById('flash') && document.getElementById('flash').offsetParent!==null" --timeout 10000; agent-browser eval "JSON.stringify({flash: document.getElementById('flash').innerText, checkboxGone: document.querySelectorAll('input[type=checkbox]').length===0})"
+-> [316 chars] ✗ Element not found: .remove-button. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 10000ms
+✗ Wait timed out after 10000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:56
+
+
+Command exited with code 1
+$ agent-browser eval "Array.from(document.querySelectorAll('button')).map(b=>b.outerHTML).join('\n')"
+-> [176 chars] "<button autocomplete=\"off\" type=\"button\" onclick=\"swapCheckbox()\">Remove</button>\n<button autocomplete=\"off\" type=\"button\" onclick=\"swapInput()\">Enable</button>"
+
+SAY: Buttons use inline `onclick`, no classes. Clicking via eval:
+$ agent-browser eval "document.querySelector(\"button[onclick='swapCheckbox()']\").click(); 'clicked'"; agent-browser wait --fn "document.querySelectorAll('input[type=checkbox]').length===0" --timeout 10000; agent-browser wait --fn "document.getElementById('flash') && document.getElementById('flash').offsetParent!==null" --timeout 10000; agent-browser eval "JSON.stringify({flash: document.getElementById('flash').innerText, checkboxCount: document.querySelectorAll('input[type=checkbox]').length})"
+-> [182 chars] "clicked"
+true
+✗ Wait timed out after 10000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'innerText')
+    at <anonymous>:1:56
+
+
+Command exited with code 1
+$ agent-browser eval "document.body.innerHTML"; agent-browser eval "JSON.stringify({flashEl: document.getElementById('flash') ? {text: document.getElementById('flash').innerText, cls: document.getElementById('flash').className} : 'none', msgs: Array.from(document.querySelectorAll('.message, #flash, .success, .error')).map(d=>({id:d.id,cls:d.className,text:d.innerText}))})"
+-> [3945 chars] "\n    <div class=\"row\">\n      <div id=\"flash-messages\" class=\"large-12 columns\">\n      \n        \n      \n        \n      \n        \n      \n      </div>\n    </div>\n    <div class=\"row\">\n      <a href=\"https://github.com/tourdedave/the-internet\"><img style=\"position: absolute; top: 0; right: 0; border: 0;\" src=\"/img/forkme_right_green_007200.png\" alt=\"Fork me on GitHub\"></a>\n      <div id=\"content\" class=\"large-12 columns\">\n        <script src=\"https://ajax.googlea …ef=\"http://elementalselenium.com/\">Elemental Selenium</a></div>\n      </div>\n    </div>\n  \n\n</div></div>"
+"{\"flashEl\":\"none\",\"msgs\":[]}"
+
+SAY: After **Remove** is executed, the message `<p id="message">It's gone!</p>` is displayed, and the checkbox disappears. Next is the **Enable** part:
+$ agent-browser eval "document.querySelector(\"button[onclick='swapInput()']\").click(); 'clicked'"; agent-browser wait --fn "!document.querySelector('#input-example input').disabled" --timeout 15000; agent-browser eval "document.querySelector('#input-example input').focus(); 'focused'"; agent-browser fill "#input-example input" "hello"; agent-browser eval "JSON.stringify({message: document.getElementById('message').innerText, inputValue: document.querySelector('#input-example input').value, disabled: document.querySelector('#input-example input').disabled})"; agent-browser close
+-> [127 chars] "clicked"
+true
+"focused"
+✓ Done
+"{\"message\":\"It's enabled!\",\"inputValue\":\"hello\",\"disabled\":false}"
+✓ Browser closed
+
+SAY: Done. Summary of what the page showed:
+
+1. **Remove** → the checkbox was removed, and the message shown once it was gone: **It's gone!**
+2. **Enable** → after the input became enabled (`disabled` no longer set), I typed into it. Message shown: **It's enabled!** and the input's value: **hello**.
+
+ANSWER: After clicking Remove the message shown was "It's gone!". After clicking Enable and waiting for the input to become enabled, I typed "hello" into it; the message shown was "It's enabled!" and the

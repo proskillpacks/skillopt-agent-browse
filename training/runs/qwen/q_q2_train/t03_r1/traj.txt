@@ -1,0 +1,53 @@
+TASK t03: On https://the-internet.herokuapp.com/tables , in the 'Example 2' table, click the 'Due' column header twice so the table is sorted by Due descending. Report the email address in the first data row after sorting.
+EXPECT: ['jdoe@hotmail\\.com']
+RESULT: {"id": "t03_r1", "correct": true, "score": 0.957, "wtok": 28519, "out_tok": 1449, "turns": 8, "secs": 64, "timed_out": false, "curl": false, "answer": "jdoe@hotmail.com"}
+
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser snapshot -i
+-> [109 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+(no interactive elements)
+
+$ agent-browser open https://the-internet.herokuapp.com/tables; agent-browser wait "table"; agent-browser eval "JSON.stringify([...document.querySelectorAll('table')].map((t,i)=>({i, id:t.id, th:[...t.querySelectorAll('th')].map(h=>h.textContent)})))"
+-> [310 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ Done
+"[{\"i\":0,\"id\":\"table1\",\"th\":[\"Last Name\",\"First Name\",\"Email\",\"Due\",\"Web Site\",\"Action\"]},{\"i\":1,\"id\":\"table2\",\"th\":[\"Last Name\",\"First Name\",\"Email\",\"Due\",\"Web Site\",\"Action\"]}]"
+
+$ agent-browser eval "
+const th=[...document.querySelectorAll('#table2 th')].find(h=>h.textContent.trim()==='Due');
+th.click(); th.click();
+JSON.stringify(th.textContent)
+"
+-> [10 chars] "\"Due\""
+
+$ agent-browser eval "
+const rows=[...document.querySelectorAll('#table2 tr')];
+JSON.stringify({dueCol: rows.map(r=>r.cells[3].textContent.trim()), firstEmail: rows[1].cells[2].textContent})
+"
+-> [106 chars] "{\"dueCol\":[\"Due\",\"$100.00\",\"$51.00\",\"$50.00\",\"$50.00\"],\"firstEmail\":\"jdoe@hotmail.com\"}"
+
+$ agent-browser eval "
+const rows=[...document.querySelectorAll('#table2 tr')];
+JSON.stringify(rows[1].cells[0].textContent+' '+rows[1].cells[1].textContent+' '+rows[1].cells[2].textContent+' '+rows[1].cells[3].textContent)
+"
+-> [105 chars] ✗ Evaluation error: SyntaxError: Identifier 'rows' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval "
+(() => {
+const r=document.querySelector('#table2 tr:nth-child(2)');
+return JSON.stringify([...r.cells].map(c=>c.textContent));
+})()
+"
+-> [131 chars] "[\"Bach\",\"Frank\",\"fbach@yahoo.com\",\"$51.00\",\"http://www.frank.com\",\"\\n          edit\\n          delete\\n        \"]"
+
+$ agent-browser eval "
+(() => {
+const rs=[...document.querySelectorAll('#table2 tr')];
+return JSON.stringify(rs.map(r=>({c:[...r.cells].map(x=>x.textContent.trim())})));
+})()
+"
+-> [549 chars] "[{\"c\":[\"Last Name\",\"First Name\",\"Email\",\"Due\",\"Web Site\",\"Action\"]},{\"c\":[\"Doe\",\"Jason\",\"jdoe@hotmail.com\",\"$100.00\",\"http://www.jdoe.com\",\"edit\\n          delete\"]},{\"c\":[\"Bach\",\"Frank\",\"fbach@yahoo.com\",\"$51.00\",\"http://www.frank.com\",\"edit\\n          delete\"]},{\"c\":[\"Smith\",\"John\",\"jsmith@example.com\",\"$50.00\",\"http://www.jsmith.com\",\"edit\\n          delete\"]},{\"c\":[\"Conway\",\"Tim\",\"tconway@earthlink.net\",\"$50.00\",\"http://www.timconway.com\",\"edit\\n          delete\"]}]"
+
+SAY: The table is sorted by Due descending ($100.00, $51.00, $50.00, $50.00). The first data row is Jason Doe.
+
+ANSWER: jdoe@hotmail.com

@@ -1,0 +1,82 @@
+TASK s02: On https://quotes.toscrape.com/ log in (any username and password are accepted). After logging in, each quote shows an extra '(Goodreads page)' link. Report the URL that link points to for the first quote on the first page.
+EXPECT: ['goodreads\\.com/author/show/9810\\.albert_einstein']
+RESULT: {"id": "s02_r3", "correct": true, "score": 0.954, "wtok": 30861, "out_tok": 874, "turns": 8, "secs": 83, "timed_out": false, "curl": false, "answer": "http://goodreads.com/author/show/9810.Albert_Einstein"}
+
+$ agent-browser open https://quotes.toscrape.com/; agent-browser wait "form"; agent-browser snapshot -i
+-> [1694 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/
+✗ Wait timed out after 25000ms
+- heading "Quotes to Scrape" [level=1, ref=e1]
+  - link "Quotes to Scrape" [ref=e23]
+- link "Login" [ref=e24]
+- link "(about)" [ref=e2]
+- link "change" [ref=e25]
+- link "deep-thoughts" [ref=e26]
+- link "thinking" [ref=e27]
+- link "world" [ref=e28]
+- link "(about)" [ref=e3]
+- link "abilities" [ref=e29]
+- link "choices" [ref=e30]
+- link "(about)" [ref=e4]
+- link "inspirational" [ref=e31]
+- link "life" [ref=e32]
+- link …hip" [ref=e19]
+- link "friends" [ref=e20]
+- link "truth" [ref=e21]
+- link "simile" [ref=e22]
+- link "GoodReads.com" [ref=e55]
+- link "Zyte" [ref=e56]
+
+$ agent-browser open https://quotes.toscrape.com/login; agent-browser snapshot -i
+-> [310 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+- heading "Quotes to Scrape" [level=1, ref=e58]
+  - link "Quotes to Scrape" [ref=e60]
+- link "Login" [ref=e61]
+- textbox "Username Password" [ref=e62]
+- textbox [ref=e63]
+- button "Login" [ref=e59]
+- link "GoodReads.com" [ref=e64]
+- link "Zyte" [ref=e65]
+
+$ agent-browser fill "input#id_username" "admin"; agent-browser fill "input#id_password" "admin"; agent-browser click "input#id_username"; agent-browser snapshot -i
+-> [618 chars] ✗ Element not found: input#id_username. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: input#id_password. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: input#id_username. Verify the selector, role, or name is correct and the element exists in the DOM.
+- heading "Quotes to Scrape" [level=1, ref=e58]
+  - link "Quotes to Scrape" [ref=e60]
+- link "Login" [ref=e61]
+- textbox "Username Password" [ref=e62]
+- textbox [ref=e63]
+- button "Login" [ref=e59]
+- link "GoodReads.com" [ref=e64]
+- link "Zyte" [ref=e65]
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('input')].map(i=>({type:i.type,name:i.name,cls:i.className})))"
+-> [265 chars] "[{\"type\":\"hidden\",\"name\":\"csrf_token\",\"cls\":\"\"},{\"type\":\"text\",\"name\":\"username\",\"cls\":\"form-control\"},{\"type\":\"password\",\"name\":\"password\",\"cls\":\"form-control\"},{\"type\":\"submit\",\"name\":\"\",\"cls\":\"btn btn-primary\"}]"
+
+$ agent-browser fill "input[name=username]" "admin"; agent-browser fill "input[name=password]" "admin"; agent-browser click "button[type=submit]"; agent-browser wait "#login" && agent-browser open https://quotes.toscrape.com/ ; agent-browser wait ".quote"
+-> [227 chars] ✓ Done
+✓ Done
+✗ Element not found: button[type=submit]. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Wait timed out after 25000ms
+
+
+Command exited with code 1
+$ agent-browser open https://quotes.toscrape.com/login; agent-browser fill "input[name=username]" "admin"; agent-browser fill "input[name=password]" "admin"; agent-browser eval "document.querySelector('.btn-primary').click(); 'submitted'"; agent-browser wait --fn "location.pathname === '/'"
+-> [86 chars] ✓ Quotes to Scrape
+  https://quotes.toscrape.com/login
+✓ Done
+✓ Done
+"submitted"
+true
+
+$ agent-browser eval "JSON.stringify((function(){const q=document.querySelector('.quote');return {text:q.querySelector('.text').textContent.trim(), links:[...q.querySelectorAll('a')].map(a=>({t:a.textContent.trim(),h:a.href})), hasGoodreadsLink:[...document.querySelectorAll('a')].some(a=>/goodreads/i.test(a.textContent))};})())"
+-> [665 chars] "{\"text\":\"“The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking.”\",\"links\":[{\"t\":\"(about)\",\"h\":\"https://quotes.toscrape.com/author/Albert-Einstein\"},{\"t\":\"(Goodreads page)\",\"h\":\"http://goodreads.com/author/show/9810.Albert_Einstein\"},{\"t\":\"change\",\"h\":\"https://quotes.toscrape.com/tag/change/page/1/\"},{\"t\":\"deep-thoughts\",\"h\":\"https://quotes.toscrape.com/tag/deep-thoughts/page/1/\"},{\"t\":\"thinking\",\"h\":\"https://quotes.toscrape.com/tag/thinking/page/1/\"},{\"t\":\"world\",\"h\":\"https://quotes.toscrape.com/tag/world/page/1/\"}],\"hasGoodreadsLink\":true}"
+
+SAY: Logged in as `admin`/`admin`. After login, the first quote (Einstein's "The world as we have created it…") now shows an extra "(Goodreads page)" link, which points to:
+
+`http://goodreads.com/author/show/9810.Albert_Einstein`
+
+ANSWER: http://goodreads.com/author/show/9810.Albert_Einstein

@@ -1,0 +1,82 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r1", "correct": true, "score": 0.976, "wtok": 15669, "out_tok": 469, "turns": 5, "secs": 6, "timed_out": false, "curl": false, "answer": "49 wins, 269 GF"}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/ && agent-browser snapshot 2>&1 | head -80
+-> [2569 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- navigation
+  - list
+    - listitem [level=1]
+    - listitem [level=1]
+      - link "Sandbox" [ref=e3]
+    - listitem [level=1]
+      - link "Lessons" [ref=e4]
+    - listitem [level=1]
+      - link "FAQ" [ref=e5]
+    - listitem [level=1]
+      - link "Login" [ref=e6]
+- generic
+  - heading "Hockey Teams: Forms, Searching and Pagination 25 i …- cell "26" [ref=e39]
+    - cell
+    - cell "0.575" [ref=e40]
+    - cell "344" [ref=e41]
+    - cell "263" [ref=e42]
+    - cell "81" [ref=e43]
+  - row
+
+$ agent-browser fill e9 "Bruins" && agent-browser click e10 && agent-browser snapshot 2>&1 | head -100
+-> [3004 chars] ✓ Done
+✓ Done
+- navigation
+  - list
+    - listitem [level=1]
+    - listitem [level=1]
+      - link "Sandbox" [ref=e249]
+    - listitem [level=1]
+      - link "Lessons" [ref=e250]
+    - listitem [level=1]
+      - link "FAQ" [ref=e251]
+    - listitem [level=1]
+      - link "Login" [ref=e252]
+- generic
+  - heading "Hockey Teams: Forms, Searching and Pagination 21 items" [level=1, ref=e248]
+    - StaticText "Hockey Teams: Forms, Searching and Pagination 21 items"
+  - separator
+- generic
+  - paragrap …   - cell "18" [ref=e301]
+    - cell
+    - cell "0.562" [ref=e302]
+    - cell "150" [ref=e303]
+    - cell "127" [ref=e304]
+    - cell "23" [ref=e305]
+
+$ agent-browser eval "Array.from(document.querySelectorAll('table tr')).filter(r=>r.textContent.includes('2011')).map(r=>Array.from(r.cells).map(c=>c.textContent)).map(r=>r.join(' | '))"
+-> [572 chars] [
+  "\n                            Boston Bruins\n                         | \n                            2011\n                         | \n                            49\n                         | \n                            29\n                         | \n                            4\n                         | \n                            0.598\n                         | \n                            269\n                         | \n                            202\n                         | \n                            67\n                        "
+]
+
+SAY: Found it — after searching for "Bruins" in the search box, the 2011 Boston Bruins row shows 49 wins and Goals For (GF) of 269.
+
+ANSWER: 49 wins, 269 GF

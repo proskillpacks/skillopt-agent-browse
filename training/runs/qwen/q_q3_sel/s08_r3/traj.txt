@@ -1,0 +1,174 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r3", "correct": true, "score": 0.908, "wtok": 61141, "out_tok": 3082, "turns": 10, "secs": 33, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ for i in 1 2 3; do agent-browser open "https://books.toscrape.com/" && break; sleep 5; done; agent-browser eval --stdin <<'JS'
+(() => {
+  const items = document.querySelectorAll('article.product_pod');
+  const sample = items.length ? items[0].textContent : 'none';
+  return JSON.stringify({count: items.length, sample, total: document.querySelector('.page-link').length});
+})()
+JS
+-> [229 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'length')
+    at <anonymous>:4:98
+    at <anonymous>:5:3
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const html = document.querySelector('main') || document.body;
+  return JSON.stringify(html.innerHTML.slice(0, 2500));
+})()
+JS
+-> [2816 chars] "\"\\n        \\n        \\n    \\n    \\n    <header class=\\\"header container-fluid\\\">\\n        <div class=\\\"page_inner\\\">\\n            <div class=\\\"row\\\">\\n                <div class=\\\"col-sm-8 h1\\\"><a href=\\\"index.html\\\">Books to Scrape</a><small> We love being scraped!</small>\\n</div>\\n\\n                \\n            </div>\\n        </div>\\n    </header>\\n\\n    \\n    \\n<div class=\\\"container-fluid page\\\">\\n    <div class=\\\"page_inner\\\">\\n        \\n …                    </li>\\n                        \\n                \\n                    <li>\\n                        <a href=\\\"catalogue\""
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const arts = document.querySelectorAll('article.product_pod');
+  const prices = document.querySelectorAll('.price_color');
+  const links = [...document.querySelectorAll('a')].map(a => a.textContent.trim()).filter(t => /next|page/i.test(t));
+  const prodText = arts[0] ? arts[0].textContent : (prices.length ? document.querySelector('.row').textContent.slice(0,500) : 'no articles');
+  return JSON.stringify({arts: arts.length, prices: prices.length, links, prodText});
+})()
+JS
+-> [806 chars] "{\"arts\":20,\"prices\":20,\"links\":[\"next\"],\"prodText\":\"\\n        \\n            \\n                \\n                    \\n                    \\n                    \\n                \\n            \\n        \\n\\n        \\n            \\n                \\n                    \\n                    \\n                    \\n                    \\n                    \\n                \\n            \\n        \\n\\n        \\n            A Light in the ...\\n        \\n\\n      … \\n                    \\n\\n\\n\\n\\n\\n\\n    \\n    \\n        Add to basket\\n    \\n\\n\\n                \\n            \\n        \\n    \"}"
+
+SAY: Standard layout confirmed (20 books/page, "next" link). Now I'll walk all pages and collect title + price on each:
+$ cd /tmp && agent-browser open "https://books.toscrape.com/" && agent-browser eval --stdin <<'JS'
+(() => {
+  const out = [...document.querySelectorAll('article.product_pod')].map(a => ({
+    t: a.querySelector('h3 a').textContent.trim(),
+    p: parseFloat(a.querySelector('.price_color').textContent.replace('£',''))
+  }));
+  const next = [...document.querySelectorAll('a')].find(a => a.textContent.trim() === 'next' && a.getAttribute('href'));
+  return JSON.stringify({data: out, next: next ? next.getAttribute('href') : null});
+})()
+JS
+-> [1036 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"{\"data\":[{\"t\":\"A Light in the ...\",\"p\":51.77},{\"t\":\"Tipping the Velvet\",\"p\":53.74},{\"t\":\"Soumission\",\"p\":50.1},{\"t\":\"Sharp Objects\",\"p\":47.82},{\"t\":\"Sapiens: A Brief History ...\",\"p\":54.23},{\"t\":\"The Requiem Red\",\"p\":22.65},{\"t\":\"The Dirty Little Secrets ...\",\"p\":33.34},{\"t\":\"The Coming Woman: A ...\",\"p\":17.93},{\"t\":\"The Boys in the ...\",\"p\":22.6},{\"t\":\"The Black M …p\":37.59},{\"t\":\"Libertarianism for Beginners\",\"p\":51.33},{\"t\":\"It's Only the Himalayas\",\"p\":45.17}],\"next\":\"catalogue/page-2.html\"}"
+
+SAY: Titles are truncated in text; I'll use the `title` attribute. Now loop through all pages:
+$ cd /tmp && rm -f books.jsonl && echo '{"t":"A Light in the Darkness","p":51.77}' > /dev/null
+agent-browser open "https://books.toscrape.com/" >/dev/null
+url=""; pages=1
+while :; do
+  res=$(agent-browser eval --stdin <<'JS'
+(() => {
+  const out = [...document.querySelectorAll('article.product_pod')].map(a => ({
+    t: a.querySelector('h3 a').getAttribute('title'),
+    p: parseFloat(a.querySelector('.price_color').textContent.replace('£',''))
+  }));
+  const next = [...document.querySelectorAll('a')].find(a => a.textContent.trim() === 'next');
+  const href = next ? next.getAttribute('href') : null;
+  return JSON.stringify({data: out, next: href});
+})()
+JS
+)
+  echo "$res" >> books.jsonl
+  nxt=$(echo "$res" | sed 's/^"//; s/"$//' | sed 's/\\\\"/"/g' | python3 -c 'import json,sys; print(json.load(sys.stdin)["next"] or "")')
+  [ -z "$nxt" ] && break
+  url="https://books.toscrape.com/$nxt"
+  for
+-> [782 chars] Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/usr/lib/python3.12/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …  ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+pages collected: 1
+
+SAY: The shell unescaping was fragile. Redo with proper double JSON parse in python:
+$ cd /tmp && rm -f books.jsonl
+cat > parse.py <<'EOF'
+import json, sys
+raw = sys.argv[1]
+inner = json.loads(raw)          # strip outer JSON string
+obj = json.loads(inner) if isinstance(inner, str) else inner
+print(json.dumps(obj))
+EOF
+agent-browser open "https://books.toscrape.com/" >/dev/null && echo ok
+url=""; pages=1
+while :; do
+  res=$(agent-browser eval --stdin <<'EOF'
+(() => {
+  const out = [...document.querySelectorAll('article.product_pod')].map(a => ({
+    t: a.querySelector('h3 a').getAttribute('title'),
+    p: parseFloat(a.querySelector('.price_color').textContent.replace('£',''))
+  }));
+  const next = [...document.querySelectorAll('a')].find(a => a.textContent.trim() === 'next');
+  return JSON.stringify({data: out, next: next ? next.getAttribute('href') : null});
+})()
+EOF
+)
+  obj=$(python3 parse.py "$res") || { echo "parse fail on page $pages"; break; }
+  echo "$obj" >> books.
+-> [22 chars] ok
+pages collected: 3
+
+SAY: Only 3 pages — let me check why:
+$ cd /tmp && tail -c 400 books.jsonl; echo; agent-browser get title
+-> [415 chars] phant Tree", "p": 23.82}, {"t": "The Bear and the Piano", "p": 36.89}, {"t": "Sophie's World", "p": 15.94}, {"t": "Penny Maybe", "p": 33.29}, {"t": "Maude (1883-1993):She Grew Up with the country", "p": 18.02}, {"t": "In a Dark, Dark Wood", "p": 19.63}, {"t": "Behind Closed Doors", "p": 52.22}, {"t": "You can't bury them all: Poems", "p": 33.63}], "next": "page-3.html"}
+{"data": [], "next": null}
+
+404 Not Found
+
+SAY: The 2nd page's `next` is relative to `/catalogue/`. I need to resolve URLs properly:
+$ cd /tmp && rm -f books.jsonl
+agent-browser open "https://books.toscrape.com/" >/dev/null && echo ok
+pages=1
+while :; do
+  res=$(agent-browser eval --stdin <<'EOF'
+(() => {
+  const out = [...document.querySelectorAll('article.product_pod')].map(a => ({
+    t: a.querySelector('h3 a').getAttribute('title'),
+    p: parseFloat(a.querySelector('.price_color').textContent.replace('£',''))
+  }));
+  const next = [...document.querySelectorAll('a')].find(a => a.textContent.trim() === 'next');
+  return JSON.stringify({data: out, next: next ? new URL(next.getAttribute('href'), location.href).href : null});
+})()
+EOF
+)
+  obj=$(python3 parse.py "$res") || { echo "parse fail page $pages"; break; }
+  echo "$obj" >> books.jsonl
+  nxt=$(echo "$obj" | python3 -c 'import json,sys; print(json.load(sys.stdin)["next"] or "")')
+  [ -z "$nxt" ] && break
+  for i in 1 2 3; do agent-browser open "$nxt" >/dev/null && 
+-> [23 chars] ok
+pages collected: 50
+
+SAY: All 50 pages collected. Now compute:
+$ cd /tmp && python3 <<'EOF'
+import json
+books = []
+for line in open('books.jsonl'):
+    obj = json.loads(line)
+    books += obj['data']
+print("total books:", len(books))
+under = [b for b in books if b['p'] < 12.0]
+print("under £12.00:", len(under))
+cheapest = min(books, key=lambda b: b['p'])
+print("cheapest:", cheapest['t'], "£%.2f" % cheapest['p'])
+ties = [b for b in books if abs(b['p']-cheapest['p']) < 1e-9]
+print("ties:", len(ties), [b['t'] for b in ties])
+EOF
+-> [118 chars] total books: 1000
+under £12.00: 44
+cheapest: An Abundance of Katherines £10.00
+ties: 1 ['An Abundance of Katherines']
+
+SAY: Done. Verification:
+- 50 pages × 20 books = 1000 total books (matches the full catalogue)
+- **44 books** cost less than £12.00
+- Cheapest book: **An Abundance of Katherines** at **£10.00** (unique minimum, no ties)
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of Katherines" at £10.00.

@@ -1,0 +1,142 @@
+TASK t08: On https://www.scrapethissite.com/pages/ajax-javascript/ show the films for 2013. Which film won the most awards that year, how many, and which film is marked as Best Picture?
+EXPECT: ['gravity', '\\b7\\b', '12 years a slave']
+RESULT: {"id": "t08_r3", "correct": true, "score": 0.965, "wtok": 23478, "out_tok": 857, "turns": 9, "secs": 10, "timed_out": false, "curl": false, "answer": "In 2013, Gravity won the most awards with 7; 12 Years a Slave is the film marked as Best Picture."}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open "https://www.scrapethissite.com/pages/ajax-javascript/" 2>&1
+-> [163 chars] ✓ Oscar Winning Films: AJAX and Javascript | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/ajax-javascript/
+
+$ agent-browser read 2>&1 | head -100
+-> [702 chars] -
+
+Scrape This Site
+
+-
+
+Sandbox
+
+-
+
+Lessons
+
+-
+
+FAQ
+
+-
+
+Login
+
+#
+Oscar Winning Films: AJAX and Javascript
+87 items
+
+Click through a bunch of great films. Learn how content is added to the page asynchronously with Javascript and how you can scrape it.
+Look for ways that you can tell visually when a site is loading content with AJAX. Then, browse through your network tab to see those AJAX requests and scrape them.
+
+There are 3 video lessons that show you how to scrape this page.
+
+Data via
+https:// …films
+
+###
+Choose a Year to View Films
+
+2015
+2014
+2013
+2012
+2011
+2010
+
+Title
+Nominations
+Awards
+Best Picture
+
+Lessons and Videos © Hartley Brody 2023
+
+$ agent-browser snapshot 2>&1 | grep -n -i -E "select|year|2013|option" | head -20
+-> [91 chars] 33:  - heading "Choose a Year to View Films" [level=3, ref=e2]
+36:  - link "2013" [ref=e5]
+
+$ agent-browser click @e5 2>&1 && agent-browser wait 2000 2>&1
+-> [14 chars] ✓ Done
+✓ Done
+
+$ agent-browser read 2>&1
+-> [921 chars] -
+
+Scrape This Site
+
+-
+
+Sandbox
+
+-
+
+Lessons
+
+-
+
+FAQ
+
+-
+
+Login
+
+#
+Oscar Winning Films: AJAX and Javascript
+87 items
+
+Click through a bunch of great films. Learn how content is added to the page asynchronously with Javascript and how you can scrape it.
+Look for ways that you can tell visually when a site is loading content with AJAX. Then, browse through your network tab to see those AJAX requests and scrape them.
+
+There are 3 video lessons that show you how to scrape this page.
+
+Data via
+https:// … Hublot11
+
+The Lady in Number 6: Music Saved My Life11
+
+Helium11
+
+The Great Beauty11
+
+20 Feet from Stardom11
+
+Lessons and Videos © Hartley Brody 2023
+
+$ agent-browser eval "Array.from(document.querySelectorAll('table tr')).map(r => Array.from(r.cells).map(c => c.textContent.trim()).join(' | ')).join('\n')" 2>&1
+-> [373 chars] "Title | Nominations | Awards | Best Picture\n12 Years a Slave | 9 | 3 | \nGravity | 10 | 7 | \nDallas Buyers Club | 6 | 3 | \nFrozen | 2 | 2 | \nThe Great Gatsby | 2 | 2 | \nHer | 5 | 1 | \nBlue Jasmine | 3 | 1 | \nMr Hublot | 1 | 1 | \nThe Lady in Number 6: Music Saved My Life | 1 | 1 | \nHelium | 1 | 1 | \nThe Great Beauty | 1 | 1 | \n20 Feet from Stardom | 1 | 1 | "
+
+$ agent-browser eval "Array.from(document.querySelectorAll('table tbody tr')).map(r => { const cells = r.cells; return cells[0].textContent.trim() + ' => ' + cells[3].innerHTML.trim(); }).join('\n')" 2>&1
+-> [285 chars] "12 Years a Slave => <i class=\"glyphicon glyphicon-flag\"></i>\nGravity => \nDallas Buyers Club => \nFrozen => \nThe Great Gatsby => \nHer => \nBlue Jasmine => \nMr Hublot => \nThe Lady in Number 6: Music Saved My Life => \nHelium => \nThe Great Beauty => \n20 Feet from Stardom => "
+
+SAY: The 2013 film list is loaded in the browser. From the table:
+
+- **Gravity** won the most awards: **7** (it also had 10 nominations)
+- The film marked as Best Picture (flag icon in the Best Picture column) is **12 Years a Slave** (9 nominations, 3 awards)
+
+ANSWER: In 2013, Gravity won the most awards with 7; 12 Years a Slave is the film marked as Best Picture.

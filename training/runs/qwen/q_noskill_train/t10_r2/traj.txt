@@ -1,0 +1,106 @@
+TASK t10: On https://the-internet.herokuapp.com/jqueryui/menu open the menu path Enabled > Downloads and report the names of the items in the Downloads submenu, as actually displayed after opening it.
+EXPECT: ['pdf', 'csv', 'excel']
+RESULT: {"id": "t10_r2", "correct": false, "score": 0.0, "wtok": 38955, "out_tok": 1402, "turns": 10, "secs": 41, "timed_out": false, "curl": false, "answer": "Let me double-check via JavaScript that the Downloads submenu is the open one and enumerate exactly what's displayed in it:"}
+
+$ which agent-browser && agent-browser --help 2>&1 | head -100
+$ env | grep -i -E "agent|browser|session" | sed 's/=.*TOKEN.*/=REDACTED/' | head -50
+-> [4420 chars] /home/user/.nvm/versions/node/v24.21.0/bin/agent-browser
+
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, prote …nt
+  inspect                    Open Chrome DevTools for the active page
+  clipboard <op> [text]      Read/write clipboard (read, write, copy, paste)
+
+-> [1041 chars] PI_CODING_AGENT=true
+CLAUDE_CODE_CHILD_SESSION=1
+AI_AGENT=pi
+CLAUDE_CODE_SESSION_ID=<scrubbed>
+PWD=/home/user/skill-research/skillopt-agent-browse/tests/runs/q_noskill_train/t10_r2
+XDG_SESSION_TYPE=<scrubbed>
+AGENT_BROWSER_EXECUTABLE_PATH=/snap/bin/chromium
+CLAUDE_CODE_SESSION_ATTENDED=1
+XDG_SESSION_CLASS=<scrubbed>
+PI_MANAGED_INSTALL_ROOT=<scrubbed>
+PI_SESSION_ID=<scrubbed>
+AGENT_BROWSER_ARGS=--ozone-platform=x11
+AGENT_BROWSER_NAMESPA …/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+DBUS_SESSION_BUS_ADDRESS=<scrubbed>
+AGENT_BROWSER_HEADED=1
+
+$ agent-browser open https://the-internet.herokuapp.com/jqueryui/menu 2>&1 | head -40
+-> [83 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+$ agent-browser get url; agent-browser get title
+-> [50 chars] https://the-internet.herokuapp.com/jqueryui/menu
+
+
+$ agent-browser snapshot 2>&1 | head -80
+-> [13 chars] (empty page)
+
+$ sleep 5; agent-browser get title; agent-browser get url
+-> [62 chars] The Internet
+https://the-internet.herokuapp.com/jqueryui/menu
+
+$ agent-browser snapshot 2>&1 | head -100
+-> [1639 chars] - generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e2]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e3]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of elements is actually not in the html itself, but done magic …nk "Back to JQuery UI" [ref=e9]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e6]
+
+SAY: The page has loaded, and the underlying DOM is displayed in the snapshot, but since the text on the page warns that visibility is controlled by jQuery, we actually need to open the menu to check what's really visible. Let's interact with it:
+$ agent-browser click e5 && sleep 1 && agent-browser snapshot 2>&1 | head -60
+-> [1646 chars] ✓ Done
+- generic
+  - link "Fork me on GitHub" [ref=e1]
+    - image "Fork me on GitHub"
+  - heading "JQueryUI - Menu" [level=3, ref=e2]
+  - paragraph
+    - link "JQuery UI Menus" [ref=e3]
+    - StaticText " are a nice UI element from a user perspective, but poses an interesting automation challenge since it requires mouse operations and synchronization between them."
+  - paragraph
+    - StaticText "Another 'fun' aspect is that the visibility of elements is actually not in the html itself, but don …nk "Back to JQuery UI" [ref=e9]
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e6]
+
+$ agent-browser hover e8 && sleep 1; echo "--- Downloads item visibility:"; agent-browser is visible e8; echo "--- submenu item visibility:"; for r in e10 e11 e12; do echo -n "$r: "; agent-browser is visible $r; done
+-> [102 chars] ✓ Done
+--- Downloads item visibility:
+true
+--- submenu item visibility:
+e10: true
+e11: true
+e12: true
+
+SAY: The submenu items are visible after opening. Let me verify their actual displayed text and confirm visually with a screenshot:
+$ for r in e10 e11 e12; do echo -n "$r: "; agent-browser get text $r; done
+$ agent-browser screenshot /tmp/menu-downloads.png && echo saved
+-> [29 chars] e10: PDF
+e11: CSV
+e12: Excel
+
+-> [52 chars] ✓ Screenshot saved to /tmp/menu-downloads.png
+saved
+
+SAY: Let me double-check via JavaScript that the Downloads submenu is the open one and enumerate exactly what's displayed in it:

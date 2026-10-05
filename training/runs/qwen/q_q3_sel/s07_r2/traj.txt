@@ -1,0 +1,58 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r2", "correct": true, "score": 0.959, "wtok": 27144, "out_tok": 939, "turns": 8, "secs": 62, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" && agent-browser snapshot -i
+-> [111 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+
+
+Command exited with code 1
+$ for i in 1 2 3; do agent-browser open "https://the-internet.herokuapp.com/drag_and_drop" && break; sleep 5; done; agent-browser snapshot -i
+-> [266 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✓ The Internet
+  https://the-internet.herokuapp.com/drag_and_drop
+- link "Fork me on GitHub" [ref=e1]
+- heading "Drag and Drop" [level=3, ref=e2]
+- link "Elemental Selenium" [ref=e3]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('#column-1 li')].map(li=>({h:li.querySelector('.header').textContent, rect:li.querySelector('.column').getBoundingClientRect()})))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const list = document.querySelector('#column-1');
+  if (!list) return JSON.stringify({error: 'no #column-1', body: document.body.innerText.slice(0,500)});
+  return JSON.stringify([...list.querySelectorAll('li .header')].map(h=>h.textContent));
+})()
+JS
+-> [98 chars] "{\"error\":\"no #column-1\",\"body\":\"Drag and Drop\\nA\\nB\\nPowered by Elemental Selenium\"}"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const lis = [...document.querySelectorAll('li')].filter(li=>li.querySelector('.header'));
+  return JSON.stringify(lis.map(li=>({h:li.querySelector('.header').textContent, r:li.querySelector('.column').getBoundingClientRect()})));
+})()
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const el = [...document.querySelectorAll('h3')].find(h=>/drag/i.test(h.textContent));
+  let sec = el ? el.closest('section') : null;
+  return JSON.stringify({html: (sec||document.body).innerHTML.slice(0, 1200)});
+})()
+JS
+-> [1436 chars] "{\"html\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fork me on GitHub\\\"></a>\\n      <div id=\\\"content\\\" class=\\\ …nsfer.effectAllowed = 'move';\\n  e.dataTransfer.setData('text/html', this.innerHTML);\\n}\\n\\nfunction handleDragOver(e) {\\n  if (e.preventDef\"}"
+
+$ agent-browser drag "#column-a" "#column-b"; sleep 1; agent-browser eval "JSON.stringify([...document.querySelectorAll('#columns .column')].map(c=>c.id+'='+c.querySelector('header').textContent))"
+-> [41 chars] ✓ Done
+"[\"column-a=B\",\"column-b=A\"]"
+
+SAY: The drag and drop succeeded. After the swap:
+
+- Left box (`#column-a`): header **B**
+- Right box (`#column-b`): header **A**
+
+ANSWER: B, A

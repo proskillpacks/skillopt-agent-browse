@@ -1,0 +1,106 @@
+TASK t09: On http://localhost:8791/shop.html request a quote for region Nordics, quantity 7, plan Pro. Report the quote reference and the total price.
+EXPECT: ['nor-2087', '1,?470']
+RESULT: {"id": "t09_r3", "correct": true, "score": 0.958, "wtok": 28075, "out_tok": 1006, "turns": 9, "secs": 10, "timed_out": false, "curl": false, "answer": "Quote ref NOR-2087, total \u20ac1470.00"}
+
+$ agent-browser open http://localhost:8791/shop.html; agent-browser snapshot -i
+-> [446 chars] ✓ Northwind Quotes
+  http://localhost:8791/shop.html
+- heading "We value your privacy" [level=2, ref=e4]
+- button "Manage preferences" [ref=e5]
+- button "Accept all" [ref=e6]
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser click e6; agent-browser click e2; agent-browser snapshot -i
+-> [285 chars] ✓ Done
+✓ Done
+- heading "Request a quote" [level=1, ref=e1]
+- generic "Choose region…" [ref=e2] clickable [cursor:pointer, onclick]
+- spinbutton "Quantity" [ref=e9]: 1
+- radio "Basic" [checked=true, ref=e7]
+- radio "Pro" [checked=false, ref=e8]
+- button "Get quote" [disabled, ref=e3]
+
+$ agent-browser eval "JSON.stringify({tag:document.querySelector('[ref=e2]')||undefined, opts:[...document.querySelectorAll('option')].map(o=>o.textContent), lists:[...document.querySelectorAll('.list,.menu,.dropdown,ul')].slice(0,5).map(l=>l.className+'|'+l.textContent.trim().slice(0,100))})"
+-> [29 chars] "{\"opts\":[],\"lists\":[]}"
+
+$ agent-browser eval "const el=[...document.querySelectorAll('body *')].find(n=>n.getAttribute&&n.getAttribute('onclick')||false);JSON.stringify({script:document.documentElement.outerHTML.length})" ; agent-browser read 2>/dev/null | head -50
+-> [135 chars] "{\"script\":2282}"
+# Request a quote
+
+Region
+
+Choose region…
+
+Benelux
+
+Nordics
+
+Iberia
+
+DACH
+
+Baltics
+
+Quantity
+
+Basic
+Pro
+
+Get quote
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('body *')].filter(n=>n.children.length===0&&n.textContent.trim()).map(n=>n.tagName+'.'+n.className+'|'+n.textContent.trim()).slice(0,40))"
+-> [1377 chars] "[\"H1.|Request a quote\",\"P.|Region\",\"DIV.dd|Choose region…\",\"DIV.opt|Benelux\",\"DIV.opt|Nordics\",\"DIV.opt|Iberia\",\"DIV.opt|DACH\",\"DIV.opt|Baltics\",\"BUTTON.|Get quote\",\"SCRIPT.|const base={\\\"Benelux\\\":120,\\\"Nordics\\\":140,\\\"Iberia\\\":95,\\\"DACH\\\":160,\\\"Baltics\\\":80};\\nlet region=null;const dd=document.getElementById('dd'),opts=document.getElementById('opts'),go=document.getElementById('go'),out=document.getElementById('out');\\ndocument.getElementById('c-ok').o …*7919+region.length*104729+(pro?31337:0))%9973);\\nout.innerHTML='<p>Quote ref: <b>'+ref+'</b></p><p>Total: €'+total.toFixed(2)+'</p>';},2500);};\"]"
+
+$ agent-browser click e2; agent-browser wait --fn "document.querySelector('.opt')!=null"; agent-browser eval "[...document.querySelectorAll('.opt')].find(o=>o.textContent==='Nordics').click(); true"
+-> [17 chars] ✓ Done
+true
+true
+
+$ agent-browser eval "document.getElementById('qty').value=7; true"; agent-browser click e8; agent-browser click e3; agent-browser wait --fn "document.getElementById('out').textContent.includes('Quote ref')"; agent-browser read
+-> [170 chars] true
+✓ Done
+✓ Done
+true
+# Request a quote
+
+Region
+
+Nordics
+
+Benelux
+
+Nordics
+
+Iberia
+
+DACH
+
+Baltics
+
+Quantity
+
+Basic
+Pro
+
+Get quote
+
+Quote ref: NOR-2087
+
+Total: €1470.00
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Quote requested on the shop page (region Nordics, quantity 7, plan Pro):
+
+- **Quote reference:** NOR-2087
+- **Total price:** €1470.00
+
+(Verified: Nordics base €140 × 7 × 1.5 Pro multiplier = €1470.00)
+
+ANSWER: Quote ref NOR-2087, total €1470.00

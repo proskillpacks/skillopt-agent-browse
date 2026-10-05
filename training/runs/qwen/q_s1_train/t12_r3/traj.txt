@@ -1,0 +1,76 @@
+TASK t12: Create a small text file named skillopt-note.txt and upload it using the form at https://the-internet.herokuapp.com/upload . Report the heading shown after uploading and the uploaded file name the page displays.
+EXPECT: ['file uploaded!', 'skillopt-note\\.txt']
+RESULT: {"id": "t12_r3", "correct": true, "score": 0.944, "wtok": 37371, "out_tok": 1883, "turns": 10, "secs": 223, "timed_out": false, "curl": false, "answer": "Heading: \"File Uploaded!\"; uploaded file name: \"skillopt-note.txt\""}
+
+$ printf 'skillopt note\n' > skillopt-note.txt && ls -la skillopt-note.txt
+-> [61 chars] -rw-rw-r-- 1 user user 14 Oct  5 13:02 skillopt-note.txt
+
+$ agent-browser open "https://the-internet.herokuapp.com/upload"; agent-browser upload #fileUpload /home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r3/skillopt-note.txt; agent-browser click "This file"; agent-browser eval "JSON.stringify({heading:document.getElementById('flash').textContent||null, fname:document.getElementById('fileNameDisplay')?document.getElementById('fileNameDisplay').textContent:null});"
+-> [191 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+Missing arguments for: upload
+Usage: agent-browser upload <selector> <files...>
+
+
+Command exited with code 1
+$ agent-browser open "https://the-internet.herokuapp.com/upload" ; agent-browser wait "#fileUpload" ; agent-browser upload "#fileUpload" "/home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r3/skillopt-note.txt" ; agent-browser eval "JSON.stringify({fileInput: document.getElementById('fileUpload') ? document.getElementById('fileUpload').value : null})" ; agent-browser click "#fileUploadButton" ; agent-browser wait "#flash" ; agent-browser eval "JSON.stringify({heading: document.getElementById('flash').textContent.trim(), fname: document.getElementById('fileNameDisplay').textContent.trim()})"
+-> [518 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✗ Wait timed out after 25000ms
+✗ Element not found: #fileUpload. Verify the selector, role, or name is correct and the element exists in the DOM.
+"{\"fileInput\":null}"
+✗ Element not found: #fileUploadButton. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:58
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({url: location.href, hasForm: !!document.querySelector('form'), inputs: Array.from(document.querySelectorAll('input')).map(i=>({id:i.id,name:i.name,type:i.type}))})"
+-> [254 chars] "{\"url\":\"https://the-internet.herokuapp.com/upload\",\"hasForm\":true,\"inputs\":[{\"id\":\"file-upload\",\"name\":\"file\",\"type\":\"file\"},{\"id\":\"file-submit\",\"name\":\"\",\"type\":\"submit\"},{\"id\":\"\",\"name\":\"\",\"type\":\"file\"}]}"
+
+$ agent-browser upload "#file-upload" "/home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r3/skillopt-note.txt" && agent-browser click "#file-submit" && agent-browser wait "#flash" && agent-browser eval "JSON.stringify({heading: document.getElementById('flash').textContent.trim(), fname: document.getElementById('fileNameDisplay') ? document.getElementById('fileNameDisplay').textContent.trim() : null})" ; agent-browser close
+-> [62 chars] ✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+✓ Browser closed
+
+SAY: I closed the browser prematurely before reading the result. Redoing the full flow:
+$ agent-browser open "https://the-internet.herokuapp.com/upload" ; agent-browser wait "#file-upload" ; agent-browser upload "#file-upload" "/home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r3/skillopt-note.txt" ; agent-browser click "#file-submit" ; agent-browser wait --text "These are the files that were uploaded" ; agent-browser eval "JSON.stringify({heading: document.getElementById('flash').textContent.trim(), fname: document.getElementById('fileNameDisplay') ? document.getElementById('fileNameDisplay').textContent.trim() : null})" ; agent-browser close
+-> [460 chars] ✗ CDP command timed out: Page.navigate
+✗ Wait timed out after 25000ms
+✗ Element not found: #file-upload. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Element not found: #file-submit. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:58
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/upload" ; agent-browser wait "#file-upload" ; agent-browser eval "JSON.stringify({url: location.href, input: !!document.getElementById('file-upload')})"
+-> [139 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✓ Done
+"{\"url\":\"https://the-internet.herokuapp.com/upload\",\"input\":true}"
+
+$ agent-browser upload "#file-upload" "/home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r3/skillopt-note.txt" ; agent-browser click "#file-submit" ; agent-browser wait "#flash" ; agent-browser eval "JSON.stringify({heading: document.getElementById('flash').textContent.trim(), fname: document.getElementById('fileNameDisplay') ? document.getElementById('fileNameDisplay').textContent.trim() : null})" ; agent-browser close
+-> [172 chars] ✓ Done
+✓ Done
+✗ Wait timed out after 25000ms
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'textContent')
+    at <anonymous>:1:58
+✓ Browser closed
+
+$ agent-browser open "https://the-internet.herokuapp.com/upload" ; agent-browser wait "#file-upload" ; agent-browser upload "#file-upload" "/home/user/skill-research/skillopt-agent-browse/tests/runs/q_s1_train/t12_r3/skillopt-note.txt" ; agent-browser click "#file-submit" ; sleep 3 ; agent-browser eval "JSON.stringify({url: location.href, headings: Array.from(document.querySelectorAll('h1,h2,h3')).map(h=>h.tagName+':'+h.textContent.trim()), flash: Array.from(document.querySelectorAll('.flash,.message')).map(f=>f.textContent.trim()), nameEl: document.getElementById('fileNameDisplay') ? document.getElementById('fileNameDisplay').textContent.trim() : null, bodySnippet: document.body.innerText.slice(0,400)})" ; agent-browser close
+-> [308 chars] ✓ The Internet
+  https://the-internet.herokuapp.com/upload
+✓ Done
+✓ Done
+✓ Done
+"{\"url\":\"https://the-internet.herokuapp.com/upload\",\"headings\":[\"H3:File Uploaded!\"],\"flash\":[],\"nameEl\":null,\"bodySnippet\":\"File Uploaded!\\nskillopt-note.txt\\nPowered by Elemental Selenium\"}"
+✓ Browser closed
+
+SAY: The upload completed in a real browser:
+- Created `skillopt-note.txt` (14 bytes) in the working directory
+- Uploaded it via the `#file-upload` input and submitted with `#file-submit`
+- The page then displayed the heading **"File Uploaded!"** (an h3 element) and the uploaded file name **"skillopt-note.txt"**
+
+ANSWER: Heading: "File Uploaded!"; uploaded file name: "skillopt-note.txt"

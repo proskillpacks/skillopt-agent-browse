@@ -1,0 +1,118 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r4", "correct": true, "score": 0.909, "wtok": 60678, "out_tok": 2499, "turns": 13, "secs": 18, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; archived with confirmation; receipt number #A-7028"}
+
+$ agent-browser open http://localhost:8791/inbox.html; agent-browser snapshot -i
+-> [419 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('[class*=msg], .message, li, tr, article, section')].slice(0,20).map(el => el.className + ' | ' + el.textContent.slice(0,120)))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval "document.body.innerHTML.length" && agent-browser eval --stdin <<'JS'
+document.body.innerText.slice(0, 1500)
+JS
+-> [929 chars] 4487
+"Inbox\n\nShowing 24 of 60\n\nAlex A.\nInvoice #100\nArchive\nFemi H.\nLunch order #113\nArchive\nKai C.\nOn-call swap #126\nArchive\nDana K.\nRetro actions #139\nArchive\nIvo E.\nRelease checklist #152\nArchive\nBo M.\nDesign review #165\nArchive\nGus G.\nHiring loop #178\nArchive\nLena B.\nStandup notes #191\nArchive\nElif J.\nTravel booking #204\nArchive\nJude D.\nBudget draft #217\nArchive\nChen L.\nInvoice #230\nArchive\nHana F.\nLunch order #243\nArchive\nAlex A.\nOn-call swap #256\nA …nInvoice #360\nArchive\nJude D.\nLunch order #373\nArchive\nChen L.\nOn-call swap #386\nArchive\nHana F.\nRetro actions #399\nArchive\nLoading more…"
+
+$ agent-browser eval --stdin <<'JS'
+const btns = [...document.querySelectorAll('button')].filter(b => !/archive/i.test(b.textContent));
+JSON.stringify(btns.map(b => b.className + ' | ' + b.textContent.trim()))
+JS
+-> [5 chars] "[]"
+
+$ agent-browser eval --stdin <<'JS'
+const el = [...document.querySelectorAll('*')].find(e => e.children.length === 0 && /loading more/i.test(e.textContent));
+el ? el.outerHTML.slice(0,500) + ' || PARENT: ' + el.parentElement.outerHTML.slice(0,800) : 'not found'
+JS
+-> [918 chars] "<div id=\"sentinel\" style=\"height:40px\">Loading more…</div> || PARENT: <body>\n<h1>Inbox</h1><p id=\"count\">Showing 24 of 60</p><div id=\"list\"><div class=\"row\"><span class=\"from\">Alex A.</span><span class=\"subj\">Invoice #100</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Femi H.</span><span class=\"subj\">Lunch order #113</span><button>Archive</button></div><div class=\"row\"><span class=\"from\">Kai C.</span><span class=\"subj\">On-call swap #126</span> …on>Archive</button></div><div class=\"row\"><span class=\"from\">Bo M.</span><span class=\"subj\">Design review #165</span><button>Archive</button><"
+
+SAY: There's infinite loading via a sentinel. I'll scroll to load more rows until Priya N. appears:
+$ for i in 1 2 3 4 5 6; do agent-browser eval "document.getElementById('sentinel').scrollIntoView()"; sleep 1; agent-browser eval "document.getElementById('count').textContent"; if agent-browser eval --stdin <<'JS'
+document.querySelector('body').innerText.includes('Priya N.')
+JS
+; then echo FOUND; break; fi; done
+-> [150 chars] /bin/bash: -c: line 4: syntax error near unexpected token `;'
+/bin/bash: -c: line 4: `; then echo FOUND; break; fi; done'
+
+
+Command exited with code 2
+$ agent-browser eval "document.getElementById('sentinel').scrollIntoView()"; sleep 1
+agent-browser eval --stdin <<'JS'
+const rows = [...document.querySelectorAll('.row')];
+JSON.stringify({count: document.getElementById('count').textContent, rows: rows.length, priya: rows.map(r => r.querySelector('.from').textContent).filter(f => f.startsWith('Priya'))})
+JS
+-> [87 chars] {
+  "interrupted": false
+}
+"{\"count\":\"Showing 36 of 60\",\"rows\":36,\"priya\":[]}"
+
+$ agent-browser eval "document.getElementById('sentinel').scrollIntoView()"; sleep 1
+agent-browser eval "document.getElementById('sentinel').scrollIntoView()"; sleep 1
+agent-browser eval --stdin <<'JS'
+const rows = [...document.querySelectorAll('.row')];
+JSON.stringify({count: document.getElementById('count').textContent, priya: rows.filter(r => r.querySelector('.from').textContent.startsWith('Priya')).map(r => r.innerText.replace(/\n/g,' | '))})
+JS
+-> [159 chars] {
+  "interrupted": false
+}
+{
+  "interrupted": false
+}
+✗ Evaluation error: SyntaxError: Identifier 'rows' has already been declared
+
+
+Command exited with code 1
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const rws = [...document.querySelectorAll('.row')];
+return JSON.stringify({count: document.getElementById('count').textContent, priya: rws.filter(r => r.querySelector('.from').textContent.startsWith('Priya')).map(r => r.innerText.replace(/\n/g,' | '))});
+})()
+JS
+-> [114 chars] "{\"count\":\"Showing 60 of 60\",\"priya\":[\"Priya N. | Q3 vendor audit — rescheduled to the 19th | Archive\"]}"
+
+SAY: Found Priya N. — subject: "Q3 vendor audit — rescheduled to the 19th". Now archive that row:
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const i = [...document.querySelectorAll('#list .row')].findIndex(r => r.querySelector('.from').textContent.startsWith('Priya'));
+return i + 1;
+})()
+JS
+-> [3 chars] 45
+
+$ agent-browser click "#list .row:nth-child(45) button"; agent-browser dialog accept
+-> [146 chars] ✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+const t = document.body.innerText;
+const m = t.match(/[Rr]eceipt[^\n]*\n?[^\n]*/);
+return JSON.stringify({receipt: m ? m[0] : null, tail: t.slice(-300)});
+})()
+JS
+-> [398 chars] "{\"receipt\":\"Receipt #A-7028\",\"tail\":\"swap #776\\nArchive\\nBo M.\\nRetro actions #789\\nArchive\\nGus G.\\nRelease checklist #802\\nArchive\\nLena B.\\nDesign review #815\\nArchive\\nElif J.\\nHiring loop #828\\nArchive\\nJude D.\\nStandup notes #841\\nArchive\\nChen L.\\nTravel booking #854\\nArchive\\nHana F.\\nBudget draft #867\\nArchive\\nEnd of inbox\\nArchived. Receipt #A-7028\"}"
+
+SAY: Done. Summary:
+
+- **Message from Priya N.:** subject **"Q3 vendor audit — rescheduled to the 19th"** (found in the inbox after loading all 60 messages via the infinite-scroll sentinel)
+- **Archived:** clicked the row's Archive button, which raised the confirm dialog *"Archive this message?"* — I accepted it, and the page showed "Archived."
+- **Receipt number shown:** **Receipt #A-7028**
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; archived with confirmation; receipt number #A-7

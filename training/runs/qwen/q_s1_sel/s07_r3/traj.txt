@@ -1,0 +1,63 @@
+TASK s07: On https://the-internet.herokuapp.com/drag_and_drop drag box A and drop it onto box B. Report the header letters of the two boxes after the drop, left to right, as a comma-separated list.
+EXPECT: ['\\bB\\s*,\\s*A\\b']
+RESULT: {"id": "s07_r3", "correct": true, "score": 0.944, "wtok": 37214, "out_tok": 1752, "turns": 10, "secs": 93, "timed_out": false, "curl": false, "answer": "B, A"}
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser snapshot -i
+-> [57 chars] ✗ CDP command timed out: Page.navigate
+- Iframe [ref=e1]
+
+$ agent-browser open https://the-internet.herokuapp.com/drag_and_drop; agent-browser wait "#drag_box_A #header"; agent-browser snapshot -i
+-> [231 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+✗ Wait timed out after 25000ms
+- link "Fork me on GitHub" [ref=e2]
+- heading "Drag and Drop" [level=3, ref=e3]
+- link "Elemental Selenium" [ref=e4]
+
+$ agent-browser snapshot
+-> [360 chars] - generic
+  - link "Fork me on GitHub" [ref=e2]
+    - image "Fork me on GitHub"
+  - heading "Drag and Drop" [level=3, ref=e3]
+  - generic
+    - group
+      - banner
+        - StaticText "A"
+    - group
+      - banner
+        - StaticText "B"
+  - generic
+    - separator
+    - generic
+      - StaticText "Powered by "
+      - link "Elemental Selenium" [ref=e4]
+
+SAY: The boxes are in the main document. Now dragging box A onto box B:
+$ agent-browser drag "#drag_box_A" "#drag_box_B"; agent-browser eval "JSON.stringify({a: document.querySelector('#drag_box_A').getBoundingClientRect().left, b: document.querySelector('#drag_box_B').getBoundingClientRect().left, aHeader: document.querySelector('#drag_box_A').textContent.trim(), bHeader: document.querySelector('#drag_box_B').textContent.trim()})"
+-> [263 chars] ✗ Element not found: #drag_box_A. Verify the selector, role, or name is correct and the element exists in the DOM.
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')
+    at <anonymous>:1:57
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({iframes: [...document.querySelectorAll('iframe')].map(f=>f.src||f.name), hasA: !!document.querySelector('#drag_box_A'), groups: [...document.querySelectorAll('[class*=drag]')].map(g=>g.id||g.className)})"
+-> [48 chars] "{\"iframes\":[],\"hasA\":false,\"groups\":[]}"
+
+$ agent-browser eval "JSON.stringify({ready:document.readyState, title:document.title, len:document.body.innerHTML.length, snippet:document.body.innerHTML.slice(0,600)})"
+-> [794 chars] "{\"ready\":\"complete\",\"title\":\"The Internet\",\"len\":2550,\"snippet\":\"\\n    <div class=\\\"row\\\">\\n      <div id=\\\"flash-messages\\\" class=\\\"large-12 columns\\\">\\n      \\n        \\n      \\n        \\n      \\n        \\n      \\n      </div>\\n    </div>\\n    <div class=\\\"row\\\">\\n      <a href=\\\"https://github.com/tourdedave/the-internet\\\"><img style=\\\"position: absolute; top: 0; right: 0; border: 0;\\\" src=\\\"/img/forkme_right_green_007200.png\\\" alt=\\\"Fo ….column {\\n  height: 150px;\\n  width: 150px;\\n  float: left;\\n  border: 2px solid #666666;\\n  background-color: #ccc;\\n  margin-right: 5px;\"}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.column')].map(c=>({cls:c.className, header:c.querySelector('.column-header')?.textContent.trim(), left:c.getBoundingClientRect().left, text:c.textContent.trim()})))"
+-> [101 chars] "[{\"cls\":\"column\",\"left\":15,\"text\":\"A\"},{\"cls\":\"column\",\"left\":230,\"text\":\"B\"}]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('.column')].map(c=>({parent:c.parentElement.tagName+'.'+c.parentElement.className, tag:c.tagName, draggable:c.getAttribute('draggable'), parentHTML:c.parentElement.outerHTML.slice(0,300)})))"
+-> [636 chars] "[{\"parent\":\"DIV.\",\"tag\":\"DIV\",\"draggable\":\"true\",\"parentHTML\":\"<div id=\\\"columns\\\">\\n    <div class=\\\"column\\\" id=\\\"column-a\\\" draggable=\\\"true\\\"><header>A</header></div>\\n    <div class=\\\"column\\\" id=\\\"column-b\\\" draggable=\\\"true\\\"><header>B</header></div>\\n  </div>\"},{\"parent\":\"DIV.\",\"tag\":\"DIV\",\"draggable\":\"true\",\"parentHTML\":\"<div id=\\\"columns\\\">\\n    <div class=\\\"column\\\" id=\\\"column-a\\\" draggable=\\\"true\\\"><header>A</header></div>\\n    <div class=\\\"column\\\" id=\\\"column-b\\\" draggable=\\\"true\\\"><header>B</header></div>\\n  </div>\"}]"
+
+SAY: Boxes are `#column-a` and `#column-b` (HTML5 draggable). Dragging A onto B:
+$ agent-browser drag "#column-a" "#column-b"; agent-browser eval "JSON.stringify([...document.querySelectorAll('.column')].map(c=>({id:c.id, header:c.querySelector('header')?.textContent.trim(), left:Math.round(c.getBoundingClientRect().left)})).sort((x,y)=>x.left-y.left))"
+-> [114 chars] ✓ Done
+"[{\"id\":\"column-a\",\"header\":\"B\",\"left\":15},{\"id\":\"column-b\",\"header\":\"A\",\"left\":230}]"
+
+SAY: The drag succeeded. After the drop, the left box (`#column-a`) now shows header **B** and the right box (`#column-b`) shows header **A** — the boxes swapped their contents as expected.
+
+Left-to-right header letters: B, A
+
+ANSWER: B, A

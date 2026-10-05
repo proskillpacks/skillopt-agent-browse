@@ -1,0 +1,103 @@
+TASK s05: On http://localhost:8791/inbox.html find the message from 'Priya N.' and report its subject. Then archive that message (confirm when asked) and report the receipt number shown afterwards.
+EXPECT: ['vendor audit', '19th', 'a-7028']
+RESULT: {"id": "s05_r2", "correct": true, "score": 0.937, "wtok": 41833, "out_tok": 1699, "turns": 9, "secs": 70, "timed_out": false, "curl": false, "answer": "Subject: \"Q3 vendor audit \u2014 rescheduled to the 19th\"; Receipt #A-7028"}
+
+$ agent-browser open "http://localhost:8791/inbox.html"; agent-browser wait ".msg, [class*=msg], tbody, #inbox"; agent-browser snapshot -i
+-> [798 chars] ✓ Inbox
+  http://localhost:8791/inbox.html
+✗ Wait timed out after 25000ms
+- heading "Inbox" [level=1, ref=e1]
+- button "Archive" [ref=e2]
+- button "Archive" [ref=e3]
+- button "Archive" [ref=e4]
+- button "Archive" [ref=e5]
+- button "Archive" [ref=e6]
+- button "Archive" [ref=e7]
+- button "Archive" [ref=e8]
+- button "Archive" [ref=e9]
+- button "Archive" [ref=e10]
+- button "Archive" [ref=e11]
+- button "Archive" [ref=e12]
+- button "Archive" [ref=e13]
+- button "Archive" [ref=e14]
+- button "Archive" [r …e20]
+- button "Archive" [ref=e21]
+- button "Archive" [ref=e22]
+- button "Archive" [ref=e23]
+- button "Archive" [ref=e24]
+- button "Archive" [ref=e25]
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('.msg, li, tr, article, div')).map(e=>e.textContent.slice(0,120)).filter(t=>t.includes('Priya N.')).slice(0,5))"
+-> [5 chars] "[]"
+
+$ agent-browser eval "JSON.stringify({title:document.title, body:document.body.innerHTML.slice(0,1500)})"
+-> [1768 chars] "{\"title\":\"Inbox\",\"body\":\"\\n<h1>Inbox</h1><p id=\\\"count\\\">Showing 24 of 60</p><div id=\\\"list\\\"><div class=\\\"row\\\"><span class=\\\"from\\\">Alex A.</span><span class=\\\"subj\\\">Invoice #100</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Femi H.</span><span class=\\\"subj\\\">Lunch order #113</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Kai C.</span><span class=\\\"subj\\\">On-call swap #126</span><bu …</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Hana F.</span><span class=\\\"subj\\\">Lunch order #243</spa\"}"
+
+$ agent-browser eval "JSON.stringify({rest:document.body.innerHTML.slice(1500)})"
+-> [3451 chars] "{\"rest\":\"n><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Alex A.</span><span class=\\\"subj\\\">On-call swap #256</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Femi H.</span><span class=\\\"subj\\\">Retro actions #269</span><button>Archive</button></div><div class=\\\"row\\\"><span class=\\\"from\\\">Kai C.</span><span class=\\\"subj\\\">Release checklist #282</span><button>Archive</button></div><div class=\\\"row\\\"><spa …\nmore();new IntersectionObserver(e=>{if(e[0].isIntersecting)setTimeout(more,600);}).observe(document.getElementById('sentinel'));\\n</script>\\n\"}"
+
+SAY: Priya N.'s message is at index 44 — I need to scroll to load more rows (infinite scroll). Let me load more and find the row.
+$ agent-browser eval "
+(function(){
+  let n=0;
+  const rows=()=>Array.from(document.querySelectorAll('.row'));
+  const found=()=>rows().find(r=>r.querySelector('.from').textContent.trim()==='Priya N.');
+  while(!found() && n<6){ document.getElementById('sentinel').scrollIntoView(); n++; }
+  // wait a bit for async loads
+  return new Promise(res=>{
+    let tries=0;
+    const iv=setInterval(()=>{
+      const r=found();
+      if(r||tries++>20){
+        clearInterval(iv);
+        if(r){
+          r.scrollIntoView();
+          res(JSON.stringify({found:true, subj:r.querySelector('.subj').textContent}));
+        } else res(JSON.stringify({found:false, shown:document.getElementById('count').textContent}));
+      }
+    },300);
+  });
+})()"
+-> [51 chars] "{\"found\":false,\"shown\":\"Showing 36 of 60\"}"
+
+$ agent-browser eval "
+(function(){
+  const rows=()=>Array.from(document.querySelectorAll('.row'));
+  const found=()=>rows().find(r=>r.querySelector('.from').textContent.trim()==='Priya N.');
+  return new Promise(res=>{
+    let scrolls=0, tries=0;
+    const iv=setInterval(()=>{
+      if(found()){
+        clearInterval(iv);
+        const r=found(); r.scrollIntoView();
+        res(JSON.stringify({found:true, subj:r.querySelector('.subj').textContent, shown:document.getElementById('count').textContent}));
+      } else if(tries++>80){
+        clearInterval(iv);
+        res(JSON.stringify({found:false, shown:document.getElementById('count').textContent}));
+      } else {
+        if(tries%5===0){ document.getElementById('sentinel').scrollIntoView(); scrolls++; }
+      }
+    },250);
+  });
+})()"
+-> [105 chars] "{\"found\":true,\"subj\":\"Q3 vendor audit — rescheduled to the 19th\",\"shown\":\"Showing 48 of 60\"}"
+
+SAY: Found it — subject is "Q3 vendor audit — rescheduled to the 19th". Now archive it, confirming the dialog.
+$ agent-browser eval "const r=Array.from(document.querySelectorAll('.row')).find(r=>r.querySelector('.from').textContent.trim()==='Priya N.'); r.querySelector('button').id='priyaBtn'; document.getElementById('priyaBtn').scrollIntoView(); 'ok'"; agent-browser click "#priyaBtn"; agent-browser dialog accept; agent-browser wait "#toast:visible" 2>/dev/null; agent-browser eval "document.getElementById('toast').textContent"
+-> [179 chars] "ok"
+✓ Done
+⚠ A JavaScript confirm dialog is blocking the page: "Archive this message?" — use `dialog accept` or `dialog dismiss` to resolve it
+✓ Done
+"Archived. Receipt #A-7028"
+
+$ agent-browser close
+-> [17 chars] ✓ Browser closed
+
+SAY: Done. Summary:
+
+- **Sender:** Priya N. (index 44 in the inbox, reached by scrolling the infinite list)
+- **Subject:** "Q3 vendor audit — rescheduled to the 19th"
+- **Archived:** clicked the Archive button on that row, accepted the "Archive this message?" confirm dialog
+- **Receipt shown afterwards:** `Archived. Receipt #A-7028`
+
+ANSWER: Subject: "Q3 vendor audit — rescheduled to the 19th"; Receipt #A-7028

@@ -1,0 +1,57 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": true, "score": 0.949, "wtok": 33748, "out_tok": 2018, "turns": 9, "secs": 16, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the Historical Fiction category has 26 books in total.**"}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books_17/historical-fiction_25/index.html" 2>&1 | tail -5; agent-browser eval "JSON.stringify({title: document.title, books: document.querySelectorAll('.product_pod').length, pagination: [...document.querySelectorAll('.pagination a')].map(a=>a.textContent)})"
+-> [168 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/books_17/historical-fiction_25/index.html
+"{\"title\":\"404 Not Found\",\"books\":0,\"pagination\":[]}"
+
+SAY: That URL was a guess and 404'd. Let me find the real link from the homepage.
+$ agent-browser open "https://books.toscrape.com/" ; agent-browser eval "JSON.stringify([...document.querySelectorAll('a')].filter(a=>/Historical Fiction/i.test(a.textContent)).map(a=>a.href))"
+-> [165 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" ; agent-browser eval "JSON.stringify({page: document.querySelector('.pagination span.current')?.textContent, next: !!document.querySelector('a[rel=next]')})"
+-> [154 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+"{\"next\":false}"
+
+$ agent-browser eval "JSON.stringify({count: document.querySelectorAll('.product_pod').length, ratingEls: document.querySelectorAll('p.rating').length, stars: [...document.querySelectorAll('p.rating')].map(p=>p.textContent.trim()), pag: [...document.querySelectorAll('.pagination li')].map(li=>li.textContent.trim()), pagHTML: document.querySelector('.pagination')?.innerHTML.slice(0,500)})"
+-> [57 chars] "{\"count\":20,\"ratingEls\":0,\"stars\":[],\"pag\":[]}"
+
+$ agent-browser eval "JSON.stringify({pod: document.querySelector('.product_pod')?.outerHTML.slice(0,1200), body: document.querySelector('body')?.className, foot: document.querySelector('footer')? true : false})"
+-> [1483 chars] "{\"pod\":\"<article class=\\\"product_pod\\\">\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"../../../tipping-the-velvet_999/index.html\\\"><img src=\\\"../../../../media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg\\\" alt=\\\"Tipping the Velvet\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n                <p  …       \\n\\n\\n\\n\\n\\n\\n    \\n    <form>\\n        <button type=\\\"submit\\\" class=\\\"btn btn-primary \",\"body\":\"default\",\"foot\":true}"
+
+SAY: Ratings use `p.star-rating` with classes like `One`. Let me check the pagination structure and loop through pages.
+$ agent-browser eval "JSON.stringify({pag: document.querySelector('.pagination')?.outerHTML.slice(0,600)})"
+-> [5 chars] "{}"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('a')].filter(a=>/next|prev/i.test(a.textContent)).map(a=>a.href))"
+-> [93 chars] "[\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"]"
+
+$ for p in 1 2 3 4 5 6 7 8; do
+  if [ $p -eq 1 ]; then url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html"; else url="https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"; fi
+  agent-browser open "$url" >/dev/null 2>&1
+  out=$(agent-browser eval "JSON.stringify({one: [...document.querySelectorAll('p.star-rating.One')].length, total: document.querySelectorAll('.product_pod').length, hasNext: [...document.querySelectorAll('a')].some(a=>/next/i.test(a.textContent.trim()))})")
+  echo "$out"
+  echo "$out" | grep -q '"hasNext":false' && break
+done
+-> [380 chars] "{\"one\":5,\"total\":20,\"hasNext\":true}"
+"{\"one\":0,\"total\":6,\"hasNext\":false}"
+"{\"one\":0,\"total\":0,\"hasNext\":false}"
+"{\"one\":0,\"total\":0,\"hasNext\":false}"
+"{\"one\":0,\"total\":0,\"hasNext\":false}"
+"{\"one\":0,\"total\":0,\"hasNext\":false}"
+"{\"one\":0,\"total\":0,\"hasNext\":false}"
+"{\"one\":0,\"total\":0,\"hasNext\":false}"
+
+
+Command exited with code 1
+SAY: The loop data is clear: page 1 has 20 books (5 with one-star rating), page 2 has 6 books (0 with one-star rating). Subsequent pages don't exist.
+
+- Total books: 20 + 6 = 26
+- One-star books: 5 + 0 = 5
+
+**ANSWER: 5 books have a one-star rating; the Historical Fiction category has 26 books in total.**

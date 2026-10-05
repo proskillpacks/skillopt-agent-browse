@@ -1,0 +1,60 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": false, "score": 0.0, "wtok": 31534, "out_tok": 1267, "turns": 10, "secs": 12, "timed_out": false, "curl": false, "answer": "5 books have a one-star rating; the Historical Fiction category has 20 books total (all on a single page)."}
+
+$ agent-browser --help 2>&1 | head -50
+-> [2283 chars] 
+agent-browser - fast browser automation CLI for AI agents
+
+Usage: agent-browser <command> [args] [options]
+
+Start here (for AI agents):
+  agent-browser skills get core --full
+
+  Skills ship with the CLI (always version-matched) and include workflow
+  patterns, ref/selector usage, and copy-paste examples. Prefer this over
+  guessing commands from flag docs alone. Specialized skills cover Electron
+  apps, Slack, exploratory testing, protected Vercel deployments, and cloud
+  browser providers.
+
+   … Connect to browser via CDP
+  close [--all]              Close browser (--all closes every session)
+
+Navigation:
+  back                       Go back
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical_11/index.html" 2>&1 | head -20
+-> [89 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical_11/index.html
+
+$ agent-browser open "https://books.toscrape.com/" 2>&1 | head -5
+-> [73 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('a')].map(a=>a.href).filter(h=>h.includes('category')).slice(0,40))" 2>&1 | head -10
+-> [3212 chars] "[\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\",\"https://books.toscrape.com/catalogue/category/books/classics_6/index.html\",\"https://books.toscrape.c …s.toscrape.com/catalogue/category/books/spirituality_39/index.html\",\"https://books.toscrape.com/catalogue/category/books/academic_40/index.html\"]"
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html" 2>&1
+-> [135 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
+
+$ agent-browser eval "JSON.stringify({books: document.querySelectorAll('article.product_pod').length, oneStar: document.querySelectorAll('article.product_pod p.star-rating.One').length, next: !!document.querySelector('ul.pagination li.next a')})" 2>&1
+-> [46 chars] "{\"books\":20,\"oneStar\":5,\"next\":false}"
+
+$ agent-browser eval "document.querySelector('ul.pagination') ? document.querySelector('ul.pagination').outerHTML : 'none'" 2>&1
+-> [7 chars] "none"
+
+$ agent-browser eval "document.body.innerText.substring(0, 400)" 2>&1
+-> [437 chars] "Books to Scrape We love being scraped!\nHome  Books Historical Fiction\nBooks\nTravel\nMystery\nHistorical Fiction\nSequential Art\nClassics\nPhilosophy\nRomance\nWomens Fiction\nFiction\nChildrens\nReligion\nNonfiction\nMusic\nDefault\nScience Fiction\nSports and Games\nAdd a comment\nFantasy\nNew Adult\nYoung Adult\nScience\nPoetry\nParanormal\nArt\nPsychology\nAutobiography\nParenting\nAdult Fiction\nHumor\nHorror\nHistory\nFoo"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod p.star-rating')].map(p=>p.className).reduce((a,c)=>{a[c]=(a[c]||0)+1;return a},{}))" 2>&1
+-> [118 chars] "{\"star-rating One\":5,\"star-rating Three\":3,\"star-rating Five\":5,\"star-rating Four\":3,\"star-rating Two\":4}"
+
+SAY: I opened the Historical Fiction category page in the browser. The category has no pagination (all books fit on a single page — no `ul.pagination` element), so page 1 is the only page.
+
+Counting from the live DOM:
+- Total books (`article.product_pod`): **20**
+- Rating breakdown: One=5, Two=4, Three=3, Four=3, Five=5 (sums to 20 ✓)
+- One-star books: **5**
+
+ANSWER: 5 books have a one-star rating; the Historical Fiction category has 20 books total (all on a single page).

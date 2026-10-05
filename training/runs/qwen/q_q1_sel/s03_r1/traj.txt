@@ -1,0 +1,76 @@
+TASK s03: On https://books.toscrape.com/ open the 'Historical Fiction' category. Across all pages of that category, how many books have a one-star rating? Also report how many books the category has in total.
+EXPECT: ['\\b5\\b|\\bfive\\b', '\\b26\\b']
+RESULT: {"id": "s03_r1", "correct": true, "score": 0.944, "wtok": 37447, "out_tok": 1420, "turns": 11, "secs": 11, "timed_out": false, "curl": false, "answer": "5 books are rated one star; the category has 26 books in total."}
+
+$ agent-browser open "https://books.toscrape.com/catalogue/category/historical-fiction_30/index.html" ; agent-browser snapshot -i
+-> [141 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/category/historical-fiction_30/index.html
+- heading "404 Not Found" [level=1, ref=e1]
+
+$ agent-browser open "https://books.toscrape.com/" ; agent-browser find text "Historical Fiction" click
+-> [80 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+
+$ agent-browser eval "JSON.stringify({url: location.href, count: document.querySelector('#content_list').children.length, lastPage: document.querySelector('li.next a') ? document.querySelector('li.next a').getAttribute('href') : null})"
+-> [135 chars] ✗ Evaluation error: TypeError: Cannot read properties of null (reading 'children')
+    at <anonymous>:1:83
+
+
+Command exited with code 1
+$ agent-browser eval "JSON.stringify({url: location.href, title: document.title})"
+-> [161 chars] "{\"url\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"title\":\"Historical Fiction | Books to Scrape - Sandbox\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({books: document.querySelectorAll('article.product_pod').length, last: document.querySelector('ul.pager li.next a')?.href || null})
+JS
+-> [115 chars] "{\"books\":20,\"last\":\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html\"}"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({pages: document.querySelectorAll('ul.pager li').length, texts: [...document.querySelectorAll('ul.pager li')].map(li=>li.textContent.trim())})
+JS
+-> [53 chars] "{\"pages\":2,\"texts\":[\"Page 1 of 2\",\"next\"]}"
+
+$ for p in 1 2; do agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('article.product_pod')].reduce((acc, a) => { acc.total++; const stars = a.querySelectorAll('.stars i').length; acc[stars] = (acc[stars]||0)+1; return acc; }, {}))
+JS
+done
+-> [327 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1.html
+"{\"0\":20,\"total\":null}"
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"0\":6,\"total\":null}"
+
+SAY: The star counting was off. Let me inspect the actual markup.
+$ agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1.html"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('article.product_pod')[0].querySelectorAll('span.rating')].map(s=>s.className))
+JS
+-> [141 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1.html
+"[]"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify(document.querySelector('article.product_pod').innerHTML)
+JS
+-> [1553 chars] "\"\\n        \\n            <div class=\\\"image_container\\\">\\n                \\n                    \\n                    <a href=\\\"../../../tipping-the-velvet_999/index.html\\\"><img src=\\\"../../../../media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg\\\" alt=\\\"Tipping the Velvet\\\" class=\\\"thumbnail\\\"></a>\\n                    \\n                \\n            </div>\\n        \\n\\n        \\n            \\n                <p class=\\\"star-rating One\\\">\\n            …block\\\" data-loading-text=\\\"Adding...\\\">Add to basket</button>\\n    </form>\\n\\n\\n                \\n            </div>\\n        \\n    \""
+
+$ for p in 1 2; do agent-browser open "https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-$p.html"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('article.product_pod')].reduce((a, p) => { a.total++; const m = p.querySelector('p.star-rating').className.match(/(One|Two|Three|Four|Five)/); a[m[1]] = (a[m[1]]||0)+1; return a; }, {total:0}))
+JS
+done
+-> [393 chars] ✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-1.html
+"{\"total\":20,\"One\":5,\"Three\":3,\"Five\":5,\"Four\":3,\"Two\":4}"
+✓ Historical Fiction | Books to Scrape - Sandbox
+  https://books.toscrape.com/catalogue/category/books/historical-fiction_4/page-2.html
+"{\"total\":6,\"Five\":3,\"Three\":2,\"Four\":1}"
+
+SAY: Done. The Historical Fiction category spans 2 pages (20 + 6 books):
+
+- **Page 1:** 20 books — 5 one-star, 4 two-star, 3 three-star, 3 four-star, 5 five-star
+- **Page 2:** 6 books — 0 one-star, 2 three-star, 1 four-star, 3 five-star
+
+Totals: **5 one-star books** out of **26 books** in the category.
+
+ANSWER: 5 books are rated one star; the category has 26 books in total.

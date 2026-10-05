@@ -1,0 +1,191 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r6", "correct": false, "score": 0.0, "wtok": 54432, "out_tok": 2702, "turns": 10, "secs": 911, "timed_out": true, "curl": false, "answer": "The extraction works. Now I'll walk through all pages via the `next` link and collect titles (full, from `title` attr) and prices:"}
+
+$ agent-browser open https://books.toscrape.com/; agent-browser wait "article.product_pod"; agent-browser snapshot -i | head -50
+-> [1544 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+- link "Books to Scrape" [ref=e2]
+- link "Home" [ref=e3]
+- link "Books" [ref=e4]
+- link "Travel" [ref=e6]
+- link "Mystery" [ref=e7]
+- link "Historical Fiction" [ref=e8]
+- link "Sequential Art" [ref=e9]
+- link "Classics" [ref=e10]
+- link "Philosophy" [ref=e11]
+- link "Romance" [ref=e12]
+- link "Womens Fiction" [ref=e13]
+- link "Fiction" [ref=e14]
+- link "Childrens" [ref=e15]
+- link "Religion" [ref=e16]
+- link "Nonfict …ref=e47]
+- link "Suspense" [ref=e48]
+- link "Short Stories" [ref=e49]
+- link "Novels" [ref=e50]
+- link "Health" [ref=e51]
+- link "Politics" [ref=e52]
+
+$ cd /tmp && : > books.jsonl
+for i in $(seq 1 50); do
+  url="https://books.toscrape.com/catalogue/page-${i}.html"
+  [ $i -eq 1 ] && url="https://books.toscrape.com/"
+  agent-browser open "$url" >/dev/null 2>&1
+  agent-browser wait "article.product_pod" >/dev/null 2>&1
+  agent-browser eval "(() => JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => { const p = a.querySelector('.price_color'); return { t: a.querySelector('h3 a').textContent.trim(), p: p.textContent }; })))" >> books.jsonl
+  echo "" >> books.jsonl
+done
+wc -l books.jsonl; head -c 300 books.jsonl
+-> [216 chars] 100 books.jsonl
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+{}
+
+
+SAY: The eval returned empty results. Let me debug a single page:
+$ agent-browser open https://books.toscrape.com/; agent-browser wait "article.product_pod"; agent-browser eval "(() => document.querySelectorAll('article.product_pod').length)()"
+-> [83 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+20
+
+$ agent-browser eval "(() => JSON.stringify(document.querySelectorAll('article.product_pod').length))()" ; agent-browser eval "(() => { const li = [...document.querySelectorAll('li a, .pagination a, nav a')]; return JSON.stringify(li.map(a=>a.textContent.trim()).slice(0,80)); })()"
+-> [1176 chars] "20"
+"[\"Home\",\"Books\",\"Travel\",\"Mystery\",\"Historical Fiction\",\"Sequential Art\",\"Classics\",\"Philosophy\",\"Romance\",\"Womens Fiction\",\"Fiction\",\"Childrens\",\"Religion\",\"Nonfiction\",\"Music\",\"Default\",\"Science Fiction\",\"Sports and Games\",\"Add a comment\",\"Fantasy\",\"New Adult\",\"Young Adult\",\"Science\",\"Poetry\",\"Paranormal\",\"Art\",\"Psychology\",\"Autobiography\",\"Parenting\",\"Adult Fiction\",\"Humor\",\"Horror\",\"History\",\"Food and Drink\",\"Christia …a\",\"\",\"Starving Hearts (Triangular Trade ...\",\"\",\"Shakespeare's Sonnets\",\"\",\"Set Me Free\",\"\",\"Scott Pilgrim's Precious Little ...\"]"
+
+$ agent-browser eval "(() => JSON.stringify([...document.querySelectorAll('a')].filter(a=>/^(next|Prev|next )/.test(a.textContent.trim())).map(a=>({t:a.textContent.trim(),h:a.href}))))()"
+-> [80 chars] "[{\"t\":\"next\",\"h\":\"https://books.toscrape.com/catalogue/page-2.html\"}]"
+
+$ agent-browser eval "(() => JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => ({ t: a.querySelector('h3 a').textContent.trim(), p: a.querySelector('.price_color').textContent.trim() }))))"
+-> [3 chars] {}
+
+$ agent-browser eval "(() => document.querySelectorAll('article.product_pod')[0].querySelector('h3 a').textContent)()"
+agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].length)"
+agent-browser eval --stdin <<'JS'
+(() => JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => ({ t: a.querySelector('h3 a').textContent.trim(), p: a.querySelector('.price_color').textContent.trim() }))))
+JS
+-> [29 chars] "A Light in the ..."
+"20"
+{}
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => a.querySelector('h3 a').textContent.trim()).slice(0,3))"
+agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => a.querySelector('h3 a').textContent.trim()))"
+-> [584 chars] "[\"A Light in the ...\",\"Tipping the Velvet\",\"Soumission\"]"
+"[\"A Light in the ...\",\"Tipping the Velvet\",\"Soumission\",\"Sharp Objects\",\"Sapiens: A Brief History ...\",\"The Requiem Red\",\"The Dirty Little Secrets ...\",\"The Coming Woman: A ...\",\"The Boys in the ...\",\"The Black Maria\",\"Starving Hearts (Triangular Trade ...\",\"Shakespeare's Sonnets\",\"Set Me Free\",\"Scott Pilgrim's Precious Little ...\",\"Rip it Up and ...\",\"Our Band Could Be ...\",\"Olio\",\"Mesaerion: The Best Science ...\",\"Libertarianism for Beginners\",\"It's Only the Himalayas\"]"
+
+$ agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => a.querySelector('.price_color').textContent.trim()))"
+agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => ({ t: a.querySelector('h3 a').textContent.trim(), p: a.querySelector('.price_color').textContent.trim() })))"
+-> [1243 chars] "[\"£51.77\",\"£53.74\",\"£50.10\",\"£47.82\",\"£54.23\",\"£22.65\",\"£33.34\",\"£17.93\",\"£22.60\",\"£52.15\",\"£13.99\",\"£20.66\",\"£17.46\",\"£52.29\",\"£35.02\",\"£57.25\",\"£23.88\",\"£37.59\",\"£51.33\",\"£45.17\"]"
+"[{\"t\":\"A Light in the ...\",\"p\":\"£51.77\"},{\"t\":\"Tipping the Velvet\",\"p\":\"£53.74\"},{\"t\":\"Soumission\",\"p\":\"£50.10\"},{\"t\":\"Sharp Objects\",\"p\":\"£47.82\"},{\"t\":\"Sapiens: A Brief History ...\",\"p\":\"£54.23\"},{\"t\":\"The Requiem Red\",\"p\":\"£2 …Best Science ...\",\"p\":\"£37.59\"},{\"t\":\"Libertarianism for Beginners\",\"p\":\"£51.33\"},{\"t\":\"It's Only the Himalayas\",\"p\":\"£45.17\"}]"
+
+SAY: The extraction works. Now I'll walk through all pages via the `next` link and collect titles (full, from `title` attr) and prices:
+$ cd /tmp && : > books.jsonl
+url="https://books.toscrape.com/"
+for i in $(seq 1 60); do
+  agent-browser open "$url" >/dev/null 2>&1
+  agent-browser wait "article.product_pod" >/dev/null 2>&1
+  agent-browser eval "JSON.stringify([...document.querySelectorAll('article.product_pod')].map(a => ({ t: a.querySelector('h3 a').getAttribute('title'), p: a.querySelector('.price_color').textContent.trim() })))" >> books.jsonl
+  echo >> books.jsonl
+  # find next page
+  next=$(agent-browser eval "(() => { const a = [...document.querySelectorAll('a')].find(x => x.textContent.trim() === 'next'); return a ? a.href : ''; })()")
+  [ "$next" = "''" ] && { echo "no next on page $i"; break; }
+  url="$next"
+done
+wc -l books.jsonl; head -c 200 books.jsonl

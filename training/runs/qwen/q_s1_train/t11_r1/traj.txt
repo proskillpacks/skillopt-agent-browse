@@ -1,0 +1,40 @@
+TASK t11: On https://the-internet.herokuapp.com/context_menu right-click inside the dashed box. A JavaScript alert appears; report its exact message text.
+EXPECT: ['you selected a context menu']
+RESULT: {"id": "t11_r1", "correct": true, "score": 0.973, "wtok": 17710, "out_tok": 921, "turns": 6, "secs": 57, "timed_out": false, "curl": false, "answer": "You selected a context menu"}
+
+$ agent-browser open "https://the-internet.herokuapp.com/context_menu"; agent-browser eval "window.__alerts=[]; window.alert=m=>window.__alerts.push(String(m)); 'hooked'"; agent-browser get box "#hoge"
+-> [229 chars] ✗ Operation timed out. The page may still be loading or the element may not exist.
+"hooked"
+✗ Element not found: #hoge. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser wait "#hoge"; agent-browser get box "#hoge"
+-> [168 chars] ✗ Wait timed out after 25000ms
+✗ Element not found: #hoge. Verify the selector, role, or name is correct and the element exists in the DOM.
+
+
+Command exited with code 1
+$ agent-browser get url; agent-browser eval "JSON.stringify({title:document.title, bodyLen:document.body?document.body.innerHTML.length:0, divs:Array.from(document.querySelectorAll('div')).map(d=>d.id)})"
+-> [192 chars] https://the-internet.herokuapp.com/context_menu
+"{\"title\":\"The Internet\",\"bodyLen\":1237,\"divs\":[\"\",\"flash-messages\",\"\",\"content\",\"\",\"hot-spot\",\"page-footer\",\"\",\"\"]}"
+
+SAY: The dashed box is `#hot-spot`. Now right-clicking on it and reading the hooked alert:
+$ agent-browser eval "window.__alerts=[]; window.alert=m=>window.__alerts.push(String(m)); 'reset'"; x=$(agent-browser get box "#hot-spot" | sed -n 's/.*"\?x":\s*//p'); agent-browser get box "#hot-spot"
+-> [59 chars] "reset"
+x:      15
+y:      179.875
+width:  250
+height: 150
+
+$ agent-browser mouse move 140 254; agent-browser mouse down right; agent-browser mouse up right; agent-browser eval "JSON.stringify(window.__alerts)"
+-> [57 chars] ✓ Done
+✓ Done
+✓ Done
+"[\"You selected a context menu\"]"
+
+SAY: Right-clicking inside the dashed box (`#hot-spot`) triggered the JavaScript alert.
+
+Alert message: **You selected a context menu**
+
+ANSWER: You selected a context menu

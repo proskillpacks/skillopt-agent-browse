@@ -1,0 +1,207 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r2", "correct": true, "score": 0.833, "wtok": 111552, "out_tok": 6199, "turns": 14, "secs": 52, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the single cheapest book is \"An Abundance of Katherines\" at \u00a310.00."}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser eval "document.querySelectorAll('.bookSection').length + '|' + (document.querySelector('li.next > a') ? 'Y' : 'N')"
+-> [79 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+"0|Y"
+
+$ agent-browser eval "JSON.stringify({h1: document.querySelector('h1')?.textContent, art: document.querySelectorAll('article').length, sec: document.querySelectorAll('.bookSection').length, sample: document.body.innerHTML.slice(0,300)})"
+-> [421 chars] "{\"h1\":\"All products\",\"art\":20,\"sec\":0,\"sample\":\"\\n        \\n        \\n    \\n    \\n    <header class=\\\"header container-fluid\\\">\\n        <div class=\\\"page_inner\\\">\\n            <div class=\\\"row\\\">\\n                <div class=\\\"col-sm-8 h1\\\"><a href=\\\"index.html\\\">Books to Scrape</a><small> We love being scraped!</small>\\n</div>\\n\\n                \\n            </div>\\n\"}"
+
+SAY: Books are in `<article>` elements. Looping through all pages now:
+$ out=/tmp/books.json; : > "$out"
+agent-browser wait "article"
+for i in $(seq 1 60); do
+  agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article')).map(e=>[e.querySelector('h3 a').getAttribute('title'), parseFloat(e.querySelector('.price_color').textContent)]))" >> "$out"
+  nxt=$(agent-browser eval "document.querySelector('li.next > a') ? 'Y' : 'N'")
+  [ "$nxt" != "Y" ] && break
+  agent-browser click "li.next a"
+  agent-browser wait "article"
+done
+wc -l "$out"
+-> [25 chars] ✓ Done
+1 /tmp/books.json
+
+$ head -c 300 /tmp/books.json; echo; agent-browser eval "document.querySelector('h1').textContent + '|' + document.querySelectorAll('article').length"
+-> [319 chars] "[[\"A Light in the Attic\",null],[\"Tipping the Velvet\",null],[\"Soumission\",null],[\"Sharp Objects\",null],[\"Sapiens: A Brief History of Humankind\",null],[\"The Requiem Red\",null],[\"The Dirty Little Secrets of Getting Your Dream Job\",null],[\"The Coming Woman: A Novel Based on the Life of t
+"All products|20"
+
+SAY: The loop broke because `eval` prints string results in JSON quotes (so `nxt` was `"Y"` not `Y`). Also prices came back null — need to check the price element class.
+$ agent-browser eval "document.querySelector('article').innerHTML.replace(/\n/g,'').slice(0,400)"; agent-browser eval "document.querySelector('li.next > a') ? 1 : 0"
+-> [416 chars] "                    <div class=\"image_container\">                                                        <a href=\"catalogue/a-light-in-the-attic_1000/index.html\"><img src=\"media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg\" alt=\"A Light in the Attic\" class=\"thumbnail\"></a>                                                </div>                                            <p class=\"star-rating Thr"
+1
+
+$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article p')).map(p=>p.className))" | head -c 400
+-> [400 chars] "[\"star-rating Three\",\"price_color\",\"instock availability\",\"star-rating One\",\"price_color\",\"instock availability\",\"star-rating One\",\"price_color\",\"instock availability\",\"star-rating Four\",\"price_color\",\"instock availability\",\"star-rating Five\",\"price_color\",\"instock availability\",\"star-rating One\",\"price_color\",\"instock availability\",\"star-rating Four\",\"price
+SAY: Prices were NaN (the `£` prefix) and JSON.stringify turned them into null. Rerunning the full crawl with proper parsing:
+$ out=/tmp/books.json; : > "$out"
+agent-browser open "https://books.toscrape.com/"
+for i in $(seq 1 60); do
+  agent-browser wait "article"
+  agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article')).map(e=>[e.querySelector('h3 a').getAttribute('title'), Number(e.querySelector('.price_color').textContent.replace(/[^0-9.]/g,''))]))" >> "$out"
+  nxt=$(agent-browser eval "document.querySelector('li.next > a') ? 1 : 0")
+  [ "$nxt" != "1" ] && break
+  agent-browser click "li.next a"
+done
+wc -l "$out"; tail -c 200 "$out"
+-> [478 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+✓ Done
+✓ Done
+✗ Evaluation error: TypeError: Cannot read properties of null (reading 'getAttribute')
+    at <anonymous>:1:96
+    at Array.map (<anonymous>)
+    at <anonymous>:1:65
+1 /tmp/books.json
+Indie Underground, 1981-1991\",57.25],[\"Olio\",23.88],[\"Mesaerion: The Best Science Fiction Stories 1800-1849\",37.59],[\"Libertarianism for Beginners\",51.33],[\"It's Only the Himalayas\",45.17]]"
+
+$ agent-browser eval "JSON.stringify({h1: document.querySelector('h1').textContent, n: document.querySelectorAll('article').length, firstH3a: !!document.querySelector('article h3 a'), one: document.querySelector('article')?.querySelector('h3')?.outerHTML?.slice(0,200)})"
+-> [161 chars] "{\"h1\":\"All products\",\"n\":20,\"firstH3a\":true,\"one\":\"<h3><a href=\\\"in-her-wake_980/index.html\\\" title=\\\"In Her Wake\\\">In Her Wake</a></h3>\"}"
+
+SAY: On page 2 now, DOM is fine — the earlier failure was a mid-navigation race. Rerunning with direct `page-N.html` URLs (same targets the "next" link points to), which is more deterministic:
+$ out=/tmp/books.json; : > "$out"
+last=0
+for p in $(seq 1 60); do
+  agent-browser open "https://books.toscrape.com/catalogue/page-$p.html" >/dev/null
+  agent-browser wait "article"
+  agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('article')).map(e=>[e.querySelector('h3 a').getAttribute('title'), Number(e.querySelector('.price_color').textContent.replace(/[^0-9.]/g,''))]))" >> "$out"
+  nxt=$(agent-browser eval "document.querySelector('li.next > a') ? 1 : 0")
+  [ "$nxt" != "1" ] && last=$p && break
+done
+echo "last page: $last"; wc -l "$out"
+-> [383 chars] ✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+✓ Done
+last page: 50
+50 /tmp/books.json
+
+SAY: All 50 pages crawled. Now aggregating:
+$ python3 - <<'EOF'
+import json
+books=[]
+for line in open('/tmp/books.json'):
+    books += json.loads(line)
+print("total books:", len(books), "unique:", len({t for t,_ in books}))
+lt12=[b for b in books if b[1]<12.0]
+print("under 12.00:", len(lt12))
+mn=min(b[1] for b in books)
+print("cheapest price:", mn, [b for b in books if b[1]==mn])
+print("cheapest 5:", sorted(books,key=lambda b:b[1])[:5])
+EOF
+-> [161 chars] Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+ValueError: not enough values to unpack (expected 2, got 1)
+
+
+Command exited with code 1
+$ awk '{print NR": "length($0)}' /tmp/books.json | head -5; grep -n ",\[[0-9]" /tmp/books.json | head; awk 'length<300' /tmp/books.json | head
+-> [39 chars] 1: 968
+2: 1041
+3: 1169
+4: 1455
+5: 1285
+
+$ python3 - <<'EOF'
+import json
+for i,line in enumerate(open('/tmp/books.json'),1):
+    data=json.loads(line)
+    bad=[b for b in data if len(b)!=2]
+    if bad: print(i, bad[:3], "len(page):",len(data))
+EOF
+-> [1711 chars] 1 ['[', '[', '"'] len(page): 926
+2 ['[', '[', '"'] len(page): 999
+3 ['[', '[', '"'] len(page): 1127
+4 ['[', '[', '"'] len(page): 1413
+5 ['[', '[', '"'] len(page): 1243
+6 ['[', '[', '"'] len(page): 1191
+7 ['[', '[', '"'] len(page): 1076
+8 ['[', '[', '"'] len(page): 1063
+9 ['[', '[', '"'] len(page): 979
+10 ['[', '[', '"'] len(page): 1070
+11 ['[', '[', '"'] len(page): 927
+12 ['[', '[', '"'] len(page): 930
+13 ['[', '[', '"'] len(page): 1041
+14 ['[', '[', '"'] len(page): 1005
+15 ['[', '[', '"'] len(p …en(page): 916
+47 ['[', '[', '"'] len(page): 840
+48 ['[', '[', '"'] len(page): 828
+49 ['[', '[', '"'] len(page): 794
+50 ['[', '[', '"'] len(page): 911
+
+SAY: The `eval` output double-encodes: each line is a JSON string containing the JSON array. Fixing:
+$ python3 - <<'EOF'
+import json
+books=[]
+for line in open('/tmp/books.json'):
+    d=json.loads(line)
+    if isinstance(d,str): d=json.loads(d)
+    books+=d
+print("total books:", len(books), "unique titles:", len({t for t,_ in books}))
+lt12=[b for b in books if b[1]<12.0]
+print("under 12.00:", len(lt12))
+mn=min(b[1] for b in books)
+print("cheapest:", [(t,p) for t,p in books if p==mn])
+print("cheapest 5:", sorted(books,key=lambda b:b[1])[:5])
+EOF
+-> [312 chars] total books: 1000 unique titles: 999
+under 12.00: 44
+cheapest: [('An Abundance of Katherines', 10)]
+cheapest 5: [['An Abundance of Katherines', 10], ['The Origin of Species', 10.01], ['The Tipping Point: How Little Things Can Make a Big Difference', 10.02], ['Patience', 10.16], ['Greek Mythic History', 10.23]]
+
+SAY: Done. Crawled all 50 catalogue pages in the browser (1,000 book entries total), extracting title + price from each page's article elements.
+
+**Results:**
+- Books priced under £12.00: **44**
+- Cheapest book: **"An Abundance of Katherines" — £10.00** (next cheapest are "The Origin of Species" £10.01 and "The Tipping Point" £10.02)
+
+ANSWER: 44 books cost less than £12.00; the single cheapest book is "An Abundance of Katherines" at £10.00.

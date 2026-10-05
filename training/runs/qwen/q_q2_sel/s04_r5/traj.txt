@@ -1,0 +1,58 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r5", "correct": true, "score": 0.956, "wtok": 29384, "out_tok": 481, "turns": 5, "secs": 5, "timed_out": false, "curl": false, "answer": "Wins: 49, Goals For (GF): 269"}
+
+$ agent-browser open https://www.scrapethissite.com/pages/forms/ && agent-browser snapshot -i
+-> [6582 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+- link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10 …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+SAY: Now let me search for "Bruins" using the search box.
+$ agent-browser fill @e9 "Bruins"; agent-browser click @e10
+-> [14 chars] ✓ Done
+✓ Done
+
+$ agent-browser snapshot -i | head -60
+-> [1769 chars] - link "Sandbox" [ref=e250]
+- link "Lessons" [ref=e251]
+- link "FAQ" [ref=e252]
+- link "Login" [ref=e253]
+- heading "Hockey Teams: Forms, Searching and Pagination 21 items" [level=1, ref=e248]
+- link "8 video lessons" [ref=e254]
+- link "http://www.opensourcesports.com/hockey/" [ref=e255]
+- textbox "Search for Teams:  " [ref=e256]: Bruins
+- button "Search" [ref=e257]
+- columnheader "Team Name" [ref=e258]
+- columnheader "Year" [ref=e259]
+- columnheader "Wins" [ref=e260]
+- columnheader "Losses" [re … "0.562" [ref=e303]
+- cell "150" [ref=e304]
+- cell "127" [ref=e305]
+- cell "23" [ref=e306]
+- cell "Boston Bruins" [ref=e307]
+- cell "1995" [ref=e308]
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('table tbody tr, table tr')].map(r => [...r.cells].map(c => c.textContent.trim())).filter(r => r[0] === 'Boston Bruins' && r[1] === '2011'))
+JS
+-> [86 chars] "[[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]]"
+
+SAY: Found the row for the Boston Bruins 2011 season in the search results.
+
+- **Team:** Boston Bruins, Year 2011
+- **Wins:** 49
+- **Goals For (GF):** 269
+
+ANSWER: Wins: 49, Goals For (GF): 269

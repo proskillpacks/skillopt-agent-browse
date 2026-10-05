@@ -1,0 +1,43 @@
+TASK s04: On https://www.scrapethissite.com/pages/forms/ use the search box to search for Bruins. For the 2011 season, report the team's number of wins and its Goals For (GF).
+EXPECT: ['\\b49\\b', '\\b269\\b']
+RESULT: {"id": "s04_r2", "correct": true, "score": 0.962, "wtok": 25296, "out_tok": 529, "turns": 5, "secs": 4, "timed_out": false, "curl": false, "answer": "49 wins, 269 GF"}
+
+$ agent-browser open "https://www.scrapethissite.com/pages/forms/"
+-> [158 chars] ✓ Hockey Teams: Forms, Searching and Pagination | Scrape This Site | A public sandbox for learning web scraping
+  https://www.scrapethissite.com/pages/forms/
+
+$ agent-browser snapshot -i
+-> [6424 chars] - link "Sandbox" [ref=e3]
+- link "Lessons" [ref=e4]
+- link "FAQ" [ref=e5]
+- link "Login" [ref=e6]
+- heading "Hockey Teams: Forms, Searching and Pagination 25 items" [level=1, ref=e1]
+- link "8 video lessons" [ref=e7]
+- link "http://www.opensourcesports.com/hockey/" [ref=e8]
+- textbox "Search for Teams:  " [ref=e9]
+- button "Search" [ref=e10]
+- columnheader "Team Name" [ref=e11]
+- columnheader "Year" [ref=e12]
+- columnheader "Wins" [ref=e13]
+- columnheader "Losses" [ref=e14]
+- columnheader "OT Lo …"Next" [ref=e244]
+- combobox [expanded=false, ref=e2]: 25
+  - option "25" [selected, ref=e245]
+  - option "50" [ref=e246]
+  - option "100" [ref=e247]
+
+$ agent-browser fill @e9 "Bruins"; agent-browser click @e10
+-> [14 chars] ✓ Done
+✓ Done
+
+$ agent-browser eval --stdin <<'JS'
+(() => {
+  const rows = [...document.querySelectorAll('tbody tr')].map(r => [...r.cells].map(c => c.textContent.trim()));
+  return JSON.stringify({count: rows.length, rows: rows.filter(r => r[1] === '2011'), total: document.querySelector('h1')?.textContent});
+})()
+JS
+-> [267 chars] "{\"count\":22,\"rows\":[[\"Boston Bruins\",\"2011\",\"49\",\"29\",\"4\",\"0.598\",\"269\",\"202\",\"67\"]],\"total\":\"\\n                            Hockey Teams: Forms, Searching and Pagination\\n                            21 items\\n                        \"}"
+
+SAY: The search for Bruins returned the 2011 season row: Boston Bruins, 49 wins, Goals For (GF) 269 (along with 29 losses, 4 OT losses, 0.598 win %, GF 269, GA 202, +67).
+
+ANSWER: 49 wins, 269 GF

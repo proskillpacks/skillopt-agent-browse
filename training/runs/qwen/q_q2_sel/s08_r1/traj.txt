@@ -1,0 +1,159 @@
+TASK s08: On https://books.toscrape.com/ , across the entire catalogue (every page), how many books cost less than £12.00? Also report the title and price of the single cheapest book.
+EXPECT: ['\\b44\\b', 'an\\ abundance\\ of\\ katherine', '10\\.0']
+RESULT: {"id": "s08_r1", "correct": true, "score": 0.919, "wtok": 54013, "out_tok": 2850, "turns": 10, "secs": 385, "timed_out": false, "curl": false, "answer": "44 books cost less than \u00a312.00; the cheapest is \"An Abundance of Katherines\" at \u00a310.00"}
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait ".page"; agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  total: document.body.innerText.match(/(\d+) results?/)?.[1],
+  next: document.querySelector('li.next > a')?.textContent
+})
+JS
+-> [121 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✓ Done
+"{\"total\":\"1000\",\"next\":\"next\"}"
+
+SAY: Catalogue has 1000 books (50/page, 20 pages). Now loop through all pages collecting prices:
+$ for p in $(seq 1 20); do
+  agent-browser open "https://books.toscrape.com/catalogue/page/$p/index.html"
+  agent-browser wait ".product"
+  agent-browser eval --stdin <<'JS'
+const items = [...document.querySelectorAll('article.product_pod')].map(el => ({
+  title: el.querySelector('h3 a').getAttribute('title'),
+  price: parseFloat(el.querySelector('.price_color').textContent.replace('£',''))
+}));
+JSON.stringify(items);
+JS
+done
+-> [1312 chars] ✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page/1/index.html
+✗ Wait timed out after 25000ms
+"[]"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page/2/index.html
+✗ Wait timed out after 25000ms
+"[]"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page/3/index.html
+✗ Wait timed out after 25000ms
+"[]"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page/4/index.html
+✗ Wait timed out after 25000ms
+"[]"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page/5/in …ml
+✗ Wait timed out after 25000ms
+"[]"
+✓ 404 Not Found
+  https://books.toscrape.com/catalogue/page/12/index.html
+
+
+Command timed out after 300 seconds
+SAY: The URL pattern was wrong. Let me check the actual next-page href from the site itself:
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait ".product"; agent-browser eval --stdin <<'JS'
+JSON.stringify([...document.querySelectorAll('ul.pagination a')].map(a => a.href))
+JS
+-> [109 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+"[]"
+
+$ agent-browser open "https://books.toscrape.com/"; agent-browser wait ".product"; agent-browser eval "document.querySelectorAll('.product').length"
+-> [106 chars] ✓ All products | Books to Scrape - Sandbox
+  https://books.toscrape.com/
+✗ Wait timed out after 25000ms
+0
+
+$ agent-browser eval "document.title + ' | ' + document.querySelectorAll('h3 a').length + ' | ' + (document.body.innerText.match(/\\d+ results?/)||[])[0]"
+-> [63 chars] "All products | Books to Scrape - Sandbox | 20 | 1000 results"
+
+$ agent-browser eval --stdin <<'JS'
+JSON.stringify({
+  articles: document.querySelectorAll('article.product_pod').length,
+  products: document.querySelectorAll('article').length,
+  pag: [...document.querySelectorAll('.pagination a, ul a')].map(a => a.href),
+  total: (document.body.innerText.match(/\d+ results?/)||[])[0]
+})
+JS
+-> [4246 chars] "{\"articles\":20,\"products\":20,\"pag\":[\"https://books.toscrape.com/index.html\",\"https://books.toscrape.com/catalogue/category/books_1/index.html\",\"https://books.toscrape.com/catalogue/category/books/travel_2/index.html\",\"https://books.toscrape.com/catalogue/category/books/mystery_3/index.html\",\"https://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html\",\"https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html\",\"https://books.toscr …/books.toscrape.com/catalogue/category/books/crime_51/index.html\",\"https://books.toscrape.com/catalogue/page-2.html\"],\"total\":\"1000 results\"}"
+
+SAY: The pagination uses `catalogue/page-N.html`. Let me walk pages via the "next" link and accumulate all prices:
+$ cd /tmp && rm -f books.json
+url="https://books.toscrape.com/"
+i=0
+while [ -n "$url" ] && [ $i -lt 60 ]; do
+  agent-browser open "$url" > /dev/null
+  agent-browser wait "article.product_pod" > /dev/null 2>&1
+  out=$(agent-browser eval --stdin <<'JS'
+const items = [...document.querySelectorAll('article.product_pod')].map(el => ({
+  t: el.querySelector('h3 a').getAttribute('title'),
+  p: parseFloat(el.querySelector('.price_color').textContent.replace('£',''))
+}));
+const next = document.querySelector('li.next a');
+JSON.stringify({items, next: next ? next.href : null});
+JS
+)
+  echo "$out" >> books.json
+  next=$(echo "$out" | sed 's/^"//;s/"$//' | sed 's/\\\\"/"/g' | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const j=JSON.parse(d);console.log(j.next||'')})")
+  url="$next"
+  i=$((i+1))
+done
+echo "pages collected: $i"
+wc -l books.json
+-> [271 chars] /bin/bash: line 13: warning: here-document at line 7 delimited by end-of-file (wanted `JS')
+/bin/bash: -c: line 13: syntax error near unexpected token `{items,'
+/bin/bash: -c: line 13: `ON.stringify({items, next: next ? next.href : null});'
+
+
+Command exited with code 127
+SAY: Simpler: write the JS extraction to a file first, then loop:
+$ cat > /tmp/extract.js <<'EOF'
+const items = [...document.querySelectorAll('article.product_pod')].map(el => ({
+  t: el.querySelector('h3 a').getAttribute('title'),
+  p: parseFloat(el.querySelector('.price_color').textContent.replace('£',''))
+}));
+const next = document.querySelector('li.next a');
+JSON.stringify({items, next: next ? next.href : null});
+EOF
+cd /tmp && rm -f books.jsonl
+url="https://books.toscrape.com/"; i=0
+while [ -n "$url" ] && [ $i -lt 60 ]; do
+  agent-browser open "$url" > /dev/null
+  agent-browser wait "article.product_pod" > /dev/null 2>&1
+  out=$(agent-browser eval --stdin < /tmp/extract.js)
+  echo "$out" >> /tmp/books.jsonl
+  next=$(echo "$out" | python3 -c "import json,sys; print(json.loads(json.loads(sys.stdin.read()))['next'] or '')")
+  url="$next"; i=$((i+1))
+done
+echo "pages: $i"; wc -l /tmp/books.jsonl
+-> [30 chars] pages: 50
+50 /tmp/books.jsonl
+
+SAY: Collected 50 pages (20 books each = 1000). Now aggregate:
+$ python3 - <<'EOF'
+import json
+all_items=[]
+for line in open('/tmp/books.jsonl'):
+    d=json.loads(json.loads(line))
+    all_items.extend(d['items'])
+print("total books:", len(all_items))
+under=[b for b in all_items if b['p'] < 12.00]
+print("under £12.00:", len(under))
+cheapest=min(all_items, key=lambda b: b['p'])
+print("cheapest:", cheapest['t'], "£%.2f"%cheapest['p'])
+# verify unique
+titles=[b['t'] for b in all_items]
+print("unique titles:", len(set(titles)))
+EOF
+-> [98 chars] total books: 1000
+under £12.00: 44
+cheapest: An Abundance of Katherines £10.00
+unique titles: 999
+
+SAY: All 1000 books across 50 pages were collected via the browser. Results:
+
+- **Books costing less than £12.00:** 44
+- **Cheapest book:** *An Abundance of Katherines* at £10.00
+
+ANSWER: 44 books cost less than £12.00; the cheapest is "An Abundance of Katherines" at £10.00
