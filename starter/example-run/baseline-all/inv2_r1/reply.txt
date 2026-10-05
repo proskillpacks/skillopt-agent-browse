@@ -1,0 +1,8 @@
+```json
+{
+  "id": 7,
+  "customer": "BRIGHT SPARK ELECTRICAL",
+  "date": "2026-04-12",
+  "total_pence": 8500
+}
+```

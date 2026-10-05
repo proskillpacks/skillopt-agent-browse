@@ -1,0 +1,11 @@
+TASK inv5 (invoice-json): Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.
+
+Note: number 5120, delta freight limited, 1 June 2026, £10,000 + VAT
+
+EXPECTED:
+{"id": "INV-005120", "customer": "Delta Freight Limited", "date": "2026-06-01", "total_pence": 1200000}
+
+GOT:
+{"id":"INV-005120","customer":"Delta Freight Limited","date":"2026-06-01","total_pence":1200000}
+
+RESULT: OK wtok=8477 

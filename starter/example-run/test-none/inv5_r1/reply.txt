@@ -1,0 +1,8 @@
+```json
+{
+  "id": 5120,
+  "customer": "delta freight limited",
+  "date": "2026-06-01",
+  "total_pence": 1200000
+}
+```

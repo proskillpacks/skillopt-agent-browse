@@ -1,0 +1,13 @@
+TASK fmt3 (house-format): Rewrite this note in our house style. Reply with the rewritten note only.
+
+Note: Kick-off on 21 Jan 2027, 10:15am. The deposit is £3,450.5 and the balance is £12,000.
+
+EXPECTED:
+Kick-off on 21 Jan 2027, 10:15. The deposit is GBP 3,450.50 and the balance is GBP 12,000.00.
+
+GOT:
+Kick-off: 21 January 2027, 10:15 a.m.
+Deposit: £3,450.50
+Balance: £12,000.00
+
+RESULT: FAIL wtok=2298 

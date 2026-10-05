@@ -1,0 +1,176 @@
+[
+ {
+  "id": "inv1",
+  "split": "train",
+  "family": "invoice-json",
+  "kind": "json",
+  "prompt": "Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.\n\nNote: inv no. 42 - acme widgets ltd - 3rd march 2026 - £1,200.50 + VAT",
+  "expected": {
+   "id": "INV-000042",
+   "customer": "Acme Widgets Ltd",
+   "date": "2026-03-03",
+   "total_pence": 144060
+  }
+ },
+ {
+  "id": "inv2",
+  "split": "train",
+  "family": "invoice-json",
+  "kind": "json",
+  "prompt": "Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.\n\nNote: Invoice #7 for BRIGHT SPARK ELECTRICAL, dated 12/04/2026 (day first), amount £85 inc VAT",
+  "expected": {
+   "id": "INV-000007",
+   "customer": "Bright Spark Electrical",
+   "date": "2026-04-12",
+   "total_pence": 8500
+  }
+ },
+ {
+  "id": "inv3",
+  "split": "sel",
+  "family": "invoice-json",
+  "kind": "json",
+  "prompt": "Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.\n\nNote: ref 1031: harbour & co. billed on 9 Jan 26, total 2,300 GBP + VAT",
+  "expected": {
+   "id": "INV-001031",
+   "customer": "Harbour & Co.",
+   "date": "2026-01-09",
+   "total_pence": 276000
+  }
+ },
+ {
+  "id": "inv4",
+  "split": "sel",
+  "family": "invoice-json",
+  "kind": "json",
+  "prompt": "Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.\n\nNote: INV-88 // oak street bakery // 28-Feb-2026 // £14.99",
+  "expected": {
+   "id": "INV-000088",
+   "customer": "Oak Street Bakery",
+   "date": "2026-02-28",
+   "total_pence": 1499
+  }
+ },
+ {
+  "id": "inv5",
+  "split": "test",
+  "family": "invoice-json",
+  "kind": "json",
+  "prompt": "Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.\n\nNote: number 5120, delta freight limited, 1 June 2026, £10,000 + VAT",
+  "expected": {
+   "id": "INV-005120",
+   "customer": "Delta Freight Limited",
+   "date": "2026-06-01",
+   "total_pence": 1200000
+  }
+ },
+ {
+  "id": "inv6",
+  "split": "test",
+  "family": "invoice-json",
+  "kind": "json",
+  "prompt": "Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.\n\nNote: invoice 19 - northern lights design - 15/07/26 - £640.40 + VAT",
+  "expected": {
+   "id": "INV-000019",
+   "customer": "Northern Lights Design",
+   "date": "2026-07-15",
+   "total_pence": 76848
+  }
+ },
+ {
+  "id": "fmt1",
+  "split": "train",
+  "family": "house-format",
+  "kind": "exact",
+  "prompt": "Rewrite this note in our house style. Reply with the rewritten note only.\n\nNote: Meeting moved to March 5th, 2026 at 2:30pm. Budget is £1200.",
+  "expected": "Meeting moved to 05 Mar 2026 at 14:30. Budget is GBP 1,200.00."
+ },
+ {
+  "id": "fmt2",
+  "split": "train",
+  "family": "house-format",
+  "kind": "exact",
+  "prompt": "Rewrite this note in our house style. Reply with the rewritten note only.\n\nNote: Deadline is 3 November 2026 at 9am. Late fee is £250.",
+  "expected": "Deadline is 03 Nov 2026 at 09:00. Late fee is GBP 250.00."
+ },
+ {
+  "id": "fmt3",
+  "split": "sel",
+  "family": "house-format",
+  "kind": "exact",
+  "prompt": "Rewrite this note in our house style. Reply with the rewritten note only.\n\nNote: Kick-off on 21 Jan 2027, 10:15am. The deposit is £3,450.5 and the balance is £12,000.",
+  "expected": "Kick-off on 21 Jan 2027, 10:15. The deposit is GBP 3,450.50 and the balance is GBP 12,000.00."
+ },
+ {
+  "id": "fmt4",
+  "split": "sel",
+  "family": "house-format",
+  "kind": "exact",
+  "prompt": "Rewrite this note in our house style. Reply with the rewritten note only.\n\nNote: Invoice paid on September 9, 2026 at 4pm. Amount: 75 pounds.",
+  "expected": "Invoice paid on 09 Sep 2026 at 16:00. Amount: GBP 75.00."
+ },
+ {
+  "id": "fmt5",
+  "split": "test",
+  "family": "house-format",
+  "kind": "exact",
+  "prompt": "Rewrite this note in our house style. Reply with the rewritten note only.\n\nNote: Delivery on 15th December 2026 between 8am and 11:30am. Cost 1999.9 GBP.",
+  "expected": "Delivery on 15 Dec 2026 between 08:00 and 11:30. Cost GBP 1,999.90."
+ },
+ {
+  "id": "fmt6",
+  "split": "test",
+  "family": "house-format",
+  "kind": "exact",
+  "prompt": "Rewrite this note in our house style. Reply with the rewritten note only.\n\nNote: Review set for 2 April 2027 at 12:05pm. Fee is £60 and the travel cap is £1,000.",
+  "expected": "Review set for 02 Apr 2027 at 12:05. Fee is GBP 60.00 and the travel cap is GBP 1,000.00."
+ },
+ {
+  "id": "file1",
+  "split": "train",
+  "family": "filename",
+  "kind": "exact",
+  "prompt": "Give the filename for this document under our naming convention. Reply with the filename only.\n\nTitle: The Quarterly Sales Report\nDate: 5 March 2026\nVersion: 3\nAuthor: Jane Smith\nFormat: PDF",
+  "expected": "20260305_quarterly-sales-report_v03_jsmith.pdf"
+ },
+ {
+  "id": "file2",
+  "split": "train",
+  "family": "filename",
+  "kind": "exact",
+  "prompt": "Give the filename for this document under our naming convention. Reply with the filename only.\n\nTitle: Plan for Office Move and Budget\nDate: 21 November 2025\nVersion: 12\nAuthor: Omar Haddad\nFormat: DOCX",
+  "expected": "20251121_plan-office-move-budget_v12_ohaddad.docx"
+ },
+ {
+  "id": "file3",
+  "split": "sel",
+  "family": "filename",
+  "kind": "exact",
+  "prompt": "Give the filename for this document under our naming convention. Reply with the filename only.\n\nTitle: Customer Survey Results (Final)\nDate: 1 February 2026\nVersion: 2\nAuthor: Priya Nair\nFormat: XLSX",
+  "expected": "20260201_customer-survey-results-final_v02_pnair.xlsx"
+ },
+ {
+  "id": "file4",
+  "split": "sel",
+  "family": "filename",
+  "kind": "exact",
+  "prompt": "Give the filename for this document under our naming convention. Reply with the filename only.\n\nTitle: Q3 Marketing Plan: An Overview\nDate: 30 September 2026\nVersion: 1\nAuthor: Tom O'Neill\nFormat: PDF",
+  "expected": "20260930_q3-marketing-plan-overview_v01_toneill.pdf"
+ },
+ {
+  "id": "file5",
+  "split": "test",
+  "family": "filename",
+  "kind": "exact",
+  "prompt": "Give the filename for this document under our naming convention. Reply with the filename only.\n\nTitle: Vendor Contract for the Leeds Site\nDate: 14 August 2026\nVersion: 4\nAuthor: Sam Greene\nFormat: PDF",
+  "expected": "20260814_vendor-contract-leeds-site_v04_sgreene.pdf"
+ },
+ {
+  "id": "file6",
+  "split": "test",
+  "family": "filename",
+  "kind": "exact",
+  "prompt": "Give the filename for this document under our naming convention. Reply with the filename only.\n\nTitle: Onboarding Checklist & FAQ\nDate: 9 January 2026\nVersion: 10\nAuthor: Li Wei\nFormat: DOCX",
+  "expected": "20260109_onboarding-checklist-faq_v10_lwei.docx"
+ }
+]

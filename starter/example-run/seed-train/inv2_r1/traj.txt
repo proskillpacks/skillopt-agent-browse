@@ -1,0 +1,11 @@
+TASK inv2 (invoice-json): Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.
+
+Note: Invoice #7 for BRIGHT SPARK ELECTRICAL, dated 12/04/2026 (day first), amount £85 inc VAT
+
+EXPECTED:
+{"id": "INV-000007", "customer": "Bright Spark Electrical", "date": "2026-04-12", "total_pence": 8500}
+
+GOT:
+{"id": "7", "customer": "BRIGHT SPARK ELECTRICAL", "date": "2026-04-12", "total_pence": 8500}
+
+RESULT: FAIL wtok=8326 

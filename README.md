@@ -1,5 +1,13 @@
 # Training a browsing skill with SkillOpt
 
+## Start here if you want to train your own skill
+
+Open [`starter/`](starter/). It is a small training loop you can run in ten minutes and then change. It needs no browser and no paid model: just Python 3 and either the `claude` command or any local or hosted model with an OpenAI-style endpoint (Ollama, llama.cpp, LM Studio, vLLM). It has 18 toy tasks with automatic checks, a scoring script, a reflection step, a gate that keeps a change only if the score goes up, and a real example run with its numbers. The tutorial walks through the six steps with the command for each: [`starter/README.md`](starter/README.md).
+
+The rest of this page is the original write-up of the browsing-skill experiment, unchanged.
+
+---
+
 A worked example of training an agent skill instead of hand-writing it. The skill teaches Claude to browse the web with the [`agent-browser`](https://github.com/vercel-labs/agent-browser) CLI. The method is a scaled-down version of Microsoft's SkillOpt paper ([arXiv 2605.23904](https://arxiv.org/abs/2605.23904)).
 
 **Result in one line:** the trained skill made Opus 5.5 about 14% cheaper per browsing task on unseen tasks, with no change in accuracy, because Opus already solved every task without a skill. Two of the three edit sets I proposed made things worse and were caught by the validation gate.

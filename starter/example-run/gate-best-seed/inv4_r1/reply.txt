@@ -1,0 +1,8 @@
+```json
+{
+  "id": "INV-88",
+  "customer": "oak street bakery",
+  "date": "2026-02-28",
+  "total_pence": 1499
+}
+```

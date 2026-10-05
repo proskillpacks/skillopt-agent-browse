@@ -1,0 +1,80 @@
+{
+ "tag": "local-test-c1",
+ "skill": "candidates/c1.md",
+ "split": "test",
+ "student": "openai:qwen3.8:27b",
+ "reps": 1,
+ "n": 6,
+ "acc": 0.833,
+ "score": 0.8333,
+ "wtok": 1714,
+ "cost": 0,
+ "results": [
+  {
+   "id": "inv5_r1",
+   "task": "inv5",
+   "family": "invoice-json",
+   "correct": true,
+   "score": 1.0,
+   "wtok": 1814,
+   "cost": 0,
+   "secs": 25.4,
+   "error": ""
+  },
+  {
+   "id": "inv6_r1",
+   "task": "inv6",
+   "family": "invoice-json",
+   "correct": true,
+   "score": 1.0,
+   "wtok": 1713,
+   "cost": 0,
+   "secs": 7.3,
+   "error": ""
+  },
+  {
+   "id": "fmt5_r1",
+   "task": "fmt5",
+   "family": "house-format",
+   "correct": true,
+   "score": 1.0,
+   "wtok": 2218,
+   "cost": 0,
+   "secs": 17.4,
+   "error": ""
+  },
+  {
+   "id": "fmt6_r1",
+   "task": "fmt6",
+   "family": "house-format",
+   "correct": true,
+   "score": 1.0,
+   "wtok": 1300,
+   "cost": 0,
+   "secs": 23.3,
+   "error": ""
+  },
+  {
+   "id": "file5_r1",
+   "task": "file5",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 1416,
+   "cost": 0,
+   "secs": 19.6,
+   "error": ""
+  },
+  {
+   "id": "file6_r1",
+   "task": "file6",
+   "family": "filename",
+   "correct": true,
+   "score": 1.0,
+   "wtok": 1821,
+   "cost": 0,
+   "secs": 20.9,
+   "error": ""
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+TASK fmt4 (house-format): Rewrite this note in our house style. Reply with the rewritten note only.
+
+Note: Invoice paid on September 9, 2026 at 4pm. Amount: 75 pounds.
+
+EXPECTED:
+Invoice paid on 09 Sep 2026 at 16:00. Amount: GBP 75.00.
+
+GOT:
+I don't have access to your house style guide. Could you share it so I can rewrite the note correctly?
+
+RESULT: FAIL wtok=7841 

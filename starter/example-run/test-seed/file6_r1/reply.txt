@@ -1,0 +1,5 @@
+I need to check your established naming convention. Let me access your memory to find it.
+
+<read>
+<path>/home/user/.claude/projects/-tmp-rollout-9gdsbzy2/memory</path>
+</read>

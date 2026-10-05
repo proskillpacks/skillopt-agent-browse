@@ -1,0 +1,11 @@
+TASK fmt2 (house-format): Rewrite this note in our house style. Reply with the rewritten note only.
+
+Note: Deadline is 3 November 2026 at 9am. Late fee is £250.
+
+EXPECTED:
+Deadline is 03 Nov 2026 at 09:00. Late fee is GBP 250.00.
+
+GOT:
+I don't have access to your house style guidelines. Could you share the style conventions or standards you'd like me to follow? For example, tone, formatting, specific phrasing conventions, or an example of previous notes in your house style would help me rewrite this correctly.
+
+RESULT: FAIL wtok=7401 

@@ -1,0 +1,11 @@
+TASK inv1 (invoice-json): Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.
+
+Note: inv no. 42 - acme widgets ltd - 3rd march 2026 - £1,200.50 + VAT
+
+EXPECTED:
+{"id": "INV-000042", "customer": "Acme Widgets Ltd", "date": "2026-03-03", "total_pence": 144060}
+
+GOT:
+{"id":42,"customer":"acme widgets ltd","date":"2026-03-03","total_pence":144060}
+
+RESULT: FAIL wtok=3414 

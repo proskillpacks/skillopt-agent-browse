@@ -1,0 +1,212 @@
+{
+ "tag": "baseline-all",
+ "skill": "none",
+ "split": "all",
+ "student": "claude:haiku",
+ "reps": 1,
+ "n": 18,
+ "acc": 0.0,
+ "score": 0.0,
+ "wtok": 8395,
+ "cost": 0.27,
+ "results": [
+  {
+   "id": "inv1_r1",
+   "task": "inv1",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8683,
+   "cost": 0.0153,
+   "secs": 5.0,
+   "error": ""
+  },
+  {
+   "id": "inv2_r1",
+   "task": "inv2",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8106,
+   "cost": 0.0147,
+   "secs": 4.0,
+   "error": ""
+  },
+  {
+   "id": "inv3_r1",
+   "task": "inv3",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8984,
+   "cost": 0.0156,
+   "secs": 5.0,
+   "error": ""
+  },
+  {
+   "id": "inv4_r1",
+   "task": "inv4",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8154,
+   "cost": 0.0147,
+   "secs": 4.1,
+   "error": ""
+  },
+  {
+   "id": "inv5_r1",
+   "task": "inv5",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 9305,
+   "cost": 0.0159,
+   "secs": 6.3,
+   "error": ""
+  },
+  {
+   "id": "inv6_r1",
+   "task": "inv6",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 9057,
+   "cost": 0.0157,
+   "secs": 6.0,
+   "error": ""
+  },
+  {
+   "id": "fmt1_r1",
+   "task": "fmt1",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 7426,
+   "cost": 0.014,
+   "secs": 3.7,
+   "error": ""
+  },
+  {
+   "id": "fmt2_r1",
+   "task": "fmt2",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 7401,
+   "cost": 0.014,
+   "secs": 3.5,
+   "error": ""
+  },
+  {
+   "id": "fmt3_r1",
+   "task": "fmt3",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8149,
+   "cost": 0.0147,
+   "secs": 5.0,
+   "error": ""
+  },
+  {
+   "id": "fmt4_r1",
+   "task": "fmt4",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8917,
+   "cost": 0.0155,
+   "secs": 6.5,
+   "error": ""
+  },
+  {
+   "id": "fmt5_r1",
+   "task": "fmt5",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 7699,
+   "cost": 0.0143,
+   "secs": 4.0,
+   "error": ""
+  },
+  {
+   "id": "fmt6_r1",
+   "task": "fmt6",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8187,
+   "cost": 0.0148,
+   "secs": 5.1,
+   "error": ""
+  },
+  {
+   "id": "file1_r1",
+   "task": "file1",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 9062,
+   "cost": 0.0156,
+   "secs": 6.4,
+   "error": ""
+  },
+  {
+   "id": "file2_r1",
+   "task": "file2",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 7970,
+   "cost": 0.0146,
+   "secs": 4.8,
+   "error": ""
+  },
+  {
+   "id": "file3_r1",
+   "task": "file3",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8010,
+   "cost": 0.0146,
+   "secs": 4.8,
+   "error": ""
+  },
+  {
+   "id": "file4_r1",
+   "task": "file4",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8716,
+   "cost": 0.0153,
+   "secs": 6.8,
+   "error": ""
+  },
+  {
+   "id": "file5_r1",
+   "task": "file5",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8575,
+   "cost": 0.0152,
+   "secs": 5.8,
+   "error": ""
+  },
+  {
+   "id": "file6_r1",
+   "task": "file6",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8712,
+   "cost": 0.0153,
+   "secs": 6.3,
+   "error": ""
+  }
+ ]
+}

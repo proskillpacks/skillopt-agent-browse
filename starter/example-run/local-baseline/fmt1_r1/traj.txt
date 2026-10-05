@@ -1,0 +1,11 @@
+TASK fmt1 (house-format): Rewrite this note in our house style. Reply with the rewritten note only.
+
+Note: Meeting moved to March 5th, 2026 at 2:30pm. Budget is £1200.
+
+EXPECTED:
+Meeting moved to 05 Mar 2026 at 14:30. Budget is GBP 1,200.00.
+
+GOT:
+Meeting rescheduled to 5 March 2026, 14:30. Budget: £1,200.
+
+RESULT: FAIL wtok=1873 

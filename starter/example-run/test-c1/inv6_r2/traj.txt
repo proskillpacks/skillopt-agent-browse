@@ -1,0 +1,11 @@
+TASK inv6 (invoice-json): Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.
+
+Note: invoice 19 - northern lights design - 15/07/26 - £640.40 + VAT
+
+EXPECTED:
+{"id": "INV-000019", "customer": "Northern Lights Design", "date": "2026-07-15", "total_pence": 76848}
+
+GOT:
+{"id":"INV-000019","customer":"Northern Lights Design","date":"2026-07-15","total_pence":76848}
+
+RESULT: OK wtok=9371 

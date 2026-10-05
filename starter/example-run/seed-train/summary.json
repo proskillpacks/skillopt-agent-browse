@@ -1,0 +1,80 @@
+{
+ "tag": "seed-train",
+ "skill": "skill/seed.md",
+ "split": "train",
+ "student": "claude:haiku",
+ "reps": 1,
+ "n": 6,
+ "acc": 0.0,
+ "score": 0.0,
+ "wtok": 9840,
+ "cost": 0.099,
+ "results": [
+  {
+   "id": "inv1_r1",
+   "task": "inv1",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8665,
+   "cost": 0.0153,
+   "secs": 4.8,
+   "error": ""
+  },
+  {
+   "id": "inv2_r1",
+   "task": "inv2",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8326,
+   "cost": 0.015,
+   "secs": 4.7,
+   "error": ""
+  },
+  {
+   "id": "fmt1_r1",
+   "task": "fmt1",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 9240,
+   "cost": 0.0159,
+   "secs": 7.1,
+   "error": ""
+  },
+  {
+   "id": "fmt2_r1",
+   "task": "fmt2",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8033,
+   "cost": 0.0146,
+   "secs": 4.7,
+   "error": ""
+  },
+  {
+   "id": "file1_r1",
+   "task": "file1",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 11030,
+   "cost": 0.0177,
+   "secs": 10.8,
+   "error": ""
+  },
+  {
+   "id": "file2_r1",
+   "task": "file2",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 13747,
+   "cost": 0.0204,
+   "secs": 15.8,
+   "error": ""
+  }
+ ]
+}

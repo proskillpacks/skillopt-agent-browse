@@ -1,0 +1,146 @@
+{
+ "tag": "test-none",
+ "skill": "none",
+ "split": "test",
+ "student": "claude:haiku",
+ "reps": 2,
+ "n": 12,
+ "acc": 0.0,
+ "score": 0.0,
+ "wtok": 8665,
+ "cost": 0.183,
+ "results": [
+  {
+   "id": "inv5_r1",
+   "task": "inv5",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 9557,
+   "cost": 0.0162,
+   "secs": 6.4,
+   "error": ""
+  },
+  {
+   "id": "inv6_r1",
+   "task": "inv6",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8520,
+   "cost": 0.0151,
+   "secs": 4.8,
+   "error": ""
+  },
+  {
+   "id": "fmt5_r1",
+   "task": "fmt5",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 10239,
+   "cost": 0.0168,
+   "secs": 9.1,
+   "error": ""
+  },
+  {
+   "id": "fmt6_r1",
+   "task": "fmt6",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 7437,
+   "cost": 0.014,
+   "secs": 3.6,
+   "error": ""
+  },
+  {
+   "id": "file5_r1",
+   "task": "file5",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8339,
+   "cost": 0.0149,
+   "secs": 5.3,
+   "error": ""
+  },
+  {
+   "id": "file6_r1",
+   "task": "file6",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8530,
+   "cost": 0.0151,
+   "secs": 5.9,
+   "error": ""
+  },
+  {
+   "id": "inv5_r2",
+   "task": "inv5",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8689,
+   "cost": 0.0153,
+   "secs": 4.9,
+   "error": ""
+  },
+  {
+   "id": "inv6_r2",
+   "task": "inv6",
+   "family": "invoice-json",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 9247,
+   "cost": 0.0158,
+   "secs": 6.4,
+   "error": ""
+  },
+  {
+   "id": "fmt5_r2",
+   "task": "fmt5",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8467,
+   "cost": 0.0151,
+   "secs": 7.0,
+   "error": ""
+  },
+  {
+   "id": "fmt6_r2",
+   "task": "fmt6",
+   "family": "house-format",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8267,
+   "cost": 0.0149,
+   "secs": 5.2,
+   "error": ""
+  },
+  {
+   "id": "file5_r2",
+   "task": "file5",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8634,
+   "cost": 0.0152,
+   "secs": 6.1,
+   "error": ""
+  },
+  {
+   "id": "file6_r2",
+   "task": "file6",
+   "family": "filename",
+   "correct": false,
+   "score": 0.0,
+   "wtok": 8055,
+   "cost": 0.0146,
+   "secs": 4.5,
+   "error": ""
+  }
+ ]
+}

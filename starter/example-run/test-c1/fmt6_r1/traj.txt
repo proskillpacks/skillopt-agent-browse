@@ -1,0 +1,11 @@
+TASK fmt6 (house-format): Rewrite this note in our house style. Reply with the rewritten note only.
+
+Note: Review set for 2 April 2027 at 12:05pm. Fee is £60 and the travel cap is £1,000.
+
+EXPECTED:
+Review set for 02 Apr 2027 at 12:05. Fee is GBP 60.00 and the travel cap is GBP 1,000.00.
+
+GOT:
+Review set for 2 April 2027 at 12:05. Fee is GBP 60.00 and the travel cap is GBP 1,000.00.
+
+RESULT: FAIL wtok=8634 

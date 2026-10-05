@@ -1,0 +1,15 @@
+TASK file5 (filename): Give the filename for this document under our naming convention. Reply with the filename only.
+
+Title: Vendor Contract for the Leeds Site
+Date: 14 August 2026
+Version: 4
+Author: Sam Greene
+Format: PDF
+
+EXPECTED:
+20260814_vendor-contract-leeds-site_v04_sgreene.pdf
+
+GOT:
+I don't have access to your naming convention. Could you share it so I can provide the correct filename?
+
+RESULT: FAIL wtok=8575 

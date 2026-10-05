@@ -1,0 +1,15 @@
+TASK file1 (filename): Give the filename for this document under our naming convention. Reply with the filename only.
+
+Title: The Quarterly Sales Report
+Date: 5 March 2026
+Version: 3
+Author: Jane Smith
+Format: PDF
+
+EXPECTED:
+20260305_quarterly-sales-report_v03_jsmith.pdf
+
+GOT:
+I don't have access to your house naming conventions for documents. Could you provide the standard format (for example, is it `YYYY-MM-DD_title_vX.pdf`, `title_YYYY-MM-DD_vX_initials.pdf`, etc.)?
+
+RESULT: FAIL wtok=11030 

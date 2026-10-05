@@ -1,0 +1,18 @@
+TASK inv3 (invoice-json): Turn this pasted invoice note into our record. Reply with a JSON object with exactly the keys id, customer, date, total_pence, and nothing else.
+
+Note: ref 1031: harbour & co. billed on 9 Jan 26, total 2,300 GBP + VAT
+
+EXPECTED:
+{"id": "INV-001031", "customer": "Harbour & Co.", "date": "2026-01-09", "total_pence": 276000}
+
+GOT:
+```json
+{
+  "id": 1031,
+  "customer": "harbour & co.",
+  "date": "2026-01-09",
+  "total_pence": 276000
+}
+```
+
+RESULT: FAIL wtok=10220 

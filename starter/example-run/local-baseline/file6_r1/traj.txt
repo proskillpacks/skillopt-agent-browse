@@ -1,0 +1,15 @@
+TASK file6 (filename): Give the filename for this document under our naming convention. Reply with the filename only.
+
+Title: Onboarding Checklist & FAQ
+Date: 9 January 2026
+Version: 10
+Author: Li Wei
+Format: DOCX
+
+EXPECTED:
+20260109_onboarding-checklist-faq_v10_lwei.docx
+
+GOT:
+Onboarding_Checklist_and_FAQ_2026-01-09_v10_Li_Wei.docx
+
+RESULT: FAIL wtok=2072 

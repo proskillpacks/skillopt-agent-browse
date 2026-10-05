@@ -1,0 +1,11 @@
+TASK fmt3 (house-format): Rewrite this note in our house style. Reply with the rewritten note only.
+
+Note: Kick-off on 21 Jan 2027, 10:15am. The deposit is £3,450.5 and the balance is £12,000.
+
+EXPECTED:
+Kick-off on 21 Jan 2027, 10:15. The deposit is GBP 3,450.50 and the balance is GBP 12,000.00.
+
+GOT:
+I don't have your house style guidelines available. Could you share them or point me to where they're documented? That will help me rewrite the note correctly.
+
+RESULT: FAIL wtok=9811 

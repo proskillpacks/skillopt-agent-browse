@@ -1,0 +1,11 @@
+TASK fmt5 (house-format): Rewrite this note in our house style. Reply with the rewritten note only.
+
+Note: Delivery on 15th December 2026 between 8am and 11:30am. Cost 1999.9 GBP.
+
+EXPECTED:
+Delivery on 15 Dec 2026 between 08:00 and 11:30. Cost GBP 1,999.90.
+
+GOT:
+I don't have information about your house style conventions. Could you provide an example or describe the style guide you'd like me to follow?
+
+RESULT: FAIL wtok=8106 
